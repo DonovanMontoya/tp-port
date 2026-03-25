@@ -115,8 +115,8 @@ target_compile_options(TwilightPrincess PRIVATE
   $<$<COMPILE_LANGUAGE:CXX>:${PORT_FORCE_INCLUDE}>
   # GC toolchain uses `void main()` which is non-standard; -fpermissive
   # downgrades that hard error to a warning so the file still compiles.
-  $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
-  $<$<COMPILE_LANGUAGE:CXX>:-Wno-error=main>
+  # These flags are GCC/Clang-only — MSVC uses -Dmain=gc_main instead.
+  $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<NOT:$<CXX_COMPILER_ID:MSVC>>>:-fpermissive>
 )
 target_include_directories(TwilightPrincess PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
