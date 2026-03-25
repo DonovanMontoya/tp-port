@@ -39,3 +39,4 @@
 #include "port/endian.h"
 #include "port/types.h"
 #include "port/logging.h"
+#include "port/compat.h"

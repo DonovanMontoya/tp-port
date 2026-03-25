@@ -17,6 +17,7 @@
 #include "dolphin/os/OSError.h"
 #include "dolphin/os/OSReset.h"
 #include "dolphin/os/OSTime.h"
+#include "dolphin/os/OSAlarm.h"
 
 #ifdef __cplusplus
 extern "C" {

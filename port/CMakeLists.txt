@@ -20,8 +20,9 @@ add_compile_definitions(
   PLATFORM_GC=0
   PLATFORM_WII=0
   PLATFORM_SHIELD=0
-  # Game version — GZ2E01 (GameCube North America) by default
+  # Game version — GZ2E01 (GameCube North America) = VERSION_GCN_USA = 0
   GZ2E01=1
+  VERSION=0
 )
 
 if(WIN32)
@@ -53,9 +54,19 @@ include_directories(
   # Decomp libs (JSystem, etc.) — GC SDK headers are shadowed by port/include
   "${DECOMP_ROOT}/libs/JSystem/include"
   "${DECOMP_ROOT}/libs/dolphin/include"
+  # Also add the dolphin/ subdirectory so bare #include <types.h> etc. work
+  "${DECOMP_ROOT}/libs/dolphin/include/dolphin"
   "${DECOMP_ROOT}/libs/revolution/include"
   "${DECOMP_ROOT}/libs/PowerPC_EABI_Support/include"
 )
+
+# Force-include port/port.h in every translation unit so that compat macros
+# (e.g. __cntlzw, __frsqrte) are active before any game header is processed.
+if(MSVC)
+  add_compile_options(/FI "${CMAKE_CURRENT_SOURCE_DIR}/include/port/port.h")
+else()
+  add_compile_options(-include "${CMAKE_CURRENT_SOURCE_DIR}/include/port/port.h")
+endif()
 
 # -----------------------------------------------------------------------
 # Third-party dependencies (fetched automatically)

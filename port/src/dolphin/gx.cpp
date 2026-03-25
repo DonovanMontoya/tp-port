@@ -18,6 +18,26 @@
 
 #include <glad/glad.h>
 #include <cstring>
+
+// Forward declarations from tev.cpp and texture.cpp
+namespace tp::tev {
+    void BindShaderForDraw();
+    GLint GetMVPLocation();
+    extern void SetNumStages(int);
+    extern void SetStageOrder(int, GXTexCoordID, GXTexMapID, GXChannelID);
+    extern void SetColorIn(int, GXTevColorArg, GXTevColorArg, GXTevColorArg, GXTevColorArg);
+    extern void SetAlphaIn(int, GXTevAlphaArg, GXTevAlphaArg, GXTevAlphaArg, GXTevAlphaArg);
+    extern void SetColorOp(int, GXTevOp, GXTevBias, GXTevScale, bool, GXTevRegID);
+    extern void SetAlphaOp(int, GXTevOp, GXTevBias, GXTevScale, bool, GXTevRegID);
+    extern void SetTevColor(int, GXColor);
+    extern void SetKonstColor(int, GXColor);
+    extern void SetKColorSel(int, GXTevKColorSel);
+    extern void SetKAlphaSel(int, GXTevKAlphaSel);
+}
+namespace tp::texture {
+    void Untile(int fmt, const void* src, int w, int h, void* dst,
+                int* internalFmt, int* glFmt, int* dataType);
+}
 #include <cstdio>
 #include <vector>
 #include <unordered_map>
@@ -315,6 +335,26 @@ void GXBegin(GXPrimitive type, GXVtxFmt fmt, u16 vtxCnt) {
     sCurrVtxCount  = vtxCnt;
     sVtxBuffer.clear();
     sVtxBuffer.reserve(vtxCnt * 9);
+    // Bind the correct TEV shader for this draw call
+    tp::tev::BindShaderForDraw();
+    // Upload current MVP (position matrix palette index 0)
+    GLint mvpLoc = glGetUniformLocation(sActiveProgram, "uMVP");
+    if (mvpLoc >= 0) {
+        // Build 4x4 from 3x4 palette[0]
+        float m44[16] = {
+            sPosMatPalette[0][0][0], sPosMatPalette[0][1][0], sPosMatPalette[0][2][0], 0,
+            sPosMatPalette[0][0][1], sPosMatPalette[0][1][1], sPosMatPalette[0][2][1], 0,
+            sPosMatPalette[0][0][2], sPosMatPalette[0][1][2], sPosMatPalette[0][2][2], 0,
+            sPosMatPalette[0][0][3], sPosMatPalette[0][1][3], sPosMatPalette[0][2][3], 1,
+        };
+        // proj * view (GC passes them separately; combine here)
+        float pm[16];
+        for (int r=0;r<4;r++) for(int c=0;c<4;c++) {
+            pm[r*4+c]=0;
+            for(int k=0;k<4;k++) pm[r*4+c]+=sProjectionMtx[r][k]*m44[k*4+c];
+        }
+        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, pm);
+    }
 }
 
 void GXEnd(void) {
@@ -410,17 +450,16 @@ void GXInitTexObj(GXTexObj* obj, void* imagePtr, u16 wd, u16 ht,
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    GLint  internal;
-    GLenum dataType;
-    GLenum extFmt = GXTexFmtToGL(fmt, &internal, &dataType);
-
-    if (imagePtr) {
-        // NOTE: GC texture data is tiled (GX tile format) and needs untiling
-        // before upload. For now upload raw — a texture converter is TODO.
-        glTexImage2D(GL_TEXTURE_2D, 0, internal, wd, ht, 0, extFmt, dataType, imagePtr);
+    if (imagePtr && wd > 0 && ht > 0) {
+        // Untile GC tiled texture to linear RGBA8
+        std::vector<uint8_t> untiled(wd * ht * 4);
+        int internalFmt, glFmt, dataType;
+        tp::texture::Untile((int)fmt, imagePtr, wd, ht, untiled.data(),
+                            &internalFmt, &glFmt, &dataType);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFmt, wd, ht, 0,
+                     (GLenum)glFmt, (GLenum)dataType, untiled.data());
     }
 
-    // Store GL handle in the opaque dummy array
     memcpy(obj->dummy, &tex, sizeof(GLuint));
 }
 
@@ -470,20 +509,30 @@ void GXInitTlutObj(GXTlutObj* /*obj*/, void* /*lut*/, GXTlutFmt /*fmt*/, u16 /*e
 void GXLoadTlut(GXTlutObj* /*obj*/, u32 /*tlutName*/) {}
 
 // -----------------------------------------------------------------------
-// TEV — stub (TODO: implement TEV→GLSL compiler)
+// TEV — forwarded to tev.cpp (full TEV→GLSL compiler)
 // -----------------------------------------------------------------------
-void GXSetNumTevStages(u8 /*n*/) {}
-void GXSetTevOrder(GXTevStageID /*s*/, GXTexCoordID /*tc*/, GXTexMapID /*tm*/, GXChannelID /*c*/) {}
-void GXSetTevOp(GXTevStageID /*s*/, GXTevMode /*m*/) {}
-void GXSetTevColorIn(GXTevStageID /*s*/, GXTevColorArg /*a*/, GXTevColorArg /*b*/, GXTevColorArg /*c*/, GXTevColorArg /*d*/) {}
-void GXSetTevAlphaIn(GXTevStageID /*s*/, GXTevAlphaArg /*a*/, GXTevAlphaArg /*b*/, GXTevAlphaArg /*c*/, GXTevAlphaArg /*d*/) {}
-void GXSetTevColorOp(GXTevStageID /*s*/, GXTevOp /*op*/, GXTevBias /*b*/, GXTevScale /*sc*/, GXBool /*cl*/, GXTevRegID /*r*/) {}
-void GXSetTevAlphaOp(GXTevStageID /*s*/, GXTevOp /*op*/, GXTevBias /*b*/, GXTevScale /*sc*/, GXBool /*cl*/, GXTevRegID /*r*/) {}
-void GXSetTevColor(GXTevRegID /*id*/, GXColor /*c*/) {}
-void GXSetTevColorS10(GXTevRegID /*id*/, GXColorS10 /*c*/) {}
-void GXSetTevKColor(GXTevKColorID /*id*/, GXColor /*c*/) {}
-void GXSetTevKColorSel(GXTevStageID /*s*/, GXTevKColorSel /*sel*/) {}
-void GXSetTevKAlphaSel(GXTevStageID /*s*/, GXTevKAlphaSel /*sel*/) {}
+void GXSetNumTevStages(u8 n) { tp::tev::SetNumStages(n); }
+void GXSetTevOrder(GXTevStageID s, GXTexCoordID tc, GXTexMapID tm, GXChannelID c) { tp::tev::SetStageOrder(s, tc, tm, c); }
+void GXSetTevOp(GXTevStageID s, GXTevMode m) {
+    // Convenience: set colour/alpha combiners to a standard mode
+    static const GXTevColorArg cA[] = {GX_CC_ZERO,GX_CC_TEXC,GX_CC_TEXC,GX_CC_ZERO};
+    static const GXTevColorArg cD[] = {GX_CC_RASC,GX_CC_ZERO,GX_CC_CPREV,GX_CC_ZERO};
+    static const GXTevAlphaArg aD[] = {GX_CA_RASA,GX_CA_ZERO,GX_CA_APREV,GX_CA_ZERO};
+    int mi = (m < 4) ? m : 0;
+    tp::tev::SetColorIn(s, GX_CC_ZERO, cA[mi], cD[mi], cD[mi]);
+    tp::tev::SetAlphaIn(s, GX_CA_ZERO, GX_CA_ZERO, GX_CA_ZERO, aD[mi]);
+    tp::tev::SetColorOp(s, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, true, GX_TEVPREV);
+    tp::tev::SetAlphaOp(s, GX_TEV_ADD, GX_TB_ZERO, GX_CS_SCALE_1, true, GX_TEVPREV);
+}
+void GXSetTevColorIn(GXTevStageID s, GXTevColorArg a, GXTevColorArg b, GXTevColorArg c, GXTevColorArg d) { tp::tev::SetColorIn(s,a,b,c,d); }
+void GXSetTevAlphaIn(GXTevStageID s, GXTevAlphaArg a, GXTevAlphaArg b, GXTevAlphaArg c, GXTevAlphaArg d) { tp::tev::SetAlphaIn(s,a,b,c,d); }
+void GXSetTevColorOp(GXTevStageID s, GXTevOp op, GXTevBias b, GXTevScale sc, GXBool cl, GXTevRegID r) { tp::tev::SetColorOp(s,op,b,sc,(bool)cl,r); }
+void GXSetTevAlphaOp(GXTevStageID s, GXTevOp op, GXTevBias b, GXTevScale sc, GXBool cl, GXTevRegID r) { tp::tev::SetAlphaOp(s,op,b,sc,(bool)cl,r); }
+void GXSetTevColor(GXTevRegID id, GXColor c)   { tp::tev::SetTevColor(id, c); }
+void GXSetTevColorS10(GXTevRegID id, GXColorS10 c) { GXColor gc = {(u8)c.r,(u8)c.g,(u8)c.b,(u8)c.a}; tp::tev::SetTevColor(id,gc); }
+void GXSetTevKColor(GXTevKColorID id, GXColor c) { tp::tev::SetKonstColor(id, c); }
+void GXSetTevKColorSel(GXTevStageID s, GXTevKColorSel sel) { tp::tev::SetKColorSel(s, sel); }
+void GXSetTevKAlphaSel(GXTevStageID s, GXTevKAlphaSel sel) { tp::tev::SetKAlphaSel(s, sel); }
 void GXSetTevSwapMode(GXTevStageID /*s*/, GXTevSwapSel /*r*/, GXTevSwapSel /*t*/) {}
 void GXSetTevSwapModeTable(GXTevSwapSel /*id*/, GXTevColorChan /*r*/, GXTevColorChan /*g*/, GXTevColorChan /*b*/, GXTevColorChan /*a*/) {}
 void GXSetTevIndirect(GXTevStageID /*s*/, GXIndTexStageID /*i*/, GXIndTexFormat /*f*/, GXIndTexBiasSel /*bs*/, GXIndTexMtxID /*m*/, GXIndTexWrap /*ws*/, GXIndTexWrap /*wt*/, GXBool /*ap*/, GXBool /*ul*/, GXIndTexAlphaSel /*as*/) {}
