@@ -135,3 +135,15 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     target_link_options(TwilightPrincess PRIVATE /SUBSYSTEM:WINDOWS)
   endif()
 endif()
+
+# -----------------------------------------------------------------------
+# Copy runtime DLLs next to the executable on Windows
+# -----------------------------------------------------------------------
+if(WIN32)
+  add_custom_command(TARGET TwilightPrincess POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:OpenAL::OpenAL>
+      $<TARGET_FILE_DIR:TwilightPrincess>
+    COMMENT "Copying OpenAL32.dll to output directory"
+  )
+endif()
