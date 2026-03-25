@@ -5,38 +5,20 @@
  * On PC, HIO doesn't exist; all methods are stubs returning safe defaults.
  */
 #include "JSystem/JGadget/linklist.h"
+#include "JSystem/JHostIO/JORReflexible.h"
+#include "JSystem/JHostIO/JORMContext.h"
 #include "port/types.h"
 
 // ---------------------------------------------------------------------------
 // Forward declarations for types we won't fully implement
 // ---------------------------------------------------------------------------
-class JORReflexible;
 class JORFile;
 class JORDir;
 class JORHostInfo_String;
 class JORHostInfo_CalendarTime;
 
-// Minimal JSUMemoryInputStream stub (used in method signatures)
-class JSUMemoryInputStream {
-public:
-    JSUMemoryInputStream(const void* buf, u32 size) {}
-};
+#include "JSystem/JSupport/JSUMemoryStream.h"
 
-// ---------------------------------------------------------------------------
-// JORMContext — minimal stub
-// ---------------------------------------------------------------------------
-class JORMContext {
-public:
-    JORMContext() {}
-};
-
-// ---------------------------------------------------------------------------
-// JORPropertyEvent — minimal stub
-// ---------------------------------------------------------------------------
-struct JORPropertyEvent {
-    u32 eventId   = 0;
-    u32 objectId  = 0;
-};
 
 // ---------------------------------------------------------------------------
 // JOREventCallbackListNode

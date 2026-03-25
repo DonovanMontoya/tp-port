@@ -5,25 +5,8 @@
  * Preserves the full type structure but init/load do nothing.
  */
 #include "port/types.h"
-
-// ---------------------------------------------------------------------------
-// Forward types used in the sound table
-// ---------------------------------------------------------------------------
-typedef u32 JAISoundID;
-
-// Minimal JASGlobalInstance (if JAudio2/JASGadget.h is not included first)
-#ifndef JASGLOBALINSTANCE_DEFINED
-#define JASGLOBALINSTANCE_DEFINED
-template <typename T>
-struct JASGlobalInstance {
-    static T* getInstance()       { return s_instance; }
-    static void setInstance(T* p) { s_instance = p; }
-protected:
-    JASGlobalInstance(bool /*primary*/) {}
-    static T* s_instance;
-};
-template <typename T> T* JASGlobalInstance<T>::s_instance = nullptr;
-#endif
+#include "JSystem/JAudio2/JASGadget.h"
+#include "JSystem/JAudio2/JAISoundID.h"
 
 // ---------------------------------------------------------------------------
 // Sound table item

@@ -44,4 +44,7 @@
 // blocks the original libs/dolphin version from being included later and
 // redefining OS_REPORT to nothing.
 #include "dolphin/os.h"
+// Pull in gx.h early so GXGamma/GXRenderModeObj/etc. are defined before
+// any game header that forward-declares them with incompatible types.
+#include "dolphin/gx.h"
 

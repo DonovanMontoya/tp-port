@@ -60,8 +60,10 @@ public:
     JKRHeap* getParent()       const { return mParent; }
 
     // ----- debug dump (no-op on PC) -----
-    void dump()       const {}
-    void dump_sort()  const {}
+    // dump_sort() is defined as 'bool JKRHeap::dump_sort()' in m_Do_main.cpp so
+    // we must declare it non-const and returning bool to match that out-of-line def.
+    void dump() const {}
+    bool dump_sort();
 
     // ----- global system heap -----
     static JKRHeap* sSystemHeap;
@@ -137,9 +139,10 @@ public:
         u8         mDirection;
         u8         mAlignment;
         u16        mGroupID;
-        void* getContents() const { return (void*)(this + 1); }
-        u32   getSize()     const { return mSize; }
-        CMemBlock* getNext() const { return mNext; }
+        void* getContents()    const { return (void*)(this + 1); }
+        u32   getSize()        const { return mSize; }
+        CMemBlock* getNext()      const { return mNext; }
+        CMemBlock* getNextBlock() const { return mNext; }  // alias used by m_Do_main.cpp
     };
 
     static JKRExpHeap* create(u32 size, JKRHeap* parent, bool errorFlag) {
@@ -159,6 +162,7 @@ public:
 // -----------------------------------------------------------------------
 // Global JKR heap helpers — placed after all class definitions
 // -----------------------------------------------------------------------
+inline JKRHeap* JKRGetRootHeap()   { return JKRHeap::sSystemHeap; }
 inline JKRHeap* JKRGetSystemHeap() { return JKRHeap::sSystemHeap; }
 // JKRGetCurrentHeap / JKRSetCurrentHeap use thread-local storage and are
 // implemented in JKRThread.cpp so each thread has its own current heap.

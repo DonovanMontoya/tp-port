@@ -5,14 +5,15 @@
  * No VI retrace, no GX framebuffer on PC; all methods are no-ops returning safe defaults.
  */
 #include "port/types.h"
+#include "dolphin/os/OSTime.h"
+#include "dolphin/os/OSMessage.h"
 
 // Minimal forward declarations to avoid pulling in GX/VI headers
+#ifndef _DOLPHIN_GX_GXSTRUCT_H_
 struct _GXRenderModeObj;
 typedef _GXRenderModeObj GXRenderModeObj;
+#endif
 typedef u8 (*Pattern)[2];
-typedef u64 OSTick;
-
-struct OSMessageQueue; // from OSMessage.h
 
 class JUTVideo {
 public:

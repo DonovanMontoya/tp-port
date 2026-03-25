@@ -40,8 +40,10 @@ public:
     void     insert(JSUPtrLink* prev, JSUPtrLink* link);
     bool     remove(JSUPtrLink* link);
 
-    JSUPtrLink* getFirst() const { return mHead; }
-    JSUPtrLink* getLast()  const { return mTail; }
+    JSUPtrLink* getFirst()     const { return mHead; }
+    JSUPtrLink* getLast()      const { return mTail; }
+    JSUPtrLink* getFirstLink() const { return mHead; }
+    JSUPtrLink* getLastLink()  const { return mTail; }
     u32          getNumLinks() const { return mCount; }
     bool         isEmpty()     const { return mCount == 0; }
 
@@ -65,6 +67,8 @@ class JSULink : public JSUPtrLink {
 public:
     explicit JSULink(T* obj) : JSUPtrLink(static_cast<void*>(obj)) {}
     T* getObject() const { return static_cast<T*>(getObjectPtr()); }
+    JSULink<T>* getNextLink() const { return static_cast<JSULink<T>*>(getNext()); }
+    JSULink<T>* getPrevLink() const { return static_cast<JSULink<T>*>(getPrev()); }
 };
 
 // -----------------------------------------------------------------------
@@ -87,4 +91,48 @@ public:
 
 private:
     JSULink<T>* mLink;
+};
+
+// -----------------------------------------------------------------------
+// JSUTree<T> — parent-child tree node (each node is both a list and a link)
+// -----------------------------------------------------------------------
+template<typename T>
+class JSUTree : public JSUList<T>, public JSULink<T> {
+public:
+    explicit JSUTree(T* owner) : JSUList<T>(), JSULink<T>(owner) {}
+    ~JSUTree() {}
+
+    bool appendChild(JSUTree<T>* child)                         { this->append(child); return child != nullptr; }
+    bool prependChild(JSUTree<T>* child)                        { this->prepend(child); return child != nullptr; }
+    bool removeChild(JSUTree<T>* child)                         { return this->remove(child); }
+    bool insertChild(JSUTree<T>* /*before*/, JSUTree<T>* child) { this->append(child); return child != nullptr; }
+
+    JSUTree<T>* getEndChild()   const { return nullptr; }
+    JSUTree<T>* getFirstChild() const { return static_cast<JSUTree<T>*>(this->getFirstLink()); }
+    JSUTree<T>* getLastChild()  const { return static_cast<JSUTree<T>*>(this->getLastLink()); }
+    JSUTree<T>* getNextChild()  const { return static_cast<JSUTree<T>*>(this->getNext()); }
+    JSUTree<T>* getPrevChild()  const { return static_cast<JSUTree<T>*>(this->getPrev()); }
+    u32         getNumChildren() const { return this->getNumLinks(); }
+    T*          getObject()      const { return static_cast<T*>(this->getObjectPtr()); }
+    JSUTree<T>* getParent()      const { return static_cast<JSUTree<T>*>(this->getList()); }
+};
+
+// -----------------------------------------------------------------------
+// JSUTreeIterator<T>
+// -----------------------------------------------------------------------
+template<typename T>
+class JSUTreeIterator {
+public:
+    JSUTreeIterator() : mTree(nullptr) {}
+    explicit JSUTreeIterator(JSUTree<T>* tree) : mTree(tree) {}
+
+    T* getObject() const { return mTree ? mTree->getObject() : nullptr; }
+    bool operator==(const JSUTree<T>* o) const { return mTree == o; }
+    bool operator!=(const JSUTree<T>* o) const { return mTree != o; }
+    JSUTreeIterator<T>  operator++(int) { JSUTreeIterator<T> prev = *this; if (mTree) mTree = mTree->getNextChild(); return prev; }
+    JSUTreeIterator<T>& operator++()    { if (mTree) mTree = mTree->getNextChild(); return *this; }
+    T*  operator*()  const { return getObject(); }
+    T*  operator->() const { return getObject(); }
+private:
+    JSUTree<T>* mTree;
 };

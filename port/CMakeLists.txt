@@ -100,11 +100,24 @@ target_link_libraries(tp_port_impl PUBLIC
 # -----------------------------------------------------------------------
 include(cmake/game_sources.cmake)
 
+# m_Do_main.cpp has `void main(int,char**)` (GC CodeWarrior style — not
+# standard C++).  Rename it to `gc_main` so GCC doesn't complain.
+set_source_files_properties(
+  "${DECOMP_ROOT}/src/m_Do/m_Do_main.cpp"
+  PROPERTIES COMPILE_FLAGS "-Dmain=gc_main"
+)
+
 add_executable(TwilightPrincess WIN32
   ${GAME_SOURCES}
 )
 
-target_compile_options(TwilightPrincess PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${PORT_FORCE_INCLUDE}>)
+target_compile_options(TwilightPrincess PRIVATE
+  $<$<COMPILE_LANGUAGE:CXX>:${PORT_FORCE_INCLUDE}>
+  # GC toolchain uses `void main()` which is non-standard; -fpermissive
+  # downgrades that hard error to a warning so the file still compiles.
+  $<$<COMPILE_LANGUAGE:CXX>:-fpermissive>
+  $<$<COMPILE_LANGUAGE:CXX>:-Wno-error=main>
+)
 target_include_directories(TwilightPrincess PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${DECOMP_ROOT}/src"
