@@ -141,6 +141,13 @@ void DVDInit(void) {
     sAsyncThread  = std::thread(AsyncWorker);
 }
 
+void DVDQuit(void) {
+    sAsyncRunning = false;
+    sAsyncCV.notify_all();
+    if (sAsyncThread.joinable())
+        sAsyncThread.join();
+}
+
 BOOL DVDOpen(const char* fileName, DVDFileInfo* fileInfo) {
     if (!fileInfo || !fileName) return FALSE;
     memset(fileInfo, 0, sizeof(*fileInfo));

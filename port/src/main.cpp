@@ -71,6 +71,7 @@ int main(int /*argc*/, char** /*argv*/)
     winCfg.height = 480;
     if (!tp::window::Init(winCfg)) {
         tp::log::error("Window init failed");
+        DVDQuit();
         return 1;
     }
 
@@ -95,6 +96,7 @@ int main(int /*argc*/, char** /*argv*/)
     // ── Teardown ──────────────────────────────────────────────────────
     AXQuit();
     tp::window::Shutdown();
+    DVDQuit();
 
     tp::log::info("Clean exit.");
     return 0;
