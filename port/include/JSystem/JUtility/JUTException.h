@@ -17,13 +17,21 @@ struct OSContext;
 typedef unsigned short OSError;
 typedef void (*JUTExceptionUserCallback)(u16, OSContext*, u32, u32);
 
-// Dummy GX gamma type
+// GXGamma and GXRenderModeObj are defined in dolphin/gx/GXEnum.h and
+// GXStruct.h (pulled in via dolphin/gx.h).  Only define them here as
+// fallback stubs when those GC headers haven't been included.
+#ifndef _DOLPHIN_GX_GXENUM_H_
 typedef int GXGamma;
+#endif
 
 // ---------------------------------------------------------------------------
 // JUTExternalFB — framebuffer stub
 // ---------------------------------------------------------------------------
+// GXRenderModeObj is defined in dolphin/gx/GXStruct.h when GC headers are
+// present.  Avoid a conflicting 'struct' forward-declaration in that case.
+#ifndef _DOLPHIN_GX_GXSTRUCT_H_
 struct GXRenderModeObj;
+#endif
 
 class JUTExternalFB {
 public:

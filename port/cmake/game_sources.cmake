@@ -79,7 +79,7 @@ set(GAME_SOURCES
   # ${DECOMP_SRC}/f_op/f_op_draw_tag.cpp
 
   # ── Main module ───────────────────────────────────────────────────────
-  # ${DECOMP_SRC}/m_Do/m_Do_main.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_main.cpp
   # ${DECOMP_SRC}/m_Do/m_Do_graphic.cpp
   # ${DECOMP_SRC}/m_Do/m_Do_audio.cpp
   # ${DECOMP_SRC}/m_Do/m_Do_controller_pad.cpp

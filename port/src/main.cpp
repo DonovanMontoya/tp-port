@@ -27,7 +27,7 @@
 // -----------------------------------------------------------------------
 // Forward declarations — uncomment as the game source compiles in
 // -----------------------------------------------------------------------
-extern "C" void main01(void);        // m_Do/m_Do_main.cpp — the real game boot + loop
+void main01(void);        // m_Do/m_Do_main.cpp — the real game boot + loop
 // extern "C" void fapGm_Execute(void); // f_ap/f_ap_game.cpp
 
 // -----------------------------------------------------------------------

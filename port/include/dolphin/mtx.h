@@ -10,7 +10,8 @@
 extern "C" {
 #endif
 
-typedef struct { f32 x, y, z; } Vec, *VecPtr, Point3d, *Point3dPtr;
+typedef struct Vec { f32 x, y, z; } Vec, *VecPtr;
+typedef Vec Point3d, *Point3dPtr;
 typedef struct { s16 x, y, z; } S16Vec, *S16VecPtr;
 typedef struct { f32 x, y, z, w; } Quaternion, *QuaternionPtr, Qtrn, *QtrnPtr;
 

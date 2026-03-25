@@ -11,6 +11,7 @@
  */
 #include "port/types.h"
 #include "port/logging.h"
+#include <cstdlib>
 
 #include "dolphin/os/OSContext.h"
 #include "dolphin/os/OSAlloc.h"
@@ -24,6 +25,7 @@
 #include "dolphin/os/OSReset.h"
 #include "dolphin/os/OSTime.h"
 #include "dolphin/os/OSAlarm.h"
+#include "dolphin/os/OSModule.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,6 +82,38 @@ static inline u32  OSLoadFont(OSFontHeader* /*f*/, void* /*buf*/) { return 0; }
 #ifdef __cplusplus
 }
 #endif
+
+// Boot info (GC boot block — not used on PC, provided for source compat)
+#include "dolphin/dvd.h"
+
+typedef struct OSBootInfo_s {
+    DVDDiskID diskID;
+    u32 magic;
+    u32 version;
+    u32 memorySize;
+    u32 consoleType;
+    void* arenaLo;
+    void* arenaHi;
+    void* FSTLocation;
+    u32 FSTMaxLength;
+} OSBootInfo;
+
+// Arena alloc helpers (stubs — PC has no GC memory arena)
+static inline void* OSAllocFromArenaLo(u32 size, u32 /*align*/) { return ::malloc(size); }
+static inline void* OSAllocFromArenaHi(u32 size, u32 /*align*/) { return ::malloc(size); }
+static inline void* OSAllocFromMEM1ArenaLo(u32 size, u32 align) { return OSAllocFromArenaLo(size, align); }
+static inline void* OSAllocFromMEM2ArenaLo(u32 size, u32 align) { return OSAllocFromArenaLo(size, align); }
+
+// Report initialiser (no-op on PC — output goes to stdout/stderr)
+static inline void OSReportInit(void) {}
+
+// Reset code — always return 0 (cold boot, no warm reset) on PC
+static inline u32  OSGetResetCode(void) { return 0; }
+
+// Console type — PC always reports retail console
+#define OS_CONSOLE_DEVELOPMENT 0x10000000u
+#define OS_CONSOLE_RETAIL      0x00000000u
+static inline u32  OSGetConsoleType(void) { return OS_CONSOLE_RETAIL; }
 
 // OS_REPORT convenience macros (always enabled on PC so debug output works)
 #define OS_REPORT(...)       OSReport(__VA_ARGS__)

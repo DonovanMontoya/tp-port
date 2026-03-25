@@ -5,6 +5,7 @@
  * Audio is handled by SDL/OpenAL on PC; this is a no-op wrapper.
  */
 #include "JSystem/JKernel/JKRThread.h"
+#include "JSystem/JAudio2/JASGadget.h"
 #include "dolphin/os/OSThread.h"
 
 enum JASAudioMessage {
@@ -12,17 +13,6 @@ enum JASAudioMessage {
     AUDIOMSG_DSP  = 1,
     AUDIOMSG_STOP = 2,
 };
-
-// Minimal JASGlobalInstance stub (the real one is in JAudio2/JASGadget.h)
-template <typename T>
-struct JASGlobalInstance {
-    static T* getInstance()      { return s_instance; }
-    static void setInstance(T* p){ s_instance = p; }
-protected:
-    JASGlobalInstance(bool /*primary*/) {}
-    static T* s_instance;
-};
-template <typename T> T* JASGlobalInstance<T>::s_instance = nullptr;
 
 struct JASAudioThread : public JKRThread, public JASGlobalInstance<JASAudioThread> {
     JASAudioThread(int /*prio*/, int /*msgCount*/, u32 /*stackSize*/)

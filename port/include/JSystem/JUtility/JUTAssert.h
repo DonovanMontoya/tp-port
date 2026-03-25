@@ -40,4 +40,6 @@ public:
         (void)file; (void)line; (void)fmt;
     }
     static void* getSDevice() { return nullptr; }
+    static void  setMessageCount(int /*n*/) {}
+    static int   getMessageCount()          { return 0; }
 };

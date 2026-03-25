@@ -27,6 +27,29 @@ typedef u32 OSTick;
 OSTime OSGetTime(void);
 OSTick OSGetTick(void);
 
+// Calendar time (struct from Dolphin OS)
+typedef struct OSCalendarTime {
+    int sec;   // [0, 60]
+    int min;   // [0, 59]
+    int hour;  // [0, 23]
+    int mday;  // [1, 31]
+    int mon;   // [0, 11]
+    int year;  // e.g. 2004
+    int wday;  // [0, 6]  (0 = Sunday)
+    int yday;  // [0, 365]
+    int msec;  // [0, 999]
+    int usec;  // [0, 999]
+} OSCalendarTime;
+
+static inline void OSTicksToCalendarTime(OSTime /*ticks*/, OSCalendarTime* td) {
+    if (td) {
+        td->sec = td->min = td->hour = 0;
+        td->mday = 1; td->mon = 0; td->year = 2004;
+        td->wday = td->yday = td->msec = td->usec = 0;
+    }
+}
+static inline OSTime OSCalendarTimeToTicks(OSCalendarTime* /*td*/) { return 0; }
+
 #ifdef __cplusplus
 }
 #endif

@@ -75,14 +75,11 @@ inline int __cntlzd(unsigned long long x) {
 #endif
 }
 
-// __frsqrte(x) — fast reciprocal square root estimate
+// __frsqrte / __frsqrtes — fast reciprocal square root estimate.
+// Defined as inline functions in JSystem/JMath/JMath.h (port stub).
+// Include it here so all TUs get them consistently as functions (not macros).
 #include <cmath>
-#ifndef __frsqrte
-#  define __frsqrte(x) (1.0f / sqrtf(x))
-#endif
-#ifndef __frsqrtes
-#  define __frsqrtes(x) (1.0f / sqrtf(x))
-#endif
+#include "JSystem/JMath/JMath.h"
 
 // __fabs — same as fabsf/fabs in standard math
 #ifndef __fabs
