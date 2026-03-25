@@ -58,7 +58,7 @@ public:
     virtual void listenPropertyEvent(const JORPropertyEvent*) override {}
     virtual void listen(u32, const JOREvent*) {}
     virtual void genObjectInfo(const JORGenEvent*) {}
-    virtual void genMessage(JORMContext*) = 0;
+    virtual void genMessage(JORMContext*) {}   // no-op on PC (no HIO channel)
     virtual void listenNodeEvent(const JORNodeEvent*) {}
     virtual ~JORReflexible() {}
 };
