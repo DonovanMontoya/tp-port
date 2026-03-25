@@ -27,8 +27,8 @@
 // -----------------------------------------------------------------------
 // Forward declarations — uncomment as the game source compiles in
 // -----------------------------------------------------------------------
-// extern "C" void mDoMain_boot(void);      // m_Do/m_Do_main.cpp
-// extern "C" void fapGm_Execute(void);     // f_ap/f_ap_game.cpp
+extern "C" void main01(void);        // m_Do/m_Do_main.cpp — the real game boot + loop
+// extern "C" void fapGm_Execute(void); // f_ap/f_ap_game.cpp
 
 // -----------------------------------------------------------------------
 // Port-side game loop stub (runs until window closes)
@@ -84,14 +84,11 @@ int main(int /*argc*/, char** /*argv*/)
 
     AXInit();
 
-    // ── Game init ─────────────────────────────────────────────────────
-    // TODO: uncomment once game source files are added to game_sources.cmake
-    // mDoMain_boot();
-
-    tp::log::info("Entering game loop");
-
-    // ── Game loop ─────────────────────────────────────────────────────
-    RunGameLoop();
+    // ── Game init + loop ──────────────────────────────────────────────
+    // main01() contains the full GC game boot sequence and the infinite
+    // do { fapGm_Execute(); } while(true) game loop.
+    tp::log::info("Entering main01 (game boot + loop)");
+    main01();
 
     // ── Teardown ──────────────────────────────────────────────────────
     AXQuit();
