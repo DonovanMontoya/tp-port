@@ -156,13 +156,7 @@ inline void* __memcpy(void* d, const void* s, int n) { return memcpy(d, s, (size
 #  define ASM
 #endif
 
-// -----------------------------------------------------------------------
-// SJIS string literal helpers (used in Japanese region strings)
-// -----------------------------------------------------------------------
-// On PC all strings are treated as UTF-8 / Latin-1; no transformation needed.
-#ifndef SJIS
-#  define SJIS(s) (s)
-#endif
+// SJIS(character, value) is defined in global.h — let it win there.
 
 // -----------------------------------------------------------------------
 // typeof / decltype compatibility
