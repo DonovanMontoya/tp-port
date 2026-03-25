@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-typedef struct {
+typedef struct OSContext {
     // General-purpose registers r0-r31 (64 entries for hi/lo halves)
     u32 gpr[32];
     u32 cr, lr, ctr, xer;

@@ -3,7 +3,7 @@
  * GLFW + OpenGL 4.5 window management.
  */
 
-#include "window/window.h"
+#include "window.h"
 #include "port/port.h"
 
 #include <glad/glad.h>

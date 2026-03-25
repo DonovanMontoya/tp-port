@@ -12,6 +12,11 @@
 #include "port/types.h"
 #include <cstdlib>  // abort
 
+// Undefine any macro versions that compat.h may have defined so the
+// proper static inline function definitions below are used instead.
+#undef PPCHalt
+#undef __PPCHalt
+
 #ifdef __cplusplus
 extern "C" {
 #endif

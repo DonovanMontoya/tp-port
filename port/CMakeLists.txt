@@ -60,14 +60,6 @@ include_directories(
   "${DECOMP_ROOT}/libs/PowerPC_EABI_Support/include"
 )
 
-# Force-include port/port.h in every translation unit so that compat macros
-# (e.g. __cntlzw, __frsqrte) are active before any game header is processed.
-if(MSVC)
-  add_compile_options(/FI "${CMAKE_CURRENT_SOURCE_DIR}/include/port/port.h")
-else()
-  add_compile_options(-include "${CMAKE_CURRENT_SOURCE_DIR}/include/port/port.h")
-endif()
-
 # -----------------------------------------------------------------------
 # Third-party dependencies (fetched automatically)
 # -----------------------------------------------------------------------
@@ -81,10 +73,19 @@ file(GLOB_RECURSE PORT_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
 )
 
+# Helper to apply the port.h force-include only to our CXX targets, NOT
+# to third-party C libraries (GLFW etc.) which cannot include C++ headers.
+if(MSVC)
+  set(PORT_FORCE_INCLUDE "/FI${CMAKE_CURRENT_SOURCE_DIR}/include/port/port.h")
+else()
+  set(PORT_FORCE_INCLUDE "-include${CMAKE_CURRENT_SOURCE_DIR}/include/port/port.h")
+endif()
+
 add_library(tp_port_impl STATIC ${PORT_SOURCES})
 target_include_directories(tp_port_impl PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
+target_compile_options(tp_port_impl PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${PORT_FORCE_INCLUDE}>)
 target_link_libraries(tp_port_impl PUBLIC
   glfw
   glad
@@ -101,6 +102,18 @@ include(cmake/game_sources.cmake)
 
 add_executable(TwilightPrincess WIN32
   ${GAME_SOURCES}
+)
+
+target_compile_options(TwilightPrincess PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${PORT_FORCE_INCLUDE}>)
+target_include_directories(TwilightPrincess PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${DECOMP_ROOT}/src"
+  "${DECOMP_ROOT}/include"
+  "${DECOMP_ROOT}/libs/JSystem/include"
+  "${DECOMP_ROOT}/libs/dolphin/include"
+  "${DECOMP_ROOT}/libs/dolphin/include/dolphin"
+  "${DECOMP_ROOT}/libs/revolution/include"
+  "${DECOMP_ROOT}/libs/PowerPC_EABI_Support/include"
 )
 
 target_link_libraries(TwilightPrincess PRIVATE

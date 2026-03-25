@@ -9,6 +9,8 @@
 
 // Debug assertion macros (disabled in release; OSPanic handled in logging.h)
 #if DEBUG
+#  define JUT_CONFIRM(LINE, COND) \
+       ((COND) ? (void)0 : (tp::log::error("Confirm failed: %s line %d", __FILE__, (int)(LINE)), abort()))
 #  define JUT_ASSERT(LINE, COND) \
        ((COND) ? (void)0 : (tp::log::error("Assert failed: %s line %d", __FILE__, (int)(LINE)), abort()))
 #  define JUT_ASSERT_MSG(LINE, COND, MSG) \
@@ -20,6 +22,7 @@
 #  define JUT_PANIC(LINE, TEXT) \
        (tp::log::error("%s: %s line %d", (TEXT), __FILE__, (int)(LINE)), abort())
 #else
+#  define JUT_CONFIRM(LINE, COND)                  ((void)0)
 #  define JUT_ASSERT(LINE, COND)                  ((void)0)
 #  define JUT_ASSERT_MSG(LINE, COND, MSG)          ((void)0)
 #  define JUT_ASSERT_MSG_F(LINE, COND, MSG, ...)   ((void)0)

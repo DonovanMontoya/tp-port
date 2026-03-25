@@ -372,7 +372,7 @@ void PSMTXMultS16VecArray(const ROMtx* m,const S16Vec* s,Vec* d,u32 n){
 // MTXStack
 // -----------------------------------------------------------------------
 void MTXInitStack(MTXStack* s, u32 n){ s->numMtx=n; s->stackPtr=s->stackBase; }
-MtxPtr MTXPush(MTXStack* s, const Mtx m){ C_MTXConcat(m,s->stackPtr[-1],s->stackPtr); return s->stackPtr++; }
+MtxPtr MTXPush(MTXStack* s, const Mtx m){ C_MTXConcat(m,(const float(*)[4])s->stackPtr[-1],s->stackPtr); return s->stackPtr++; }
 MtxPtr MTXPushFwd(MTXStack* s, const Mtx m){ C_MTXCopy(m,s->stackPtr); return s->stackPtr++; }
 MtxPtr MTXPushInv(MTXStack* s, const Mtx m){ C_MTXInverse(m,s->stackPtr); return s->stackPtr++; }
 MtxPtr MTXPushInvXpose(MTXStack* s, const Mtx m){ C_MTXInvXpose(m,s->stackPtr); return s->stackPtr++; }

@@ -14,7 +14,7 @@ static JKRExpHeap* getOrCreateRootHeap() {
     static JKRExpHeap* s_root = nullptr;
     if (!s_root) {
         // Use placement new into a static buffer to avoid heap-before-heap issues
-        static alignas(JKRExpHeap) char s_buf[sizeof(JKRExpHeap)];
+        alignas(JKRExpHeap) static char s_buf[sizeof(JKRExpHeap)];
         // Temporarily suppress JKRDisposer registering with a null heap
         s_root = new(s_buf) JKRExpHeap(0, nullptr, false);
         JKRHeap::sSystemHeap  = s_root;

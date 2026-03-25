@@ -51,11 +51,17 @@ public:
     virtual void  freeTail()                              {}
 
     // ----- state / info -----
-    u32  getFreeSize()   const { return 0x10000000u; }
-    u32  getTotalFreeSize() const { return 0x10000000u; }
-    u32  getUsedSize()   const { return 0; }
-    bool isValid()       const { return true; }
-    JKRHeap* getParent() const { return mParent; }
+    u32  getFreeSize()         const { return 0x10000000u; }
+    u32  getTotalFreeSize()    const { return 0x10000000u; }
+    u32  getTotalUsedSize()    const { return 0; }
+    u32  getUsedSize()         const { return 0; }
+    u32  getHeapSize()         const { return 0x10000000u; }
+    bool isValid()             const { return true; }
+    JKRHeap* getParent()       const { return mParent; }
+
+    // ----- debug dump (no-op on PC) -----
+    void dump()       const {}
+    void dump_sort()  const {}
 
     // ----- global system heap -----
     static JKRHeap* sSystemHeap;
@@ -123,6 +129,19 @@ public:
 // -----------------------------------------------------------------------
 class JKRExpHeap : public JKRHeap {
 public:
+    // Minimal CMemBlock stub — game iterates used blocks for heap stats
+    struct CMemBlock {
+        CMemBlock* mPrev;
+        CMemBlock* mNext;
+        u32        mSize;
+        u8         mDirection;
+        u8         mAlignment;
+        u16        mGroupID;
+        void* getContents() const { return (void*)(this + 1); }
+        u32   getSize()     const { return mSize; }
+        CMemBlock* getNext() const { return mNext; }
+    };
+
     static JKRExpHeap* create(u32 size, JKRHeap* parent, bool errorFlag) {
         return new JKRExpHeap(size, parent, errorFlag);
     }
@@ -130,4 +149,24 @@ public:
         return new JKRExpHeap(0, nullptr, false);
     }
     JKRExpHeap(u32 size, JKRHeap* parent, bool errFlag) : JKRHeap(size, parent, errFlag) {}
+
+    CMemBlock* getUsedFirst() const { return nullptr; }
+    CMemBlock* getFreeFirst() const { return nullptr; }
+    u32        getGroupID()   const { return 0; }
+    void       setGroupID(u32 /*id*/) {}
 };
+
+// -----------------------------------------------------------------------
+// Global JKR heap helpers — placed after all class definitions
+// -----------------------------------------------------------------------
+inline JKRHeap* JKRGetSystemHeap() { return JKRHeap::sSystemHeap; }
+// JKRGetCurrentHeap / JKRSetCurrentHeap use thread-local storage and are
+// implemented in JKRThread.cpp so each thread has its own current heap.
+JKRHeap* JKRGetCurrentHeap();
+JKRHeap* JKRSetCurrentHeap(JKRHeap* heap);
+inline JKRSolidHeap* JKRCreateSolidHeap(u32 size, JKRHeap* parent, bool errFlag) {
+    return JKRSolidHeap::create(size, parent, errFlag);
+}
+inline JKRExpHeap* JKRCreateExpHeap(u32 size, JKRHeap* parent, bool errFlag) {
+    return JKRExpHeap::create(size, parent, errFlag);
+}

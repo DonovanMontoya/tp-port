@@ -18,12 +18,7 @@ void* OSGetMEM2ArenaHi(void);
 void  OSSetMEM2ArenaLo(void* lo);
 void  OSSetMEM2ArenaHi(void* hi);
 
-// Cache operations — no-ops on PC
-inline void DCFlushRange(void* /*addr*/, u32 /*size*/) {}
-inline void DCInvalidateRange(void* /*addr*/, u32 /*size*/) {}
-inline void DCStoreRange(void* /*addr*/, u32 /*size*/) {}
-inline void ICInvalidateRange(void* /*addr*/, u32 /*size*/) {}
-inline void DCZeroRange(void* addr, u32 size) { memset(addr, 0, size); }
+// Cache ops are defined in OSCache.h — don't redefine here.
 
 #ifdef __cplusplus
 }

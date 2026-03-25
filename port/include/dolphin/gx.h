@@ -77,7 +77,7 @@ void GXSetZTexture(GXZTexOp op, GXTexFmt fmt, u32 bias);
 // -----------------------------------------------------------------------
 // Blend / alpha
 // -----------------------------------------------------------------------
-void GXSetBlendMode(GXBlendMode type, GXBlendfactor src, GXBlendfactor dst, GXLogicOp op);
+void GXSetBlendMode(GXBlendMode type, GXBlendFactor src, GXBlendFactor dst, GXLogicOp op);
 void GXSetAlphaCompare(GXCompare comp0, u8 ref0, GXAlphaOp op, GXCompare comp1, u8 ref1);
 void GXSetDstAlpha(GXBool enable, u8 a);
 

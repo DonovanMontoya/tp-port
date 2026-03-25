@@ -6,8 +6,7 @@
 extern "C" {
 #endif
 
-// Forward-declare OSContext (defined in OSContext.h, included before this in os.h)
-typedef struct OSContext OSContext;
+// OSContext is defined in OSContext.h (included earlier via os.h)
 
 typedef struct OSAlarm OSAlarm;
 typedef void (*OSAlarmHandler)(OSAlarm* alarm, OSContext* context);

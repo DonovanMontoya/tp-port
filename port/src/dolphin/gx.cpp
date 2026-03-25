@@ -262,7 +262,7 @@ void GXSetZMode(GXBool enable, GXCompare func, GXBool update) {
 void GXSetZCompLoc(GXBool /*before_tex*/) {}
 void GXSetZTexture(GXZTexOp /*op*/, GXTexFmt /*fmt*/, u32 /*bias*/) {}
 
-static GLenum GXBlendFactorToGL(GXBlendfactor f) {
+static GLenum GXBlendFactorToGL(GXBlendFactor f) {
     switch (f) {
         case GX_BL_ZERO:        return GL_ZERO;
         case GX_BL_ONE:         return GL_ONE;
@@ -276,7 +276,7 @@ static GLenum GXBlendFactorToGL(GXBlendfactor f) {
     }
 }
 
-void GXSetBlendMode(GXBlendMode type, GXBlendfactor src, GXBlendfactor dst, GXLogicOp /*op*/) {
+void GXSetBlendMode(GXBlendMode type, GXBlendFactor src, GXBlendFactor dst, GXLogicOp /*op*/) {
     if (type == GX_BM_NONE) {
         glDisable(GL_BLEND);
     } else {
@@ -433,7 +433,7 @@ static GLenum GXTexFmtToGL(GXTexFmt fmt, GLint* internalFmt, GLenum* dataType) {
         case GX_TF_RGB565: *internalFmt = GL_RGB5; *dataType = GL_UNSIGNED_SHORT_5_6_5; return GL_RGB;
         case GX_TF_RGB5A3: *internalFmt = GL_RGB5_A1; return GL_RGBA;
         case GX_TF_RGBA8:  return GL_RGBA;
-        case GX_TF_CMPR:   *internalFmt = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; return GL_RGBA;
+        case GX_TF_CMPR:   *internalFmt = GL_RGBA8; return GL_RGBA;
         default: return GL_RGBA;
     }
 }

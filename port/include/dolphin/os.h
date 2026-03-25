@@ -1,4 +1,10 @@
 #pragma once
+// Define the original header guard so libs/dolphin/include/dolphin/os.h
+// is blocked from being included (it would redefine OS_REPORT to nothing
+// in non-DEBUG builds, overwriting our always-on versions).
+#ifndef _DOLPHIN_OS_H_
+#define _DOLPHIN_OS_H_
+#endif
 /**
  * PC stub for dolphin/os.h
  * Aggregates all OS sub-headers just like the original.
@@ -46,6 +52,35 @@ inline u32   OSCachedToPhysical(void* ea) { return static_cast<u32>(reinterpret_
 // Halt / fatal
 void OSFatal(u32 fg, u32 bg, const char* msg);
 
+// Font support (stub — no ROM font on PC)
+typedef struct OSFontHeader {
+    u16 fontType;
+    u16 firstChar;
+    u16 lastChar;
+    u16 invalidChar;
+    u16 ascent;
+    u16 descent;
+    u16 width;
+    u16 leading;
+    u16 cellWidth;
+    u16 cellHeight;
+    u32 sheetSize;
+    u16 sheetFormat;
+    u16 sheetColumn;
+    u16 sheetRow;
+    u16 sheetWidth;
+    u16 sheetHeight;
+    u16 widthTableOffset;
+    u32 sheetImage;
+    u32 sheetMetric;
+} OSFontHeader;
+static inline BOOL OSInitFont(OSFontHeader* /*f*/) { return FALSE; }
+static inline u32  OSLoadFont(OSFontHeader* /*f*/, void* /*buf*/) { return 0; }
+
 #ifdef __cplusplus
 }
 #endif
+
+// OS_REPORT convenience macros (always enabled on PC so debug output works)
+#define OS_REPORT(...)       OSReport(__VA_ARGS__)
+#define OS_REPORT_ERROR(...) OSReport_Error(__VA_ARGS__)

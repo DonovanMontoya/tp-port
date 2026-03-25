@@ -40,7 +40,7 @@ namespace fs = std::filesystem;
 static fs::path sGameDataDir;
 
 static DVDDiskID sDiskID = {
-    "GZ2E", "01", 0, 0, 0, 0, {}
+    {'G','Z','2','E'}, {'0','1'}, 0, 0, 0, 0, {}
 };
 
 // -----------------------------------------------------------------------

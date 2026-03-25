@@ -81,6 +81,7 @@ BOOL PADSync(void);
 void PADSetSamplingCallback(PADSamplingCallback cb);
 void PADControlMotor(u32 chan, u32 cmd);
 void PADStopMotor(u32 chan);
+static inline void PADSetAnalogMode(u32 /*mode*/) {}
 
 #define RES_WIRELESS_LITE 0x40000
 

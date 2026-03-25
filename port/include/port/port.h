@@ -40,3 +40,8 @@
 #include "port/types.h"
 #include "port/logging.h"
 #include "port/compat.h"
+// Pull in the port's dolphin/os.h early so its include guard (_DOLPHIN_OS_H_)
+// blocks the original libs/dolphin version from being included later and
+// redefining OS_REPORT to nothing.
+#include "dolphin/os.h"
+
