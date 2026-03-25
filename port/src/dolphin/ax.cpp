@@ -19,6 +19,7 @@
 #include <cmath>
 #include <vector>
 #include <array>
+#include <chrono>
 #include <mutex>
 #include <thread>
 #include <atomic>

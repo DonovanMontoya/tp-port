@@ -17,6 +17,9 @@
 
 #include <cstdint>
 #include <cstring>
+#if defined(_MSC_VER)
+#  include <stdlib.h>  // _byteswap_ushort / _byteswap_ulong / _byteswap_uint64
+#endif
 
 // -----------------------------------------------------------------------
 // Compile-time host endianness (set by CMakeLists.txt)

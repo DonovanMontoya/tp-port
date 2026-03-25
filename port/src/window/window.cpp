@@ -87,6 +87,7 @@ void BeginFrame(void) {
     int w, h;
     glfwGetFramebufferSize(sWindow, &w, &h);
     glViewport(0, 0, w, h);
+    glClearColor(0.1f, 0.1f, 0.3f, 1.0f);  // dark blue — visible placeholder
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

@@ -11,6 +11,14 @@
  */
 
 // -----------------------------------------------------------------------
+// MSVC: expose M_PI and friends from <cmath> / <math.h>
+// Must be defined before any math header is included.
+// -----------------------------------------------------------------------
+#if defined(_MSC_VER) && !defined(_USE_MATH_DEFINES)
+#  define _USE_MATH_DEFINES
+#endif
+
+// -----------------------------------------------------------------------
 // Silence Metrowerks pragmas that other compilers don't understand
 // -----------------------------------------------------------------------
 #if defined(__GNUC__) || defined(__clang__)
