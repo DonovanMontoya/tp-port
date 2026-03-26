@@ -339,7 +339,7 @@ void mDoMtx_MtxToRot(CMtxP m, csXyz* o_rot) {
 
 bool mDoMtx_stack_c::push() {
     if (next >= end) {
-        JUT_ASSERT(729, next < end)
+        JUT_ASSERT(729, next < end);
         return false;
     }
 

@@ -106,14 +106,6 @@ J3DTexCoordScaleInfo J3DSys::sTexCoordScaleTable[8] = {};
 u32 j3dDefaultViewNo = 0;
 
 // ---------------------------------------------------------------------------
-// mDoMtx_stack_c statics (m_Do/m_Do_mtx.h port stub)
-// ---------------------------------------------------------------------------
-Mtx  mDoMtx_stack_c::now;
-Mtx  mDoMtx_stack_c::buffer[16];
-Mtx* mDoMtx_stack_c::next;
-Mtx* mDoMtx_stack_c::end;
-
-// ---------------------------------------------------------------------------
 // Background system global — all methods are inline stubs in port/include/d/d_bg_s.h
 // ---------------------------------------------------------------------------
 #include "d/d_bg_s.h"

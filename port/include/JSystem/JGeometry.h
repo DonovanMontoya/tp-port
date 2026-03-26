@@ -12,6 +12,8 @@ struct TVec3 {
 
     TVec3() : x(0), y(0), z(0) {}
     TVec3(T ix, T iy, T iz) : x(ix), y(iy), z(iz) {}
+
+    bool isZero() const { return x == 0 && y == 0 && z == 0; }
 };
 
 }  // namespace JGeometry

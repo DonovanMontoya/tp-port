@@ -151,6 +151,7 @@ set(GAME_SOURCES
   ${DECOMP_SRC}/m_Do/m_Do_machine.cpp
   ${DECOMP_SRC}/m_Do/m_Do_machine_exception.cpp
   ${DECOMP_SRC}/m_Do/m_Do_main.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_mtx.cpp
   ${DECOMP_SRC}/m_Do/m_Do_printf.cpp
   ${DECOMP_SRC}/m_Do/m_Do_Reset.cpp
   # ${DECOMP_SRC}/m_Do/m_Do_graphic.cpp
