@@ -52,9 +52,9 @@ public:
     static void setFullDrawFlag(bool)  {}
 };
 
-// 3D line material stubs — declared to satisfy d_drawlist class members
-class mDoExt_3DlineMat_c {};
-class mDoExt_3DlineMatSortPacket {};
-class m3DLineMatSortPacket {};
+// 3D line material types are defined by m_Do_ext when that source is enabled.
+class mDoExt_3DlineMat_c;
+class mDoExt_3DlineMatSortPacket;
+class m3DLineMatSortPacket;
 
 #endif /* D_D_DRAWLIST_H */

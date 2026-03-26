@@ -42,6 +42,8 @@ typedef _GXColor GXColor;
 class camera_process_class;
 struct dStage_roomDt_c;
 class dStage_startStage_c;
+struct view_class;
+struct view_port_class;
 
 // Free functions
 inline void dComIfG_dumpResControl() {}
@@ -152,6 +154,10 @@ inline void dComIfGp_particle_setSimple(u16, const cXyz*, u8, _GXColor&, float,
                                          dPa_levelEcallBack*) {}
 inline void dComIfGp_drawSimpleModel() {}
 inline void dComIfGd_peekZdata() {}
+inline void dComIfGd_setListZxlu() {}
+inline void dComIfGd_entryZSortListZxlu(J3DPacket* /*packet*/, cXyz& /*pos*/) {}
+inline view_class* dComIfGd_getView() { return nullptr; }
+inline J3DDrawBuffer* dComIfGd_getListPacket() { return nullptr; }
 // Particle emitter getters
 inline JPABaseEmitter* dComIfGp_particle_getEmitter(u32 /*handle*/) { return nullptr; }
 // Foot particle — variadic signature (many params); just return 0
@@ -164,6 +170,7 @@ inline u32 dComIfGp_particle_setSimpleFoot(u32 /*h*/, u32* /*out*/, cBgS_PolyInf
 
 // Resource access — returns nullptr on PC (no game data loaded yet)
 inline void* dComIfG_getObjectRes(const char* /*name*/, int /*idx*/) { return nullptr; }
+inline void* dComIfG_getStageRes(const char* /*resName*/) { return nullptr; }
 
 // (dComIfG_Bgsp is declared in port/include/d/d_bg_s.h)
 
@@ -175,9 +182,9 @@ JKRExpHeap* mDoExt_getZeldaHeap();
 JKRExpHeap* mDoExt_getGameHeap();
 JKRExpHeap* mDoExt_getArchiveHeap();
 JKRExpHeap* mDoExt_getJ2dHeap();
-inline JKRExpHeap* mDoExt_getHostIOHeap()   { return nullptr; }
+JKRExpHeap* mDoExt_getHostIOHeap();
 JKRExpHeap* mDoExt_getCommandHeap();
-inline JKRHeap*    mDoExt_setCurrentHeap(JKRHeap* h) { return JKRSetCurrentHeap(h); }
+JKRHeap* mDoExt_setCurrentHeap(JKRHeap* h);
 
 // f_op actor manager init — defined in f_op_actor_mng.cpp
 void fopAcM_initManager();
@@ -211,6 +218,14 @@ inline u32 dComIfGs_getPEventBit() { return 0; }
 
 // Resource archives
 inline JKRArchive* dComIfGp_getCardIconResArchive() {
+    static JKRArchive archive;
+    return &archive;
+}
+inline JKRArchive* dComIfGp_getFontArchive() {
+    static JKRArchive archive;
+    return &archive;
+}
+inline JKRArchive* dComIfGp_getRubyArchive() {
     static JKRArchive archive;
     return &archive;
 }

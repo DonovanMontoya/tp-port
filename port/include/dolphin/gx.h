@@ -27,6 +27,19 @@
 extern "C" {
 #endif
 
+typedef struct PPCWGPipe {
+    u8 u8;
+    u16 u16;
+    u32 u32;
+    f32 f32;
+} PPCWGPipe;
+
+extern PPCWGPipe GXWGFifo;
+
+static inline void GXCmd1u8(u8 value)   { GXWGFifo.u8 = value; }
+static inline void GXCmd1u16(u16 value) { GXWGFifo.u16 = value; }
+static inline void GXCmd1u32(u32 value) { GXWGFifo.u32 = value; }
+
 #include "dolphin/os/OSThread.h"
 
 // -----------------------------------------------------------------------
@@ -159,6 +172,9 @@ void GXDestroyTexObj(GXTexObj* obj);
 void GXInvalidateTexAll(void);
 void GXInitTlutObj(GXTlutObj* tlutObj, void* lut, GXTlutFmt fmt, u16 entries);
 void GXLoadTlut(GXTlutObj* tlutObj, u32 tlutName);
+static inline u16 GXGetTexObjWidth(const GXTexObj* /*obj*/) { return 0; }
+static inline u16 GXGetTexObjHeight(const GXTexObj* /*obj*/) { return 0; }
+static inline void GXSetTexCoordScaleManually(GXTexCoordID /*coord*/, u8 /*enable*/, u16 /*ss*/, u16 /*ts*/) {}
 
 // -----------------------------------------------------------------------
 // TEV (Texture Environment) — translated to GLSL shader permutations

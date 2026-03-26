@@ -10,6 +10,7 @@ extern "C" {
 inline void DCFlushRange(void* /*addr*/, u32 /*size*/) {}
 inline void DCInvalidateRange(void* /*addr*/, u32 /*size*/) {}
 inline void DCStoreRange(void* /*addr*/, u32 /*size*/) {}
+inline void DCStoreRangeNoSync(void* /*addr*/, u32 /*size*/) {}
 inline void ICInvalidateRange(void* /*addr*/, u32 /*size*/) {}
 inline void DCZeroRange(void* addr, u32 size) { memset(addr, 0, size); }
 inline void DCTouchRange(void* /*addr*/, u32 /*size*/) {}

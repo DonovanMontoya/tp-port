@@ -3,7 +3,9 @@
  * Model, Animation, and Heap Functions
  */
 
+#define TP_PORT_SKIP_M_DO_EXT
 #include "d/dolzel.h" // IWYU pragma: keep
+#include "../../include/m_Do/m_Do_ext.h"
 
 #include <gf/GFPixel.h>
 #include <gx.h>
@@ -19,7 +21,7 @@
 #include "Z2AudioLib/Z2Creature.h"
 #include "d/d_com_inf_game.h"
 #include "global.h"
-#include "m_Do/m_Do_ext.h"
+#include "../../include/f_op/f_op_view.h"
 #include "m_Do/m_Do_main.h"
 #include "m_Do/m_Do_mtx.h"
 #include <cstdio>
@@ -559,7 +561,7 @@ void mDoExt_setupShareTexture(J3DModelData* i_modelData, J3DModelData* i_shareMo
     J3DTexture* shareTexture = i_shareModelData->getTexture();
     JUT_ASSERT(1553, shareTexture != NULL);
     JUTNameTab* shareTextureName = i_shareModelData->getTextureName();
-    JUT_ASSERT(1555, shareTextureName != NULL)
+    JUT_ASSERT(1555, shareTextureName != NULL);
 
     bool bvar = false;
     for (u16 i = 0; i < texture->getNum(); i++) {
@@ -2684,9 +2686,9 @@ void mDoExt_3DlineMat1_c::draw() {
     mDoExt_3Dline_c* lines = mpLines;
     u16 vert_num = field_0x34 << 1;
     for (s32 i = 0; i < mNumLines; i++) {
-        GXSetArray(GX_VA_POS, ((mDoExt_3Dline_c*)((s32)lines + (mIsDrawn << 2)))->field_0x8, 0xC);
-        GXSetArray(GX_VA_NRM, ((mDoExt_3Dline_c*)((s32)lines + (mIsDrawn << 2)))->field_0x10, 0x3);
-        GXSetArray(GX_VA_TEX0, ((mDoExt_3Dline_c*)((s32)lines + (mIsDrawn << 2)))->field_0x18, 0x8);
+        GXSetArray(GX_VA_POS, ((mDoExt_3Dline_c*)((intptr_t)lines + (mIsDrawn << 2)))->field_0x8, 0xC);
+        GXSetArray(GX_VA_NRM, ((mDoExt_3Dline_c*)((intptr_t)lines + (mIsDrawn << 2)))->field_0x10, 0x3);
+        GXSetArray(GX_VA_TEX0, ((mDoExt_3Dline_c*)((intptr_t)lines + (mIsDrawn << 2)))->field_0x18, 0x8);
         GXBegin(GX_TRIANGLESTRIP, GX_VTXFMT0, vert_num);
 
         u16 j = 0;
@@ -2857,8 +2859,6 @@ void mDoExt_3DlineMat1_c::update(int param_0, f32 param_1, _GXColor& param_2, u1
         sp_38++;
     }
 }
-#include "assets/l_mat2DL__d_a_grass.h"
-
 void mDoExt_3DlineMat2_c::setMaterial() {
     j3dSys.reinitGX();
     GXSetNumIndStages(0);

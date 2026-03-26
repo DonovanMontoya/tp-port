@@ -44,6 +44,7 @@ public:
     JSUPtrLink* getLast()      const { return mTail; }
     JSUPtrLink* getFirstLink() const { return mHead; }
     JSUPtrLink* getLastLink()  const { return mTail; }
+    JSUPtrLink* getNthLink(u32 index) const;
     u32          getNumLinks() const { return mCount; }
     bool         isEmpty()     const { return mCount == 0; }
 
@@ -57,9 +58,13 @@ private:
 // JSUList<T> / JSULink<T>  (typed wrappers)
 // -----------------------------------------------------------------------
 template<typename T>
+class JSULink;
+
+template<typename T>
 class JSUList : public JSUPtrList {
 public:
     JSUList(bool initLinks = false) : JSUPtrList(initLinks) {}
+    JSULink<T>* getNth(u32 index) const { return static_cast<JSULink<T>*>(getNthLink(index)); }
 };
 
 template<typename T>
@@ -136,3 +141,11 @@ public:
 private:
     JSUTree<T>* mTree;
 };
+
+inline JSUPtrLink* JSUPtrList::getNthLink(u32 index) const {
+    JSUPtrLink* link = mHead;
+    while (link != nullptr && index-- > 0) {
+        link = link->getNext();
+    }
+    return link;
+}

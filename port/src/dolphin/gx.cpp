@@ -19,6 +19,8 @@
 #include <glad/glad.h>
 #include <cstring>
 
+PPCWGPipe GXWGFifo = {};
+
 // Forward declarations from tev.cpp and texture.cpp
 namespace tp::tev {
     void BindShaderForDraw();

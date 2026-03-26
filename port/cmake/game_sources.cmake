@@ -143,7 +143,9 @@ set(GAME_SOURCES
   ${DECOMP_SRC}/m_Do/m_Do_audio.cpp
   ${DECOMP_SRC}/m_Do/m_Do_controller_pad.cpp
   ${DECOMP_SRC}/m_Do/m_Do_dvd_thread.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_ext.cpp
   ${DECOMP_SRC}/m_Do/m_Do_ext2.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_hostIO.cpp
   ${DECOMP_SRC}/m_Do/m_Do_MemCard.cpp
   ${DECOMP_SRC}/m_Do/m_Do_MemCardRWmng.cpp
   ${DECOMP_SRC}/m_Do/m_Do_machine.cpp

@@ -9,6 +9,7 @@
 
 #include "port/types.h"
 #include <mtx.h>
+#include <dolphin/mtx.h>
 #include "SSystem/SComponent/c_xyz.h"
 #include "SSystem/SComponent/c_sxyz.h"
 
@@ -33,10 +34,20 @@ inline void mDoMtx_ZrotM(Mtx m, s16 z) { (void)m; (void)z; }
 
 // Matrix operations used by f_op_actor_mng and other code
 inline void cMtx_concat(const Mtx a, const Mtx b, Mtx c)          { MTXConcat(a, b, c); }
+inline void mDoMtx_concat(const Mtx a, const Mtx b, Mtx c)        { MTXConcat(a, b, c); }
 inline void cMtx_YrotS(Mtx m, s16 y)                               { (void)m; (void)y; }
 inline void cMtx_multVec(const Mtx m, const Vec* src, Vec* dst)    { MTXMultVec(m, src, dst); }
 inline void cMtx_multVecArray(const Mtx m, const Vec* src, Vec* dst, u32 n) {
     MTXMultVecArray(m, src, dst, n);
+}
+inline void mDoMtx_quat(Mtx m, const Quaternion* /*q*/) { PSMTXIdentity(m); }
+inline MtxP cMtx_getIdentity() {
+    static Mtx sIdentity = {
+        {1.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f},
+    };
+    return sIdentity;
 }
 
 // Stack matrix class — used by fopAcM_setEffectMtx and many actors

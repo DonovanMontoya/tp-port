@@ -111,53 +111,6 @@ void mDoGph_BlankingON()  {}
 void mDoGph_BlankingOFF() {}
 
 // ---------------------------------------------------------------------------
-// m_Do_ext heap globals (normally set up by mDoMch_Create / m_Do_ext.cpp)
-// ---------------------------------------------------------------------------
-#include "JSystem/JKernel/JKRHeap.h"
-#include "JSystem/JKernel/JKRAssertHeap.h"
-JKRExpHeap* zeldaHeap   = nullptr;
-JKRExpHeap* gameHeap    = nullptr;
-JKRExpHeap* archiveHeap = nullptr;
-JKRExpHeap* commandHeap = nullptr;
-JKRExpHeap* dbPrintHeap = nullptr;
-JKRAssertHeap* assertHeap = nullptr;
-JKRExpHeap* mDoExt_getZeldaHeap() { return zeldaHeap; }
-JKRExpHeap* mDoExt_getGameHeap() { return gameHeap; }
-JKRExpHeap* mDoExt_getArchiveHeap() { return archiveHeap; }
-JKRExpHeap* mDoExt_getArchiveHeapPtr() { return archiveHeap; }
-JKRExpHeap* mDoExt_getCommandHeap() { return commandHeap; }
-JKRExpHeap* mDoExt_getDbPrintHeap() { return dbPrintHeap; }
-JKRExpHeap* mDoExt_getJ2dHeap() { return nullptr; }
-JKRExpHeap* mDoExt_createDbPrintHeap(u32 heapSize, JKRHeap* parentHeap) {
-    dbPrintHeap = JKRExpHeap::create(heapSize, parentHeap, false);
-    return dbPrintHeap;
-}
-JKRAssertHeap* mDoExt_createAssertHeap(JKRHeap* parentHeap) {
-    assertHeap = JKRAssertHeap::create(0x10000, parentHeap, false);
-    return assertHeap;
-}
-JKRExpHeap* mDoExt_createCommandHeap(u32 heapSize, JKRHeap* parentHeap) {
-    commandHeap = JKRExpHeap::create(heapSize, parentHeap, false);
-    return commandHeap;
-}
-JKRExpHeap* mDoExt_createArchiveHeap(u32 heapSize, JKRHeap* parentHeap) {
-    archiveHeap = JKRExpHeap::create(heapSize, parentHeap, false);
-    return archiveHeap;
-}
-JKRExpHeap* mDoExt_createJ2dHeap(u32 heapSize, JKRHeap* parentHeap) {
-    return JKRExpHeap::create(heapSize, parentHeap, false);
-}
-JKRExpHeap* mDoExt_createZeldaHeap(u32 heapSize, JKRHeap* parentHeap) {
-    zeldaHeap = JKRExpHeap::create(heapSize, parentHeap, false);
-    return zeldaHeap;
-}
-JKRExpHeap* mDoExt_createGameHeap(u32 heapSize, JKRHeap* parentHeap) {
-    gameHeap = JKRExpHeap::create(heapSize, parentHeap, false);
-    return gameHeap;
-}
-OSThread* mDoExt_GetCurrentRunningThread() { return OSGetCurrentThread(); }
-
-// ---------------------------------------------------------------------------
 // m_Do_audio stubs
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------

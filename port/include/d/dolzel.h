@@ -38,7 +38,9 @@
 
 // m_Do helpers — port stubs exist
 #include "m_Do/m_Do_hostIO.h"
+#ifndef TP_PORT_SKIP_M_DO_EXT
 #include "m_Do/m_Do_ext.h"
+#endif
 
 // Core framework actor type — defines fopAc_ac_c used throughout game code
 #include "f_op/f_op_actor.h"

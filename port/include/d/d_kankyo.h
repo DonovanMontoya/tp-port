@@ -32,6 +32,9 @@ inline void dKy_depth_dist_set(void* /*process*/) {}
 inline void dKy_setLight(dKy_tevstr_c*) {}
 inline void dKy_GfFog_tevstr_set(dKy_tevstr_c*) {}
 inline void dKy_setLight_mine(dKy_tevstr_c*) {}
+inline void dKy_setLight_again() {}
+inline void dKy_GxFog_set() {}
+inline void dKy_Global_amb_set(dKy_tevstr_c*) {}
 
 // Misc kankyo stubs
 inline int  dKy_Indoor_check() { return 0; }

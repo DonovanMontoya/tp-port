@@ -50,6 +50,7 @@ public:
     virtual void  free(void* ptr)                         { ::free(ptr); }
     virtual void  freeAll()                               {}
     virtual void  freeTail()                              {}
+    virtual void  destroy()                               { delete this; }
 
     // ----- state / info -----
     u32  getFreeSize()         const { return 0x10000000u; }
@@ -137,11 +138,20 @@ public:
     s32 adjustSize() { return 0; }
 };
 
+inline void JKRDestroySolidHeap(JKRSolidHeap* heap) {
+    delete heap;
+}
+
 // -----------------------------------------------------------------------
 // JKRExpHeap — expandable heap (same as JKRHeap on PC)
 // -----------------------------------------------------------------------
 class JKRExpHeap : public JKRHeap {
 public:
+    enum AllocationMode {
+        ALLOC_MODE_0 = 0,
+        ALLOC_MODE_1 = 1,
+    };
+
     // Minimal CMemBlock stub — game iterates used blocks for heap stats
     struct CMemBlock {
         CMemBlock* mPrev;
@@ -171,7 +181,9 @@ public:
     CMemBlock* getUsedFirst() const { return nullptr; }
     CMemBlock* getFreeFirst() const { return nullptr; }
     u32        getGroupID()   const { return 0; }
+    u32        getCurrentGroupId() const { return 0; }
     void       setGroupID(u32 /*id*/) {}
+    void       setAllocationMode(AllocationMode /*mode*/) {}
 
     // Used by fopMsgM_destroyExpHeap
     bool check()   const { return true; }
@@ -200,8 +212,24 @@ inline JKRExpHeap* JKRCreateExpHeap(u32 size, JKRHeap* parent, bool errFlag) {
 inline void* JKRAllocFromHeap(JKRHeap* heap, u32 size, int align) {
     return heap ? heap->alloc(size, align) : nullptr;
 }
+inline void JKRFreeToHeap(JKRHeap* heap, void* ptr) {
+    if (heap) {
+        heap->free(ptr);
+    } else {
+        ::free(ptr);
+    }
+}
+inline s32 JKRGetMemBlockSize(JKRHeap* /*heap*/, const void* /*ptr*/) {
+    return 0;
+}
+inline u32 JKRGetFreeSize(JKRHeap* heap) {
+    return heap ? heap->getFreeSize() : 0;
+}
 inline void JKRFree(void* ptr) {
     ::free(ptr);
+}
+inline void JKRDestroyExpHeap(JKRExpHeap* heap) {
+    delete heap;
 }
 
 inline void* operator new(std::size_t size, JKRHeap* heap, int align) {

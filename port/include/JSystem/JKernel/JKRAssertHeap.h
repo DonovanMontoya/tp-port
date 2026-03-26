@@ -16,11 +16,9 @@ public:
     static JKRAssertHeap* create(u32 size, JKRHeap* parent, bool errFlag) {
         return new JKRAssertHeap(size, parent, errFlag);
     }
+    static JKRAssertHeap* create(JKRHeap* parent) {
+        return create(0x10000, parent, false);
+    }
 
     void dump() const {}
 };
-
-// mDoExt_getAssertHeap() — referenced by some debug code
-inline JKRHeap* mDoExt_getAssertHeap() {
-    return JKRHeap::sCurrentHeap;
-}

@@ -21,6 +21,7 @@
        ((COND) != 0 ? (void)0 : (tp::log::error("%s: %s line %d", (MSG), __FILE__, (int)(LINE)), abort()))
 #  define JUT_PANIC(LINE, TEXT) \
        (tp::log::error("%s: %s line %d", (TEXT), __FILE__, (int)(LINE)), abort())
+#  define ASSERTLINE(LINE, COND) JUT_ASSERT((LINE), (COND));
 #else
 #  define JUT_CONFIRM(LINE, COND)                  ((void)0)
 #  define JUT_ASSERT(LINE, COND)                  ((void)0)
@@ -28,6 +29,7 @@
 #  define JUT_ASSERT_MSG_F(LINE, COND, MSG, ...)   ((void)0)
 #  define J3D_PANIC(LINE, COND, MSG)               ((void)0)
 #  define JUT_PANIC(LINE, TEXT)                    ((void)0)
+#  define ASSERTLINE(LINE, COND)                   ((void)0)
 #endif
 
 // Minimal JUTAssertion class stub (used by J3D etc.)
