@@ -16,6 +16,10 @@ public:
     JUTDbPrint() {}
     virtual ~JUTDbPrint() {}
 
+    static JUTDbPrint* start(void* /*font*/, JKRHeap* /*heap*/ = nullptr) {
+        return create();
+    }
+
     static JUTDbPrint* create(JKRHeap* /*heap*/ = nullptr) {
         static JUTDbPrint s_instance;
         return &s_instance;
@@ -30,6 +34,7 @@ public:
     void  eraseScreen() {}
     void  draw() {}
     void  flush() {}
+    void  setVisible(bool /*visible*/) {}
 
     static JUTDbPrint* getManager() {
         static JUTDbPrint s_instance;

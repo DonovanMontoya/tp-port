@@ -11,6 +11,8 @@
  */
 #include "port/types.h"
 #include "port/logging.h"
+#include <cstdarg>
+#include <cstdio>
 #include <cstdlib>
 
 #include "dolphin/os/OSContext.h"
@@ -38,7 +40,12 @@ void OSInit(void);
 void OSReport(const char* fmt, ...);
 void OSReport_Error(const char* fmt, ...);
 void OSReport_Warning(const char* fmt, ...);
+void OSReport_FatalError(const char* fmt, ...);
+void OSReport_System(const char* fmt, ...);
+void OSReportDisable(void);
+void OSReportEnable(void);
 void OSPanic(const char* file, int line, const char* fmt, ...);
+void OSAttention(const char* fmt, ...);
 
 // Arena helpers (implemented in src/dolphin/os.cpp)
 void* OSGetArenaLo(void);
@@ -104,11 +111,17 @@ static inline void* OSAllocFromArenaHi(u32 size, u32 /*align*/) { return ::mallo
 static inline void* OSAllocFromMEM1ArenaLo(u32 size, u32 align) { return OSAllocFromArenaLo(size, align); }
 static inline void* OSAllocFromMEM2ArenaLo(u32 size, u32 align) { return OSAllocFromArenaLo(size, align); }
 
-// Report initialiser (no-op on PC — output goes to stdout/stderr)
-static inline void OSReportInit(void) {}
+// Report initialiser
+void OSReportInit(void);
 
 // Reset code — always return 0 (cold boot, no warm reset) on PC
 static inline u32  OSGetResetCode(void) { return 0; }
+static inline void OSSetSaveRegion(void*, u8*) {}
+static inline u32  OSGetProgressiveMode(void) { return 0; }
+static inline void OSSetProgressiveMode(u32 /*mode*/) {}
+#define OS_SOUND_MODE_MONO 0
+#define OS_SOUND_MODE_STEREO 1
+static inline u32  OSGetSoundMode(void) { return OS_SOUND_MODE_STEREO; }
 
 // Console type — PC always reports retail console
 #define OS_CONSOLE_DEVELOPMENT 0x10000000u

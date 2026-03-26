@@ -6,6 +6,30 @@
 #include "port/types.h"
 
 class JKRHeap;
+struct ResTIMG {
+    u8 format = 0;
+    u8 alphaEnabled = 0;
+    u16 width = 0;
+    u16 height = 0;
+    u8 wrapS = 0;
+    u8 wrapT = 0;
+    u8 indexTexture = 0;
+    u8 colorFormat = 0;
+    u16 numColors = 0;
+    uintptr_t paletteOffset = 0;
+    u8 mipmapEnabled = 0;
+    u8 doEdgeLOD = 0;
+    u8 biasClamp = 0;
+    u8 maxAnisotropy = 0;
+    u8 minFilter = 0;
+    u8 magFilter = 0;
+    s8 minLOD = 0;
+    s8 maxLOD = 0;
+    u8 mipmapCount = 0;
+    u8 unknown = 0;
+    s16 LODBias = 0;
+    uintptr_t imageOffset = 0;
+};
 
 class JUTTexture {
 public:

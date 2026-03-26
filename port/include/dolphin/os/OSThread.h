@@ -105,6 +105,9 @@ s32   OSCheckActiveThreads(void);
 void  OSSetThreadSpecific(s32 index, void* ptr);
 void* OSGetThreadSpecific(s32 index);
 OSSwitchThreadCallback OSSetSwitchThreadCallback(OSSwitchThreadCallback cb);
+static inline void* OSGetStackPointer(void) {
+    return __builtin_frame_address(0);
+}
 
 #define IsSuspended(suspend) ((suspend) > 0)
 

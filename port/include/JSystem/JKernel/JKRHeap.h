@@ -7,6 +7,7 @@
  * keep the interface identical to avoid touching game source.
  */
 #pragma once
+#include "JSystem/JSupport/JSUList.h"
 #include "JSystem/JKernel/JKRDisposer.h"
 #include "port/types.h"
 #include <cstdlib>
@@ -56,8 +57,14 @@ public:
     u32  getTotalUsedSize()    const { return 0; }
     u32  getUsedSize()         const { return 0; }
     u32  getHeapSize()         const { return 0x10000000u; }
+    u32  getHeapType()         const { return 'EXPH'; }
+    u32  getSize(const void* /*ptr*/) const { return 0; }
+    s32  changeGroupID(u32 /*id*/) { return 0; }
     bool isValid()             const { return true; }
     JKRHeap* getParent()       const { return mParent; }
+    bool check()               const { return true; }
+    JSUTree<JKRHeap>& getHeapTree() { return mTree; }
+    const JSUTree<JKRHeap>& getHeapTree() const { return mTree; }
 
     // ----- debug dump (no-op on PC) -----
     // dump_sort() is defined as 'bool JKRHeap::dump_sort()' in m_Do_main.cpp so
@@ -68,6 +75,7 @@ public:
     // ----- global system heap -----
     static JKRHeap* sSystemHeap;
     static JKRHeap* sCurrentHeap;
+    static JKRHeap* sRootHeap2;
     static JKRHeap* getRootHeap()    { return sSystemHeap; }
     static JKRHeap* getCurrentHeap() { return sCurrentHeap; }
 
@@ -93,6 +101,7 @@ public:
     // ----- debug fill values (no-op on PC) -----
     void      setDebugFill(bool /*b*/)  {}
     bool      getDebugFill()   const { return false; }
+    static void setDefaultDebugFill(bool /*status*/) {}
 
     // ----- aligned alloc helper -----
     void* allocFromHead(u32 size, int align = 4) { return alloc(size, align); }
@@ -105,6 +114,7 @@ public:
 
 private:
     JKRHeap* mParent;
+    JSUTree<JKRHeap> mTree{this};
 };
 
 // Global stub values for debug fill (referenced by some game files)
@@ -124,6 +134,7 @@ public:
         return new(buf) JKRSolidHeap(buf, size, parent, errorFlag);
     }
     JKRSolidHeap(void* buf, u32 size, JKRHeap* parent, bool errFlag) : JKRHeap(buf, size, parent, errFlag) {}
+    s32 adjustSize() { return 0; }
 };
 
 // -----------------------------------------------------------------------
@@ -168,7 +179,10 @@ public:
 // Global JKR heap helpers — placed after all class definitions
 // -----------------------------------------------------------------------
 inline JKRHeap* JKRGetRootHeap()   { return JKRHeap::sSystemHeap; }
+inline JKRHeap* JKRGetRootHeap2()  { return JKRHeap::sRootHeap2 ? JKRHeap::sRootHeap2 : JKRHeap::sSystemHeap; }
 inline JKRHeap* JKRGetSystemHeap() { return JKRHeap::sSystemHeap; }
+inline void JKRSetErrorHandler(JKRHeap::JKRErrorHandler handler) { JKRHeap::setErrorHandler(handler); }
+inline void JKRSetErrorFlag(JKRHeap* /*heap*/, bool /*flag*/) {}
 // JKRGetCurrentHeap / JKRSetCurrentHeap use thread-local storage and are
 // implemented in JKRThread.cpp so each thread has its own current heap.
 JKRHeap* JKRGetCurrentHeap();
@@ -178,4 +192,18 @@ inline JKRSolidHeap* JKRCreateSolidHeap(u32 size, JKRHeap* parent, bool errFlag)
 }
 inline JKRExpHeap* JKRCreateExpHeap(u32 size, JKRHeap* parent, bool errFlag) {
     return JKRExpHeap::create(size, parent, errFlag);
+}
+inline void* JKRAllocFromHeap(JKRHeap* heap, u32 size, int align) {
+    return heap ? heap->alloc(size, align) : nullptr;
+}
+inline void JKRFree(void* ptr) {
+    ::free(ptr);
+}
+
+inline void* operator new(std::size_t size, JKRHeap* heap, int align) {
+    return heap ? heap->alloc(static_cast<u32>(size), align) : ::operator new(size);
+}
+
+inline void operator delete(void* ptr, JKRHeap* /*heap*/, int /*align*/) noexcept {
+    ::operator delete(ptr);
 }

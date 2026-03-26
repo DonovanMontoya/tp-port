@@ -134,7 +134,18 @@ set(GAME_SOURCES
   ${DECOMP_SRC}/f_ap/f_ap_game.cpp
 
   # ── Main module ───────────────────────────────────────────────────────
+  ${DECOMP_SRC}/m_Do/m_Do_DVDError.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_audio.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_controller_pad.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_dvd_thread.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_ext2.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_MemCard.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_MemCardRWmng.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_machine.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_machine_exception.cpp
   ${DECOMP_SRC}/m_Do/m_Do_main.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_printf.cpp
+  ${DECOMP_SRC}/m_Do/m_Do_Reset.cpp
   # ${DECOMP_SRC}/m_Do/m_Do_graphic.cpp
   # ${DECOMP_SRC}/m_Do/m_Do_audio.cpp
   # ${DECOMP_SRC}/m_Do/m_Do_controller_pad.cpp

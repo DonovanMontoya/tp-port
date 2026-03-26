@@ -18,8 +18,6 @@ endif()
 add_compile_definitions(
   PLATFORM_PC=1
   PLATFORM_GC=0
-  PLATFORM_WII=0
-  PLATFORM_SHIELD=0
   # Game version — GZ2E01 (GameCube North America) = VERSION_GCN_USA = 0
   GZ2E01=1
   VERSION=0

@@ -7,11 +7,14 @@
 #ifndef JKRARAMARCHIVE_H
 #define JKRARAMARCHIVE_H
 
-#include "JSystem/JKernel/JKRHeap.h"
+#include "JSystem/JKernel/JKRArchive.h"
 
 class JKRAramArchive {
 public:
     JKRAramArchive() {}
+    bool mountFixed(s32 /*entryNum*/, JKRArchive::EMountDirection /*mountDirection*/) { return false; }
+    void* mBlock = nullptr;
+    void* mDvdFile = nullptr;
 };
 
 #endif /* JKRARAMARCHIVE_H */
