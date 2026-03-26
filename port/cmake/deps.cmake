@@ -33,8 +33,15 @@ set(GLAD_API          "gl=4.5" CACHE STRING "" FORCE)
 set(GLAD_GENERATOR    "c"      CACHE STRING "" FORCE)
 set(GLAD_EXTENSIONS   ""       CACHE STRING "" FORCE)
 set(GLAD_SPEC         "gl"     CACHE STRING "" FORCE)
-set(GLAD_REPRODUCIBLE ON       CACHE BOOL   "" FORCE)
+set(GLAD_REPRODUCIBLE OFF      CACHE BOOL   "" FORCE)
 FetchContent_MakeAvailable(glad)
+
+# glad v0.1.36 opens packaged XML specs in text mode; with Python 3.14 that
+# can trip over the UTF-8 BOM during generation. Staging the packaged spec in
+# the source root makes glad parse it by filename instead of by file object.
+if(DEFINED glad_SOURCE_DIR AND EXISTS "${glad_SOURCE_DIR}/glad/files/gl.xml")
+  file(COPY "${glad_SOURCE_DIR}/glad/files/gl.xml" DESTINATION "${glad_SOURCE_DIR}")
+endif()
 
 # OpenAL Soft — audio (AX replacement)
 FetchContent_Declare(openal

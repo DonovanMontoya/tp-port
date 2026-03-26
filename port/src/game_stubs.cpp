@@ -412,59 +412,6 @@ void J3DMtxCalcJ3DSysInitMaya::init(const Vec& scale, const Mtx&) {
 
 void J3DMtxCalcCalcTransformMaya::calcTransform(const J3DTransformInfo&) {}
 
-// ---------------------------------------------------------------------------
-// JUTResFont host-side shim
-// ---------------------------------------------------------------------------
-JUTResFont::JUTResFont(const ResFONT* font, JKRHeap*) : JUTFont() {
-    initialize_state();
-    mResFont = font;
-    mInf1Ptr = font != nullptr ? const_cast<ResFONT::INF1*>(reinterpret_cast<const ResFONT::INF1*>(font->data)) : nullptr;
-}
-
-JUTResFont::~JUTResFont() {}
-
-void JUTResFont::initialize_state() {
-    mWidth = 0;
-    mHeight = 0;
-    mTexPageIdx = 0;
-    mResFont = nullptr;
-    mInf1Ptr = nullptr;
-    mMemBlocks = nullptr;
-    mpWidthBlocks = nullptr;
-    mpGlyphBlocks = nullptr;
-    mpMapBlocks = nullptr;
-    mWid1BlockNum = 0;
-    mGly1BlockNum = 0;
-    mMap1BlockNum = 0;
-    field_0x66 = 0;
-    mMaxCode = 0;
-    mIsLeadByte = nullptr;
-}
-
-void JUTResFont::setGX() {}
-void JUTResFont::setGX(JUtility::TColor, JUtility::TColor) {}
-f32 JUTResFont::drawChar_scale(f32, f32, f32, f32, int, bool) { return 0.0f; }
-int JUTResFont::getLeading() const { return mInf1Ptr != nullptr ? mInf1Ptr->leading : 0; }
-s32 JUTResFont::getAscent() const { return mInf1Ptr != nullptr ? mInf1Ptr->ascent : 0; }
-s32 JUTResFont::getDescent() const { return mInf1Ptr != nullptr ? mInf1Ptr->descent : 0; }
-s32 JUTResFont::getHeight() const { return mHeight; }
-s32 JUTResFont::getWidth() const { return mWidth; }
-void JUTResFont::getWidthEntry(int, JUTFont::TWidth* width) const {
-    if (width == nullptr) {
-        return;
-    }
-    width->field_0x0 = 0;
-    width->field_0x1 = static_cast<u8>(mWidth);
-}
-s32 JUTResFont::getCellWidth() const { return mWidth; }
-s32 JUTResFont::getCellHeight() const { return mHeight; }
-int JUTResFont::getFontType() const { return mInf1Ptr != nullptr ? mInf1Ptr->fontType : 0; }
-ResFONT* JUTResFont::getResFont() const { return const_cast<ResFONT*>(mResFont); }
-bool JUTResFont::isLeadByte(int) const { return false; }
-void JUTResFont::loadImage(int, GXTexMapID) {}
-void JUTResFont::setBlock() {}
-
-// ---------------------------------------------------------------------------
 // Z2 audio shims used by morph / zel anime paths
 // ---------------------------------------------------------------------------
 Z2SoundHandles::Z2SoundHandles() : handleNum_(0) {}

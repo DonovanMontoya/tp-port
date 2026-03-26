@@ -34,6 +34,7 @@
 #include "m_Do/m_Do_ext2.h"
 #include "SSystem/SComponent/c_counter.h"
 #include <cstring>
+#include "port/port.h"
 
 #if PLATFORM_WII || PLATFORM_SHIELD
 #include <revolution/sc.h>
@@ -666,9 +667,11 @@ const int audioHeapSize = 0x14D800;
 
 void main01(void) {
     OS_REPORT("\x1b[m");
+    tp::log::info("main01: entering");
 
     // Setup heaps, setup exception manager, set RNG seed, setup DVDError Thread, setup Memory card Thread
     mDoMch_Create();
+    tp::log::info("main01: mDoMch_Create complete");
 
     #if DEBUG
     FixedMemoryCheck* local_20 = FixedMemoryCheck::easyCreate(_f_text, intptr_t(_e_text - _f_text));
@@ -679,9 +682,11 @@ void main01(void) {
 
     // setup FrameBuffer and ZBuffer, init display lists
     mDoGph_Create();
+    tp::log::info("main01: mDoGph_Create complete");
 
     // Setup control pad
     mDoCPd_c::create();
+    tp::log::info("main01: mDoCPd_c::create complete");
 
     RootHeapCheck.setHeap((JKRExpHeap*)JKRGetRootHeap());
     SystemHeapCheck.setHeap((JKRExpHeap*)JKRGetSystemHeap());
@@ -705,12 +710,18 @@ void main01(void) {
     #endif
 
     JUTConsole* console = JFWSystem::getSystemConsole();
-    console->setOutput(mDoMain::developmentMode ? JUTConsole::OUTPUT_OSR_AND_CONSOLE :
-                                                  JUTConsole::OUTPUT_NONE);
-    console->setPosition(32, 42);
+    tp::log::info("main01: system console = %p", console);
+    if (console) {
+        console->setOutput(mDoMain::developmentMode ? JUTConsole::OUTPUT_OSR_AND_CONSOLE :
+                                                      JUTConsole::OUTPUT_NONE);
+        console->setPosition(32, 42);
+    }
+    tp::log::info("main01: console setup complete");
 
     mDoDvdThd_callback_c::create((mDoDvdThd_callback_func)LOAD_COPYDATE, NULL);
+    tp::log::info("main01: LOAD_COPYDATE callback queued");
     fapGm_Create(); // init framework
+    tp::log::info("main01: fapGm_Create complete");
 
     #if DEBUG
     mDoMain_HIO.entryHIO("メイン");
@@ -719,14 +730,20 @@ void main01(void) {
     #endif
 
     fopAcM_initManager();
+    tp::log::info("main01: fopAcM_initManager complete");
     mDisplayHeapSize = 0;
     cDyl_InitAsync(); // init RELs
+    tp::log::info("main01: cDyl_InitAsync complete");
 
     g_mDoAud_audioHeap = JKRCreateSolidHeap(audioHeapSize, JKRGetCurrentHeap(), false);
+    tp::log::info("main01: audio heap = %p", g_mDoAud_audioHeap);
 
     do {
         static u32 frame;
         frame++;
+        if (frame == 1) {
+            tp::log::info("main01: entering first frame");
+        }
 
         #if DEBUG
         if (memorycheck_check_frame != 0 && frame % memorycheck_check_frame == 0) {
@@ -751,6 +768,9 @@ void main01(void) {
         #endif
 
         fapGm_Execute();    // handle game execution
+        if (frame == 1) {
+            tp::log::info("main01: first fapGm_Execute complete");
+        }
 
         #if DEBUG
         if (mDoMch::GXWarningExecuteFrame) {
@@ -764,6 +784,9 @@ void main01(void) {
         #endif
 
         mDoAud_Execute();   // handle audio execution
+        if (frame == 1) {
+            tp::log::info("main01: first mDoAud_Execute complete");
+        }
 
         #if DEBUG
         fapGm_HIO_c::printCpuTimer("");
@@ -771,6 +794,9 @@ void main01(void) {
         #endif
 
         debug();            // run debugger
+        if (frame == 1) {
+            tp::log::info("main01: first debug complete");
+        }
     } while (true);
 }
 

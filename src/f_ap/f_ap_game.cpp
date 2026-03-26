@@ -20,6 +20,7 @@
 #include "d/actor/d_a_grass.h"
 #include "d/d_tresure.h"
 #include <cstring>
+#include "port/port.h"
 
 fapGm_HIO_c::fapGm_HIO_c() {
     mUsingHostIO = true;
@@ -725,8 +726,19 @@ void fapGm_Execute() {
     JUTDbPrint::getManager()->setCharColor(g_HIO.mColor);
     #endif
 
+    static bool sLogged = false;
+    if (!sLogged) {
+        tp::log::info("fapGm_Execute: begin");
+    }
     fpcM_Management(NULL, fapGm_After);
+    if (!sLogged) {
+        tp::log::info("fapGm_Execute: fpcM_Management complete");
+    }
     cCt_Counter(0);
+    if (!sLogged) {
+        tp::log::info("fapGm_Execute: cCt_Counter complete");
+        sLogged = true;
+    }
 }
 
 fapGm_HIO_c g_HIO;

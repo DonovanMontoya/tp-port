@@ -31,6 +31,9 @@
 #include <condition_variable>
 #include <queue>
 #include <filesystem>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 namespace fs = std::filesystem;
 
@@ -38,6 +41,7 @@ namespace fs = std::filesystem;
 // Configuration
 // -----------------------------------------------------------------------
 static fs::path sGameDataDir;
+static bool     sHasGameData = false;
 
 static DVDDiskID sDiskID = {
     {'G','Z','2','E'}, {'0','1'}, 0, 0, 0, 0, {}
@@ -47,6 +51,21 @@ static DVDDiskID sDiskID = {
 // FST (File System Table) — maps GC path → host path
 // -----------------------------------------------------------------------
 static std::unordered_map<std::string, std::string> sFSTMap;
+
+static bool HasExpectedGameDataLayout(const fs::path& root) {
+    return fs::exists(root) && fs::exists(root / "files") && fs::exists(root / "sys");
+}
+
+static fs::path GetExecutableDir() {
+#ifdef _WIN32
+    char buffer[MAX_PATH];
+    DWORD len = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+    if (len > 0 && len < MAX_PATH) {
+        return fs::path(buffer).parent_path();
+    }
+#endif
+    return {};
+}
 
 static void BuildFSTMap(const fs::path& root) {
     // Walk the extracted files directory and build a name → absolute path map.
@@ -121,24 +140,56 @@ static void AsyncWorker() {
 void DVDInit(void) {
     // Locate game data directory
     const char* envPath = getenv("TP_DATA_PATH");
-    if (envPath && fs::exists(envPath)) {
-        sGameDataDir = envPath;
-    } else {
-        // Look for a "gamedata" folder next to the executable
-        sGameDataDir = fs::current_path() / "gamedata";
+    sGameDataDir.clear();
+    sHasGameData = false;
+
+    std::vector<fs::path> candidates;
+    if (envPath && *envPath) {
+        candidates.emplace_back(envPath);
+    }
+    candidates.push_back(fs::current_path() / "gamedata");
+    fs::path exeDir = GetExecutableDir();
+    if (!exeDir.empty()) {
+        candidates.push_back(exeDir / "gamedata");
+        candidates.push_back(exeDir.parent_path().parent_path() / "gamedata");
     }
 
-    if (!fs::exists(sGameDataDir)) {
+    for (const fs::path& candidate : candidates) {
+        if (HasExpectedGameDataLayout(candidate)) {
+            sGameDataDir = candidate;
+            sHasGameData = true;
+            break;
+        }
+        if (sGameDataDir.empty() && fs::exists(candidate)) {
+            sGameDataDir = candidate;
+        }
+    }
+
+    if (!sHasGameData) {
+        if (sGameDataDir.empty()) {
+            sGameDataDir = fs::current_path() / "gamedata";
+        }
         tp::log::error("DVD: game data directory not found: '%s'",
                        sGameDataDir.string().c_str());
         tp::log::error("     Run tools/extract_iso.py first, or set TP_DATA_PATH.");
     } else {
         BuildFSTMap(sGameDataDir);
+        tp::log::info("DVD: using game data directory '%s'", sGameDataDir.string().c_str());
     }
 
     // Start async worker
     sAsyncRunning = true;
     sAsyncThread  = std::thread(AsyncWorker);
+}
+
+BOOL DVDHasGameData(void) {
+    return sHasGameData ? TRUE : FALSE;
+}
+
+const char* DVDGetGameDataPath(void) {
+    static std::string path;
+    path = sGameDataDir.string();
+    return path.c_str();
 }
 
 void DVDQuit(void) {

@@ -343,5 +343,5 @@ void mDoHIO_updateChild(s8 /*no*/) {}
 // ---------------------------------------------------------------------------
 #include "m_Do/m_Do_dvd_thread.h"
 namespace mDoDvdHack {
-    const char* ConvertEntrynumToName(s32 /*entry*/) { return nullptr; }
+    const char* ConvertEntrynumToName(s32 /*entry*/) { return "<dvd-entry>"; }
 }

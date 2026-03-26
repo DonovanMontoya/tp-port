@@ -20,6 +20,7 @@
 #include "dolphin/pad.h"
 #include "dolphin/ax.h"
 #include "dolphin/gx.h"
+#include "m_Do/m_Do_Reset.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -27,7 +28,7 @@
 // -----------------------------------------------------------------------
 // Forward declarations — uncomment as the game source compiles in
 // -----------------------------------------------------------------------
-void main01(void);        // m_Do/m_Do_main.cpp — the real game boot + loop
+void main01(void);        // fallback direct boot path
 // extern "C" void fapGm_Execute(void); // f_ap/f_ap_game.cpp
 
 // -----------------------------------------------------------------------
@@ -51,12 +52,68 @@ static void RunGameLoop() {
 #define NOMINMAX          // prevent Windows.h from defining min/max macros
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+
+static LONG WINAPI LogUnhandledException(EXCEPTION_POINTERS* ep) {
+    if (!ep || !ep->ExceptionRecord) {
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+    const auto* rec = ep->ExceptionRecord;
+    HMODULE module = GetModuleHandleA(nullptr);
+    auto base = reinterpret_cast<uintptr_t>(module);
+    auto addr = reinterpret_cast<uintptr_t>(rec->ExceptionAddress);
+    tp::log::error("Unhandled exception: code=0x%08X address=%p module_base=%p rva=0x%llX",
+                   static_cast<unsigned>(rec->ExceptionCode), rec->ExceptionAddress, module,
+                   static_cast<unsigned long long>(addr - base));
+
+    void* frames[16] = {};
+    USHORT count = CaptureStackBackTrace(0, 16, frames, nullptr);
+    for (USHORT i = 0; i < count; ++i) {
+        auto frame = reinterpret_cast<uintptr_t>(frames[i]);
+        if (frame >= base) {
+            tp::log::error("  stack[%u] = %p (rva=0x%llX)", static_cast<unsigned>(i), frames[i],
+                           static_cast<unsigned long long>(frame - base));
+        } else {
+            tp::log::error("  stack[%u] = %p", static_cast<unsigned>(i), frames[i]);
+        }
+    }
+
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+static void InitResetStateIfNeeded() {
+    if (mDoRst::getResetData()) {
+        return;
+    }
+
+    mDoRst::setResetData(static_cast<mDoRstData*>(OSAllocFromArenaLo(0x18, 4)));
+    if (!mDoRst::getResetData()) {
+        return;
+    }
+
+    if ((OSGetResetCode() & 0x80000000u) == 0) {
+        mDoRst::offReset();
+        mDoRst::offResetPrepare();
+        mDoRst::off3ButtonReset();
+        mDoRst::set3ButtonResetPort(-1);
+        mDoRst::setLogoScnFlag(0);
+        mDoRst::setProgSeqFlag(0);
+        mDoRst::setProgChgFlag(0);
+        mDoRst::setWarningDispFlag(0);
+        mDoRst::offShutdown();
+        mDoRst::offReturnToMenu();
+    }
+}
+
 int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrev*/,
                    LPSTR /*cmdLine*/, int /*showCmd*/)
 #else
 int main(int /*argc*/, char** /*argv*/)
 #endif
 {
+#ifdef _WIN32
+    SetUnhandledExceptionFilter(LogUnhandledException);
+#endif
     // Parse TP_DATA_PATH from environment (also accepted in DVDInit)
     const char* dataPath = getenv("TP_DATA_PATH");
     if (dataPath)
@@ -67,6 +124,24 @@ int main(int /*argc*/, char** /*argv*/)
     // ── Port layer init ────────────────────────────────────────────────
     OSInit();
     DVDInit();
+    InitResetStateIfNeeded();
+    if (!DVDHasGameData()) {
+        const char* resolvedPath = DVDGetGameDataPath();
+        tp::log::error("Game data check failed. Aborting before boot.");
+#ifdef _WIN32
+        char msg[1024];
+        std::snprintf(
+            msg, sizeof(msg),
+            "Twilight Princess game data was not found.\n\n"
+            "Expected extracted data with both 'files' and 'sys' in:\n%s\n\n"
+            "Run port/tools/extract_iso.py on your own disc/ISO,\n"
+            "or set TP_DATA_PATH to your extracted game data folder.",
+            resolvedPath ? resolvedPath : "(unknown)");
+        MessageBoxA(nullptr, msg, "Missing Game Data", MB_OK | MB_ICONERROR);
+#endif
+        DVDQuit();
+        return 1;
+    }
 
     tp::window::Config winCfg;
     winCfg.width  = 854;   // widescreen 16:9

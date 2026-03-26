@@ -1,4 +1,8 @@
 #pragma once
+
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 /**
  * PC stub for dolphin/os/OSThread.h
  * Maps GC cooperative threads to host std::thread / POSIX primitives.
@@ -106,7 +110,11 @@ void  OSSetThreadSpecific(s32 index, void* ptr);
 void* OSGetThreadSpecific(s32 index);
 OSSwitchThreadCallback OSSetSwitchThreadCallback(OSSwitchThreadCallback cb);
 static inline void* OSGetStackPointer(void) {
+#ifdef _MSC_VER
+    return _AddressOfReturnAddress();
+#else
     return __builtin_frame_address(0);
+#endif
 }
 
 #define IsSuspended(suspend) ((suspend) > 0)

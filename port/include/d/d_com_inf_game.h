@@ -253,7 +253,7 @@ inline JKRExpHeap* dComIfGp_particle_getResHeap() { return nullptr; }
 
 // Scene change request
 class scene_class;
-inline int fopScnM_ChangeReq(scene_class*, s16, s16, u16) { return 0; }
+int fopScnM_ChangeReq(scene_class*, s16, s16, u16);
 
 // -----------------------------------------------------------------------
 // Resource archive setters — all no-ops on PC (no DVD/ARAM loading)

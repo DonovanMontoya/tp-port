@@ -39,3 +39,7 @@ compile_commands.json
 
 # ISOs
 *.iso
+
+# Extracted game data must be provided by each user from their own disc/ISO.
+/gamedata/
+/port/gamedata/

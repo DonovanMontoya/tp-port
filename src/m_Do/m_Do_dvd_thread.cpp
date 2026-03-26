@@ -44,10 +44,14 @@ bool mDoDvdThd::SyncWidthSound;
 
 u8 sDefaultDirection;
 
+#ifndef _MSC_VER
 #pragma push
 #pragma force_active on
+#endif
 static u8 padding[0x18];
+#ifndef _MSC_VER
 #pragma pop
+#endif
 
 void mDoDvdThd::create(s32 param_0) {
     OSCreateThread(&l_thread, (void*(*)(void*))mDoDvdThd::main, &l_param,

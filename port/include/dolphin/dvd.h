@@ -81,6 +81,8 @@ typedef struct DVDDirEntry {
 // Core API
 void  DVDInit(void);
 void  DVDQuit(void);
+BOOL  DVDHasGameData(void);
+const char* DVDGetGameDataPath(void);
 BOOL  DVDOpen(const char* fileName, DVDFileInfo* fileInfo);
 BOOL  DVDClose(DVDFileInfo* fileInfo);
 s32   DVDRead(DVDFileInfo* fileInfo, void* addr, s32 length, s32 offset);

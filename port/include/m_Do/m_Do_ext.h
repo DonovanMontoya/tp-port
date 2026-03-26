@@ -117,25 +117,12 @@ JUTFont* mDoExt_getSubFont();
 JUTFont* mDoExt_getRubyFont();
 void mDoExt_setAraCacheSize(u32 size);
 
-// J3D model factory — returns nullptr on PC (no GX renderer)
-inline J3DModel* mDoExt_J3DModel__create(J3DModelData* /*md*/, u32 /*flags*/, u32 /*param*/) {
-    return nullptr;
-}
-
-// Display list update — no-op on PC
-inline void mDoExt_modelUpdateDL(J3DModel* /*model*/) {}
-
-// Solid heap management stubs — GC memory model not used on PC
-inline JKRSolidHeap* mDoExt_createSolidHeap(s32 /*size*/, JKRHeap* /*heap*/, u32 /*align*/) {
-    return nullptr;
-}
-inline JKRSolidHeap* mDoExt_createSolidHeapFromGame(u32 /*size*/, u32 /*align*/) {
-    return nullptr;
-}
-inline JKRSolidHeap* mDoExt_createSolidHeapFromGameToCurrent(u32 /*size*/, u32 /*align*/) {
-    return nullptr;
-}
-inline void mDoExt_destroySolidHeap(JKRSolidHeap* /*heap*/) {}
-inline u32  mDoExt_adjustSolidHeap(JKRSolidHeap* /*heap*/)  { return 0; }
+J3DModel* mDoExt_J3DModel__create(J3DModelData* md, u32 flags, u32 param);
+void mDoExt_modelUpdateDL(J3DModel* model);
+JKRSolidHeap* mDoExt_createSolidHeap(s32 size, JKRHeap* heap, u32 align);
+JKRSolidHeap* mDoExt_createSolidHeapFromGame(u32 size, u32 align);
+JKRSolidHeap* mDoExt_createSolidHeapFromGameToCurrent(u32 size, u32 align);
+void mDoExt_destroySolidHeap(JKRSolidHeap* heap);
+u32 mDoExt_adjustSolidHeap(JKRSolidHeap* heap);
 
 #endif /* M_DO_M_DO_EXT_H */

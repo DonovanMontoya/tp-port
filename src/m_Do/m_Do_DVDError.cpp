@@ -21,10 +21,14 @@ bool mDoDvdErr_initialized;
 
 static OSThread DvdErr_thread;
 
+#ifndef _MSC_VER
 #pragma push
 #pragma force_active on
-static u8 DvdErr_stack[stack_size] ATTRIBUTE_ALIGN(16);
+#endif
+ATTRIBUTE_ALIGN(16) static u8 DvdErr_stack[stack_size];
+#ifndef _MSC_VER
 #pragma pop
+#endif
 
 static OSAlarm Alarm;
 
