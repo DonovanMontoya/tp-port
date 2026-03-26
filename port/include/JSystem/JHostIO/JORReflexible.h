@@ -55,10 +55,13 @@ class JORReflexible : public JOREventListener {
 public:
     JORReflexible() {}
     static JORServer* getJORServer() { return nullptr; }
-    virtual void listenPropertyEvent(const JORPropertyEvent*) override {}
+    virtual void listenPropertyEvent(const JORPropertyEvent*) {}
     virtual void listen(u32, const JOREvent*) {}
     virtual void genObjectInfo(const JORGenEvent*) {}
-    virtual void genMessage(JORMContext*) {}   // no-op on PC (no HIO channel)
+    // genMessage is non-virtual on PC so subclass overrides don't create
+    // an out-of-line key function (avoids vtable link errors when the
+    // subclass declares genMessage but only defines it in #if DEBUG).
+    void genMessage(JORMContext*) {}
     virtual void listenNodeEvent(const JORNodeEvent*) {}
     virtual ~JORReflexible() {}
 };

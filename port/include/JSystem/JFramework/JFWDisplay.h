@@ -14,6 +14,8 @@
 class JKRHeap;
 class JUTVideo;
 
+#include "JSystem/JUtility/TColor.h"
+
 // Minimal JUTFader stub — m_Do_graphic.h calls setColor/startFadeIn/startFadeOut
 class JUTFader {
 public:
@@ -28,7 +30,6 @@ class JUTXfb {
 public:
     void* getDisplayingXfb() const { return nullptr; }
 };
-#include "JSystem/JUtility/TColor.h"
 struct _GXRenderModeObj;
 typedef _GXRenderModeObj GXRenderModeObj;
 struct _GXColor;

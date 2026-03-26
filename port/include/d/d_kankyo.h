@@ -66,4 +66,14 @@ inline void dKy_camera_water_in_status_set(u8) {}
 inline void dKy_WaterIn_Light_set() {}
 inline void dKy_SordFlush_set(cXyz, int) {}
 
+// Sound influence (used by fopAcM actor manager for reverb/sound zone)
+struct SND_INFLUENCE {
+    /* 0x00 */ cXyz       position;
+    /* 0x0C */ int        field_0xc;
+    /* 0x10 */ int        timer;
+    /* 0x14 */ fpc_ProcID actor_id;
+};
+inline SND_INFLUENCE* dKy_Sound_get()     { return nullptr; }
+inline SND_INFLUENCE* dKy_pol_sound_get() { return nullptr; }
+
 #endif /* D_KANKYO_D_KANKYO_H */

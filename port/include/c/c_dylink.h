@@ -8,6 +8,13 @@
 
 #include "port/types.h"
 
+struct request_of_phase_process_class;
+
+struct cDylPhs {
+    static int Link(request_of_phase_process_class*, s16) { return 1; }
+    static int Unlink(request_of_phase_process_class*, s16) { return 1; }
+};
+
 inline int  cDyl_InitAsyncIsDone() { return 1; }
 inline void cDyl_InitAsync()       {}
 inline BOOL cDyl_IsLinked(s16)     { return TRUE; }

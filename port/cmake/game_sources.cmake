@@ -104,10 +104,8 @@ set(GAME_SOURCES
   ${DECOMP_SRC}/f_pc/f_pc_stdcreate_req.cpp
 
   # ── f_op framework — actor files with dolzel.h port stub ─────────────
-  # f_op_actor_mng.cpp has 2000+ lines with deep d_camera/d_attention chains;
-  # a port stub provides the minimal symbols needed for the framework loop.
   ${DECOMP_SRC}/f_op/f_op_actor.cpp
-  # ${DECOMP_SRC}/f_op/f_op_actor_mng.cpp  — deferred (use port stub below)
+  ${DECOMP_SRC}/f_op/f_op_actor_mng.cpp
   ${DECOMP_SRC}/f_op/f_op_actor_map.cpp
   ${DECOMP_SRC}/f_op/f_op_msg_mng.cpp
   ${DECOMP_SRC}/f_op/f_op_actor_iter.cpp
@@ -132,6 +130,13 @@ set(GAME_SOURCES
 
   # ── Game app framework ───────────────────────────────────────────────
   ${DECOMP_SRC}/f_ap/f_ap_game.cpp
+
+  # ── Scene files ────────────────────────────────────────────────────────
+  ${DECOMP_SRC}/d/d_s_title.cpp
+  ${DECOMP_SRC}/d/d_s_logo.cpp
+  ${DECOMP_SRC}/d/d_s_menu.cpp
+  # d_s_play.cpp (gameplay scene) deferred — depends on ~80 unsupported subsystems
+  # ${DECOMP_SRC}/d/d_s_play.cpp
 
   # ── Main module ───────────────────────────────────────────────────────
   ${DECOMP_SRC}/m_Do/m_Do_DVDError.cpp

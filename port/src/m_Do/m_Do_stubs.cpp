@@ -172,7 +172,7 @@ OSThread* mDoExt_GetCurrentRunningThread() { return OSGetCurrentThread(); }
 dComIfG_gameInfo_c g_dComIfG_gameInfo = {};
 
 // ---------------------------------------------------------------------------
-// m_Do_machine stubs
+// m_Do_dvd_thread non-debug statics
 // ---------------------------------------------------------------------------
 #include "m_Do/m_Do_dvd_thread.h"
 u8 mDoDvdThd::verbose = 0;
@@ -185,7 +185,6 @@ u8 mDoDvdThd::Report_DVDRead = 0;
 // gates behind #if DEBUG need to be supplied here for non-debug builds.
 // ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
 // JFWSystem static data
 // ---------------------------------------------------------------------------
 JKRExpHeap* JFWSystem::rootHeap = nullptr;

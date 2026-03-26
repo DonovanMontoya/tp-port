@@ -33,8 +33,8 @@ public:
     void setFadeInStart(u8 /*param*/) {}
     void resetProcess(u32 /*param*/, bool /*hard*/) {}
     void resetRecover() {}
-
     bool hasReset() const { return true; }
+    bool checkFirstWaves() { return true; }
 };
 
 inline Z2AudioMgr* Z2GetAudioMgr() {

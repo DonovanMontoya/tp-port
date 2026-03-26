@@ -3,6 +3,7 @@
 
 #include "f_op/f_op_scene.h"
 #include "m_Do/m_Do_dvd_thread.h"
+#include "SSystem/SComponent/c_phase.h"
 
 class JKRExpHeap;
 class JKRHeap;

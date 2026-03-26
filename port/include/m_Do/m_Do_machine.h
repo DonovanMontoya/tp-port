@@ -32,10 +32,9 @@ class mDoMch_render_c {
 public:
     static void setRenderModeObj(GXRenderModeObj* obj) { mRenderModeObj = obj; }
     static void setProgressiveMode() { setRenderModeObj(&g_ntscZeldaProg); }
-    static u16 getEfbHeight() { return mRenderModeObj->efbHeight; }
-    static u16 getFbWidth() { return mRenderModeObj->fbWidth; }
+    static u16  getEfbHeight()  { return mRenderModeObj ? mRenderModeObj->efbHeight : 480; }
+    static u16  getFbWidth()    { return mRenderModeObj ? mRenderModeObj->fbWidth   : 640; }
     static GXRenderModeObj* getRenderModeObj() { return mRenderModeObj; }
-
     static GXRenderModeObj* mRenderModeObj;
 };
 

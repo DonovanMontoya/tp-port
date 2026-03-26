@@ -13,6 +13,11 @@
 #include "JSystem/JUtility/JUTTexture.h"
 #include "SSystem/SComponent/c_xyz.h"
 #include "SSystem/SComponent/c_lib.h"
+#include "d/d_event.h"
+#include "d/d_event_manager.h"
+#include "d/d_drawlist.h"
+#include "Z2AudioLib/Z2SeMgr.h"
+#include "dolphin/gx/GXStruct.h"
 
 // Minimal resource control stub
 struct dResCont_c {
@@ -45,11 +50,30 @@ inline void dComIfG_ct() {}
 inline int  dComIfGp_roomControl_getStayNo() { return -1; }
 inline u8   dComIfGp_isPauseFlag() { return 0; }
 
-// Event / move system
-inline int  dComIfGp_event_moveApproval(void* /*actor*/) { return 2; } // 2 = free move
-inline BOOL dComIfGp_event_runCheck() { return FALSE; }
+// Event / move system — backed by a static stub instance (never runs on PC)
+namespace port_detail {
+    inline dEvt_control_c& getEventStub()  { static dEvt_control_c s; return s; }
+    inline dEvent_manager_c& getEvtMgrStub() { static dEvent_manager_c s; return s; }
+}
+inline dEvt_control_c*   dComIfGp_getEvent()        { return &port_detail::getEventStub(); }
+inline dEvent_manager_c& dComIfGp_getEventManager() { return port_detail::getEvtMgrStub(); }
 
-// Camera accessors
+inline int   dComIfGp_event_moveApproval(void* /*actor*/) { return 2; }
+inline BOOL  dComIfGp_event_runCheck()                    { return FALSE; }
+inline f32   dComIfGp_event_getCullRate()                 { return 1.0f; }
+inline int   dComIfGp_event_order(u16 /*type*/, u16 /*prio*/, u16 /*flags*/, u16 /*hind*/,
+                                   void* /*req*/, void* /*tgt*/, s16 /*evId*/, u8 /*toolId*/) {
+    return -1;
+}
+inline fopAc_ac_c* dComIfGp_event_getPt1()           { return nullptr; }
+inline fopAc_ac_c* dComIfGp_event_getPt2()           { return nullptr; }
+inline fopAc_ac_c* dComIfGp_event_getTalkPartner()   { return nullptr; }
+inline fopAc_ac_c* dComIfGp_event_getItemPartner()   { return nullptr; }
+inline void        dComIfGp_event_setGtItm(u8)       {}
+
+// Player/camera accessors
+class fopAc_ac_c;
+inline fopAc_ac_c*           dComIfGp_getPlayer(int /*idx*/) { return nullptr; }
 inline camera_process_class* dComIfGp_getCamera(int /*idx*/) { return nullptr; }
 
 // Start stage accessors
@@ -63,6 +87,13 @@ inline dStage_roomDt_c* dComIfGp_roomControl_getStatusRoomDt(int /*room_no*/) { 
 
 // Game switch/flag queries (never any switches set on PC)
 inline BOOL dComIfGs_isSwitch(int /*no*/, int /*roomNo*/) { return FALSE; }
+// Game state life getters
+inline u16 dComIfGs_getLife()    { return 0; }
+inline u16 dComIfGs_getMaxLife() { return 0; }
+// Item table (no data on PC)
+inline void* dComIfGp_getItemTable() { return nullptr; }
+// Room control helpers
+inline bool dComIfGp_roomControl_checkStatusFlag(int /*roomNo*/, u8 /*flag*/) { return false; }
 
 // Particle stubs — all return nullptr / no-op on PC
 inline u32 dComIfGp_particle_set(u32 /*key*/, u16 /*efxId*/, const cXyz* /*pos*/,
@@ -121,9 +152,20 @@ inline void dComIfGp_particle_setSimple(u16, const cXyz*, u8, _GXColor&, float,
                                          dPa_levelEcallBack*) {}
 inline void dComIfGp_drawSimpleModel() {}
 inline void dComIfGd_peekZdata() {}
+// Particle emitter getters
+inline JPABaseEmitter* dComIfGp_particle_getEmitter(u32 /*handle*/) { return nullptr; }
+// Foot particle — variadic signature (many params); just return 0
+struct cBgS_PolyInfo;
+inline u32 dComIfGp_particle_setSimpleFoot(u32 /*h*/, u32* /*out*/, cBgS_PolyInfo& /*bi*/,
+                                            const cXyz* /*pos*/, const dKy_tevstr_c* /*tev*/,
+                                            int /*flg*/, const csXyz* /*rot*/,
+                                            const cXyz* /*scale*/, void* /*p9*/,
+                                            u8 /*alpha*/, void* /*p11*/) { return 0; }
 
 // Resource access — returns nullptr on PC (no game data loaded yet)
 inline void* dComIfG_getObjectRes(const char* /*name*/, int /*idx*/) { return nullptr; }
+
+// (dComIfG_Bgsp is declared in port/include/d/d_bg_s.h)
 
 // m_Do_ext heap globals/accessors (defined in m_Do_ext.cpp / port stubs)
 extern JKRExpHeap* zeldaHeap;
@@ -137,8 +179,8 @@ inline JKRExpHeap* mDoExt_getHostIOHeap()   { return nullptr; }
 JKRExpHeap* mDoExt_getCommandHeap();
 inline JKRHeap*    mDoExt_setCurrentHeap(JKRHeap* h) { return JKRSetCurrentHeap(h); }
 
-// f_op actor manager init (defined in f_op_actor_mng.cpp / port stubs)
-inline void fopAcM_initManager() {}
+// f_op actor manager init — defined in f_op_actor_mng.cpp
+void fopAcM_initManager();
 
 // Audio (defined in m_Do_audio.cpp / port stubs)
 extern JKRSolidHeap* g_mDoAud_audioHeap;
@@ -172,5 +214,68 @@ inline JKRArchive* dComIfGp_getCardIconResArchive() {
     static JKRArchive archive;
     return &archive;
 }
+
+// 2D draw list submission — no-op on PC (no J2DGraph rendering)
+inline void dComIfGd_set2DOpa(dDlst_base_c* /*dlst*/)    {}
+inline void dComIfGd_set2DXlu(dDlst_base_c* /*dlst*/)    {}
+inline void dComIfGd_set2DOpaTop(dDlst_base_c* /*dlst*/) {}
+inline void dComIfGd_setCopy2D(dDlst_base_c* /*dlst*/)   {}
+
+// Resource manager stubs
+inline int  dComIfG_syncAllObjectRes()                              { return 0; }
+inline int  dComIfG_setObjectRes(const char*, u8, JKRHeap*)        { return 0; }
+inline int  dComIfG_setObjectRes(const char*, void*, u32, JKRHeap*){ return 0; }
+inline int  dComIfG_deleteObjectResMain(const char*)               { return 0; }
+inline int  dComIfG_changeOpeningScene(void*, s16)                 { return 0; }
+
+// Phase handler — always "done" on PC
+struct request_of_phase_process_class;
+typedef int (*request_of_phase_process_fn)(void*);
+inline int dComLbG_PhaseHandler(request_of_phase_process_class*, request_of_phase_process_fn*, void*) { return 1; }
+
+// Particle resource heap
+inline JKRExpHeap* dComIfGp_particle_getResHeap() { return nullptr; }
+
+// Scene change request
+class scene_class;
+inline int fopScnM_ChangeReq(scene_class*, s16, s16, u16) { return 0; }
+
+// -----------------------------------------------------------------------
+// Resource archive setters — all no-ops on PC (no DVD/ARAM loading)
+// -----------------------------------------------------------------------
+class JKRArchive;
+inline void dComIfGp_setFieldMapArchive2(JKRArchive*)    {}
+inline void dComIfGp_setAnmArchive(JKRArchive*)          {}
+inline void dComIfGp_setFmapResArchive(JKRArchive*)      {}
+inline void dComIfGp_setDmapResArchive(JKRArchive*)      {}
+inline void dComIfGp_setCollectResArchive(JKRArchive*)   {}
+inline void dComIfGp_setItemIconArchive(JKRArchive*)     {}
+inline void dComIfGp_setAllMapArchive(JKRArchive*)       {}
+inline void dComIfGp_setRingResArchive(JKRArchive*)      {}
+inline void dComIfGp_setNameResArchive(JKRArchive*)      {}
+inline void dComIfGp_setDemoMsgArchive(JKRArchive*)      {}
+inline void dComIfGp_setMeterButtonArchive(JKRArchive*)  {}
+inline void dComIfGp_setErrorResArchive(JKRArchive*)     {}
+inline void dComIfGp_setCardIconResArchive(JKRArchive*)  {}
+inline void dComIfGp_setMsgDtArchive(int, JKRArchive*)   {}
+inline void dComIfGp_setMsgCommonArchive(JKRArchive*)    {}
+inline void dComIfGp_setMsgArchive(int, JKRArchive*)     {}
+inline void dComIfGp_setFontArchive(JKRArchive*)         {}
+inline void dComIfGp_setRubyArchive(JKRArchive*)         {}
+inline void dComIfGp_setMain2DArchive(JKRArchive*)       {}
+inline void dComIfGp_setItemTable(void*)                 {}
+
+// Particle creation — no-op on PC
+inline void dComIfGp_particle_create()                   {}
+inline void dComIfGp_particle_createCommon(void*)        {}
+
+// J3DDrawBuffer accessors — stub returns nullptr (no rendering on PC)
+inline J3DDrawBuffer* dComIfGd_getOpaListBG()            { return nullptr; }
+inline J3DDrawBuffer* dComIfGd_getOpaList()              { return nullptr; }
+inline J3DDrawBuffer* dComIfGd_getXluList()              { return nullptr; }
+inline J3DDrawBuffer* dComIfGd_getOpaListFilter()        { return nullptr; }
+
+// Black color global (used for fade effects)
+extern GXColor g_blackColor;
 
 #endif /* D_COM_D_COM_INF_GAME_H */

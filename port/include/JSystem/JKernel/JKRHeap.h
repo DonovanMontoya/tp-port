@@ -159,6 +159,10 @@ public:
     static JKRExpHeap* create(u32 size, JKRHeap* parent, bool errorFlag) {
         return new JKRExpHeap(size, parent, errorFlag);
     }
+    // Overload that takes a pre-allocated buffer (used by d_s_logo.cpp)
+    static JKRExpHeap* create(void* /*buf*/, u32 size, JKRHeap* parent, bool errorFlag) {
+        return new JKRExpHeap(size, parent, errorFlag);
+    }
     static JKRExpHeap* createRoot(int /*id*/, bool /*errorFlag*/) {
         return new JKRExpHeap(0, nullptr, false);
     }
@@ -207,3 +211,4 @@ inline void* operator new(std::size_t size, JKRHeap* heap, int align) {
 inline void operator delete(void* ptr, JKRHeap* /*heap*/, int /*align*/) noexcept {
     ::operator delete(ptr);
 }
+inline void JKRFillMemory(u8* /*dst*/, u32 /*size*/, u8 /*val*/) {}

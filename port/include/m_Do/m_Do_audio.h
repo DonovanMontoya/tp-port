@@ -10,6 +10,7 @@
 #define M_DO_M_DO_AUDIO_H
 
 #include "Z2AudioLib/Z2AudioMgr.h"
+#include "Z2AudioLib/Z2SeMgr.h"
 #include "port/types.h"
 #include "JSystem/JKernel/JKRHeap.h"
 
