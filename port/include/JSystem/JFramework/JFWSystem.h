@@ -36,8 +36,13 @@ struct JFWSystem {
     static void firstInit() {}
     static void init()      {}
 
-    // System console — return a static stub (actual JUTConsole defined in JUTConsole.h)
-    static JUTConsole*       getSystemConsole() { return systemConsole; }
+    // System console — always return a valid object so m_Do_main.cpp can call
+    // setOutput()/setPosition() unconditionally.  Real console assigned by mDoMch_Create.
+    static JUTConsole*       getSystemConsole() {
+        if (systemConsole) return systemConsole;
+        static JUTConsole sDefault;
+        return &sDefault;
+    }
     static JKRExpHeap*       getSystemHeap()    { return systemHeap; }
     static JKRExpHeap*       getRootHeap()      { return rootHeap; }
     static JUTResFont*       getSystemFont()    { return systemFont; }
