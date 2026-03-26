@@ -186,3 +186,10 @@ void dComIfGs_onActor(int /*bitNo*/, int /*roomNo*/) {}
 J3DUClipper mDoLib_clipper::mClipper;
 f32         mDoLib_clipper::mSystemFar  = 100000.0f;
 f32         mDoLib_clipper::mFovyRate   = 1.0f;
+
+// ---------------------------------------------------------------------------
+// dScnPly_c statics — defined in d_s_play.cpp which is not yet enabled
+// ---------------------------------------------------------------------------
+#include "d/d_s_play.h"
+s8 dScnPly_c::pauseTimer     = 0;
+s8 dScnPly_c::nextPauseTimer = 0;
