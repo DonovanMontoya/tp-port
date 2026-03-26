@@ -82,10 +82,10 @@ bool mDoDvdThd::SyncWidthSound = false;
 mDoDvdThd_callback_c* mDoDvdThd_callback_c::create(mDoDvdThd_callback_func /*f*/, void* /*arg*/) { return nullptr; }
 
 // ---------------------------------------------------------------------------
-// f_ap_game stubs (framework create/execute — no-ops until f_ap compiles)
+// f_ap_game stubs — fapGm_Create/Execute/g_HIO/ctor now provided by
+// src/f_ap/f_ap_game.cpp.  Only the static members that the real file
+// gates behind #if DEBUG need to be supplied here for non-debug builds.
 // ---------------------------------------------------------------------------
-void fapGm_Create()  {}
-void fapGm_Execute() {}
 
 // ---------------------------------------------------------------------------
 // m_Do_Reset static data
@@ -135,36 +135,38 @@ u8            fapGm_HIO_c::mCaptureScreenDivH    = 1;
 u8            fapGm_HIO_c::mCaptureScreenDivV    = 1;
 u8            fapGm_HIO_c::mPackArchiveMode      = 1;
 
-fapGm_HIO_c::fapGm_HIO_c() {
-    mUsingHostIO       = false;   // no HIO channel on PC
-    mDisplayMeter      = false;
-    mDisplayPrint      = false;
-    mDisplay2D         = true;
-    mDisplayParticle   = true;
-    mDisplayProcessID  = false;
-    mMemBlockOff       = false;
-    mColor             = JUtility::TColor(255, 255, 255, 255);
-    mLROnValue         = 0.9f;
-    mLROffValue        = 0.6f;
-    mLetterTopColor          = JUtility::TColor(255, 150, 0, 255);
-    mLetterBottomColor       = JUtility::TColor(255, 120, 0, 255);
-    mLetterTopShadowColor    = JUtility::TColor(0, 0, 0, 255);
-    mLetterBottomShadowColor = JUtility::TColor(0, 0, 0, 255);
-    mLetterPositionX   = 0;
-    mLetterPositionY   = 10;
-    mLetterFontSize    = 27;
-    mLineSpacing       = 0;
-    mLetterSpacing     = 0;
-    mBackgroundAlpha   = 130;
-    mRegister0 = mRegister1 = mRegister2 = mRegister3 = 0;
-    field_0x04         = 0;
-}
-
-// g_HIO — type must match the `extern fapGm_HIO_c g_HIO` in f_ap_game.h
-fapGm_HIO_c g_HIO;
+// fapGm_HIO_c constructor and g_HIO are now provided by
+// src/f_ap/f_ap_game.cpp.  Removed from stubs.
 
 // ---------------------------------------------------------------------------
 // DynamicModuleControlBase stub
 // ---------------------------------------------------------------------------
 #include "DynamicLink.h"
 void DynamicModuleControlBase::dump() {}
+
+// ---------------------------------------------------------------------------
+// mDoHIO stubs — non-debug definitions for mDoHIO_root_c / mDoHIO_subRoot_c.
+// m_Do_hostIO.cpp defines these only inside #if DEBUG; provide no-op stubs
+// for non-debug PC builds so the vtables link cleanly.
+// ---------------------------------------------------------------------------
+#include "m_Do/m_Do_hostIO.h"
+
+mDoHIO_root_c mDoHIO_root;
+
+mDoHIO_root_c::~mDoHIO_root_c() {}
+mDoHIO_subRoot_c::~mDoHIO_subRoot_c() {}
+mDoHIO_child_c::~mDoHIO_child_c() {}
+
+void mDoHIO_root_c::genMessage(JORMContext* /*ctx*/) {}
+void mDoHIO_subRoot_c::genMessage(JORMContext* /*ctx*/) {}
+
+void mDoHIO_root_c::update() {}
+void mDoHIO_root_c::updateChild(s8 /*no*/) {}
+void mDoHIO_root_c::deleteChild(s8 /*no*/) {}
+
+s8 mDoHIO_subRoot_c::createChild(const char* /*name*/, JORReflexible* /*node*/) { return -1; }
+void mDoHIO_subRoot_c::deleteChild(s8 /*no*/) {}
+void mDoHIO_subRoot_c::updateChild(s8 /*no*/) {}
+
+void mDoHIO_deleteChild(s8 /*no*/) {}
+void mDoHIO_updateChild(s8 /*no*/) {}

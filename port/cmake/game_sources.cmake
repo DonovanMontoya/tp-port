@@ -67,16 +67,67 @@ set(GAME_SOURCES
   # ── SSystem/SStandard ─────────────────────────────────────────────────
   ${DECOMP_SRC}/SSystem/SStandard/s_basic.cpp
 
-  # ── Core framework ────────────────────────────────────────────────────
-  # These pull in more dependencies; uncomment as porting progresses.
-  # ${DECOMP_SRC}/f_op/f_op_actor.cpp
-  # ${DECOMP_SRC}/f_op/f_op_actor_mng.cpp
-  # ${DECOMP_SRC}/f_op/f_op_scene.cpp
-  # ${DECOMP_SRC}/f_op/f_op_scene_mng.cpp
-  # ${DECOMP_SRC}/f_op/f_op_kankyo.cpp
-  # ${DECOMP_SRC}/f_op/f_op_overlap.cpp
-  # ${DECOMP_SRC}/f_op/f_op_camera.cpp
-  # ${DECOMP_SRC}/f_op/f_op_draw_tag.cpp
+  # ── f_pc framework (process manager, creators, executors, etc.) ──────
+  ${DECOMP_SRC}/f_pc/f_pc_base.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_create_iter.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_create_req.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_create_tag.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_creator.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_debug_sv.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_delete_tag.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_deletor.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_draw.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_draw_priority.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_executor.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_fstcreate_req.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_layer.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_layer_iter.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_layer_tag.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_leaf.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_line.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_line_iter.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_line_tag.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_load.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_manager.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_method.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_method_iter.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_method_tag.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_node.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_node_req.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_pause.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_priority.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_profile.cpp
+  # f_pc_profile_lst.cpp references all scene/actor profiles — use port stub
+  # until those files are enabled:
+  # ${DECOMP_SRC}/f_pc/f_pc_profile_lst.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_searcher.cpp
+  ${DECOMP_SRC}/f_pc/f_pc_stdcreate_req.cpp
+
+  # ── f_op framework — scene/camera/overlap/draw (no dolzel.h chain) ───
+  # Actor-heavy files (f_op_actor.cpp, f_op_actor_mng.cpp,
+  # f_op_actor_map.cpp, f_op_msg_mng.cpp) use dolzel.h and are deferred.
+  ${DECOMP_SRC}/f_op/f_op_actor_iter.cpp
+  ${DECOMP_SRC}/f_op/f_op_actor_tag.cpp
+  ${DECOMP_SRC}/f_op/f_op_camera.cpp
+  ${DECOMP_SRC}/f_op/f_op_camera_mng.cpp
+  ${DECOMP_SRC}/f_op/f_op_draw_iter.cpp
+  ${DECOMP_SRC}/f_op/f_op_draw_tag.cpp
+  ${DECOMP_SRC}/f_op/f_op_kankyo.cpp
+  ${DECOMP_SRC}/f_op/f_op_kankyo_mng.cpp
+  ${DECOMP_SRC}/f_op/f_op_msg.cpp
+  ${DECOMP_SRC}/f_op/f_op_overlap.cpp
+  ${DECOMP_SRC}/f_op/f_op_overlap_mng.cpp
+  ${DECOMP_SRC}/f_op/f_op_overlap_req.cpp
+  ${DECOMP_SRC}/f_op/f_op_scene.cpp
+  ${DECOMP_SRC}/f_op/f_op_scene_iter.cpp
+  ${DECOMP_SRC}/f_op/f_op_scene_mng.cpp
+  ${DECOMP_SRC}/f_op/f_op_scene_pause.cpp
+  ${DECOMP_SRC}/f_op/f_op_scene_req.cpp
+  ${DECOMP_SRC}/f_op/f_op_scene_tag.cpp
+  ${DECOMP_SRC}/f_op/f_op_view.cpp
+
+  # ── Game app framework ───────────────────────────────────────────────
+  ${DECOMP_SRC}/f_ap/f_ap_game.cpp
 
   # ── Main module ───────────────────────────────────────────────────────
   ${DECOMP_SRC}/m_Do/m_Do_main.cpp

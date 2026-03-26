@@ -13,6 +13,10 @@
 class dScnPlay_c {
 public:
     static void create() {}
+    static bool isPause() { return false; }
 };
+
+// Alias used by f_op_msg.cpp
+typedef dScnPlay_c dScnPly_c;
 
 #endif /* D_S_D_S_PLAY_H */

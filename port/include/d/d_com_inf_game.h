@@ -22,10 +22,32 @@ struct dComIfG_gameInfo_c {
 
 extern dComIfG_gameInfo_c g_dComIfG_gameInfo;
 
+// Forward declarations for types used in inline stubs below
+class csXyz;
+struct JPABaseEmitter;
+class dKy_tevstr_c;
+class dPa_levelEcallBack;
+struct _GXColor;
+
 // Free functions
 inline void dComIfG_dumpResControl() {}
 inline void dComIfG_ct() {}
 inline int  dComIfGp_roomControl_getStayNo() { return 0; }
+inline u8   dComIfGp_isPauseFlag() { return 0; }
+
+// Particle stubs — all return nullptr / no-op on PC
+inline JPABaseEmitter* dComIfGp_particle_set(u16, const cXyz*, const csXyz*, const cXyz*) {
+    return nullptr;
+}
+inline JPABaseEmitter* dComIfGp_particle_set(u16, const cXyz*, const dKy_tevstr_c*,
+                                              const csXyz*, const cXyz*) {
+    return nullptr;
+}
+inline void dComIfGp_particle_setSimple(u16, const cXyz*, u8, _GXColor&, float) {}
+inline void dComIfGp_particle_setSimple(u16, const cXyz*, u8, _GXColor&, float,
+                                         dPa_levelEcallBack*) {}
+inline void dComIfGp_drawSimpleModel() {}
+inline void dComIfGd_peekZdata() {}
 
 // m_Do_ext heap globals/accessors (defined in m_Do_ext.cpp / port stubs)
 extern JKRExpHeap* zeldaHeap;
