@@ -17,4 +17,23 @@ void mDoMch_HeapCheckAll();
 void mDoMch_HeapFreeFillAll();
 int  mDoMch_Create();
 
+// GXRenderModeObj is defined in dolphin/gx/GXStruct.h (via gx.h)
+#include "dolphin/gx/GXStruct.h"
+extern GXRenderModeObj g_ntscZeldaProg;
+
+class mDoMch_render_c {
+public:
+    static void setRenderModeObj(GXRenderModeObj* obj) { mRenderModeObj = obj; }
+    static void setProgressiveMode() { setRenderModeObj(&g_ntscZeldaProg); }
+    static u16  getEfbHeight()  { return mRenderModeObj ? mRenderModeObj->efbHeight : 480; }
+    static u16  getFbWidth()    { return mRenderModeObj ? mRenderModeObj->fbWidth   : 640; }
+    static GXRenderModeObj* getRenderModeObj() { return mRenderModeObj; }
+    static GXRenderModeObj* mRenderModeObj;
+};
+
+namespace mDoMch {
+    extern u8 mDebugFill;
+    extern u8 mDebugFillNotUse;
+}
+
 #endif /* M_DO_M_DO_MACHINE_H */

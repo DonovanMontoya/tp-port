@@ -127,6 +127,54 @@ int daTagStream_c::checkArea(cXyz const*) { return 0; }
 u8* dEnemyItem_c::mData = nullptr;
 
 // ---------------------------------------------------------------------------
+// g_blackColor — fade color global used by d_s_logo.cpp
+// ---------------------------------------------------------------------------
+#include "dolphin/gx/GXStruct.h"
+GXColor g_blackColor = { 0, 0, 0, 255 };
+
+// ---------------------------------------------------------------------------
+// JASGlobalInstance specialization statics
+// Z2SeMgr::sInstance is already defined in m_Do_main.cpp
+// ---------------------------------------------------------------------------
+#include "Z2AudioLib/Z2AudioMgr.h"
+template<> Z2AudioMgr* JASGlobalInstance<Z2AudioMgr>::sInstance = nullptr;
+
+// ---------------------------------------------------------------------------
+// mDoAud_zelAudio_c static
+// ---------------------------------------------------------------------------
+#include "m_Do/m_Do_audio.h"
+u8 mDoAud_zelAudio_c::mInitFlag = 0;
+
+// ---------------------------------------------------------------------------
+// JFWDisplay static
+// ---------------------------------------------------------------------------
+#include "JSystem/JFramework/JFWDisplay.h"
+JFWDisplay* JFWDisplay::sManager = nullptr;
+
+// ---------------------------------------------------------------------------
+// JUTGamePad::C3ButtonReset statics
+// ---------------------------------------------------------------------------
+#include "JSystem/JUtility/JUTGamePad.h"
+callbackFn JUTGamePad::C3ButtonReset::sCallback    = nullptr;
+void*      JUTGamePad::C3ButtonReset::sCallbackArg = nullptr;
+bool       JUTGamePad::C3ButtonReset::sResetOccurred = false;
+
+// ---------------------------------------------------------------------------
+// mDoGph_gInf_c statics
+// ---------------------------------------------------------------------------
+#include "m_Do/m_Do_graphic.h"
+JUTFader*   mDoGph_gInf_c::mFader = nullptr;
+
+// ---------------------------------------------------------------------------
+// dTres_c and dMpath_c createWork stubs
+// ---------------------------------------------------------------------------
+#include "d/d_tresure.h"
+int dTres_c::createWork() { return 0; }
+
+#include "d/d_map_path_dmap.h"
+void dMpath_c::createWork() {}
+
+// ---------------------------------------------------------------------------
 // dComIfGs_onActor — declared non-inline in f_op_actor_mng.h; stub here
 // ---------------------------------------------------------------------------
 void dComIfGs_onActor(int /*bitNo*/, int /*roomNo*/) {}

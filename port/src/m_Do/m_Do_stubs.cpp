@@ -71,8 +71,20 @@ dComIfG_gameInfo_c g_dComIfG_gameInfo = {};
 // ---------------------------------------------------------------------------
 // m_Do_machine stubs
 // ---------------------------------------------------------------------------
+#include "m_Do/m_Do_machine.h"
 int  mDoMch_Create()       { return 1; }
 void mDoMch_HeapCheckAll() {}
+BOOL mDoMch_IsProgressiveMode() { return FALSE; }
+void mDoMch_HeapFreeFillAll()   {}
+
+// Zero-initialize then fill the fields we care about on PC
+GXRenderModeObj g_ntscZeldaProg = {};
+GXRenderModeObj* mDoMch_render_c::mRenderModeObj = &g_ntscZeldaProg;
+
+namespace mDoMch {
+    u8 mDebugFill       = 0;
+    u8 mDebugFillNotUse = 0;
+}
 
 // ---------------------------------------------------------------------------
 // m_Do_dvd_thread stubs
@@ -80,6 +92,8 @@ void mDoMch_HeapCheckAll() {}
 #include "m_Do/m_Do_dvd_thread.h"
 bool mDoDvdThd::SyncWidthSound = false;
 mDoDvdThd_callback_c* mDoDvdThd_callback_c::create(mDoDvdThd_callback_func /*f*/, void* /*arg*/) { return nullptr; }
+mDoDvdThd_toMainRam_c* mDoDvdThd_toMainRam_c::create(char const* /*path*/, u8 /*dir*/, JKRHeap* /*heap*/) { return nullptr; }
+mDoDvdThd_mountXArchive_c* mDoDvdThd_mountXArchive_c::create(char const* /*path*/, u8 /*dir*/, JKRArchive::EMountMode /*mode*/, JKRHeap* /*heap*/) { return nullptr; }
 
 // ---------------------------------------------------------------------------
 // f_ap_game stubs — fapGm_Create/Execute/g_HIO/ctor now provided by
@@ -88,10 +102,12 @@ mDoDvdThd_callback_c* mDoDvdThd_callback_c::create(mDoDvdThd_callback_func /*f*/
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// m_Do_Reset static data
+// m_Do_Reset stubs
 // ---------------------------------------------------------------------------
 #include "m_Do/m_Do_Reset.h"
 mDoRstData* mDoRst::mResetData = nullptr;
+void mDoRst_reset(int, u32, int) {}
+void mDoRst_resetCallBack(int, void*) {}
 
 // ---------------------------------------------------------------------------
 // m_Do_MemCard stubs

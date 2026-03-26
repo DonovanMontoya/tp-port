@@ -120,3 +120,17 @@ static inline u32  OSGetConsoleType(void) { return OS_CONSOLE_RETAIL; }
 #define OS_REPORT_ERROR(...) OSReport_Error(__VA_ARGS__)
 // OS_WARNING — debug assertion/warning (no-op in release, log on PC)
 #define OS_WARNING(...)      OSReport(__VA_ARGS__)
+
+// Progressive-mode stubs (GC/Wii only — no-op on PC)
+#define OS_PROGRESSIVE_MODE_OFF 0
+#define OS_PROGRESSIVE_MODE_ON  1
+static inline void OSSetProgressiveMode(int /*mode*/) {}
+static inline int  OSGetProgressiveMode(void)          { return OS_PROGRESSIVE_MODE_OFF; }
+
+// Timer clock (GCN: 486MHz/4 = ~162MHz; use a reasonable constant on PC)
+#ifndef OS_TIMER_CLOCK
+#define OS_TIMER_CLOCK 162000000
+#endif
+#ifndef OS_CORE_CLOCK
+#define OS_CORE_CLOCK  486000000
+#endif

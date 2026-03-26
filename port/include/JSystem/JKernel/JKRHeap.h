@@ -148,6 +148,10 @@ public:
     static JKRExpHeap* create(u32 size, JKRHeap* parent, bool errorFlag) {
         return new JKRExpHeap(size, parent, errorFlag);
     }
+    // Overload that takes a pre-allocated buffer (used by d_s_logo.cpp)
+    static JKRExpHeap* create(void* /*buf*/, u32 size, JKRHeap* parent, bool errorFlag) {
+        return new JKRExpHeap(size, parent, errorFlag);
+    }
     static JKRExpHeap* createRoot(int /*id*/, bool /*errorFlag*/) {
         return new JKRExpHeap(0, nullptr, false);
     }
@@ -179,3 +183,5 @@ inline JKRSolidHeap* JKRCreateSolidHeap(u32 size, JKRHeap* parent, bool errFlag)
 inline JKRExpHeap* JKRCreateExpHeap(u32 size, JKRHeap* parent, bool errFlag) {
     return JKRExpHeap::create(size, parent, errFlag);
 }
+inline void JKRFree(void* /*ptr*/) {}
+inline void JKRFillMemory(u8* /*dst*/, u32 /*size*/, u8 /*val*/) {}

@@ -13,6 +13,14 @@
 class Z2AudioMgr : public JASGlobalInstance<Z2AudioMgr> {
 public:
     Z2AudioMgr() : JASGlobalInstance<Z2AudioMgr>(true) {}
+
+    static Z2AudioMgr* getInterface() {
+        return JASGlobalInstance<Z2AudioMgr>::getInstance();
+    }
+
+    void resetProcess(int, bool)  {}
+    bool checkFirstWaves()        { return true; }
+    void loadStaticWaves()        {}
 };
 
 inline Z2AudioMgr* Z2GetAudioMgr() {

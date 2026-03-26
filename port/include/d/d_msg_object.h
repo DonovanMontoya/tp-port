@@ -12,32 +12,13 @@
 #include "port/types.h"
 #include "f_op/f_op_msg.h"
 #include "SSystem/SComponent/c_xyz.h"
+#include "JSystem/J2DGraph/J2DPicture.h"
 
 class fopAc_ac_c;
 class J2DTextBox;
 class JUTFont;
 class COutFont_c;
 class mDoDvdThd_mountXArchive_c;
-
-// -----------------------------------------------------------------------
-// J2DPane / J2DPicture stubs — referenced in f_op_msg_mng.cpp dummy funcs
-// -----------------------------------------------------------------------
-class J2DPane {
-public:
-    virtual ~J2DPane() {}
-    u8  getAlpha()       const { return 0xFF; }
-    f32 getHeight()      const { return 0.0f; }
-    f32 getWidth()       const { return 0.0f; }
-    void setAlpha(u8)          {}
-};
-
-class J2DPicture : public J2DPane {
-public:
-    virtual ~J2DPicture() {}
-    // Wii/Shield variant — append(const char*, f32)
-    virtual void append(const char*, f32)            {}
-    virtual void setBlendRatio(f32, f32)             {}
-};
 
 // -----------------------------------------------------------------------
 // dMsgObject_c — minimal stub inheriting from msg_class

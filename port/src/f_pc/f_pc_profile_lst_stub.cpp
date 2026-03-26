@@ -12,9 +12,14 @@
  * requires scene files to be enabled), so the empty list is safe for now.
  */
 #include "f_pc/f_pc_profile.h"
+#include "f_pc/f_pc_profile_lst.h"
 
-// Empty profile table — extended as scene/actor files are enabled
-static process_profile_definition* s_EmptyProfileList[] = {
+// Profiles for scene/actor files that are now compiled.
+// Add entries here as more files are enabled in game_sources.cmake.
+static process_profile_definition* s_ProfileList[] = {
+    &g_profile_LOGO_SCENE,
+    &g_profile_WARNING_SCENE,
+    &g_profile_WARNING2_SCENE,
     nullptr,
 };
 
@@ -22,13 +27,13 @@ static process_profile_definition* s_EmptyProfileList[] = {
 namespace {
 struct ProfileListInit {
     ProfileListInit() {
-        g_fpcPf_ProfileList_p = s_EmptyProfileList;
+        g_fpcPf_ProfileList_p = s_ProfileList;
     }
 } s_profileListInit;
 }
 
 extern "C" void ModuleProlog() {
-    g_fpcPf_ProfileList_p = s_EmptyProfileList;
+    g_fpcPf_ProfileList_p = s_ProfileList;
 }
 
 extern "C" void ModuleEpilog() {

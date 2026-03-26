@@ -103,4 +103,11 @@ public:
 };
 extern DummyCheckHeap* dch;
 
+// Font accessors — no real font on PC
+class JUTFont;
+inline JUTFont* mDoExt_getMesgFont()   { return nullptr; }
+inline JUTFont* mDoExt_getSubFont()    { return nullptr; }
+inline JUTFont* mDoExt_getRubyFont()   { return nullptr; }
+inline void     mDoExt_setAraCacheSize(u32) {}
+
 #endif /* M_DO_M_DO_EXT_H */
