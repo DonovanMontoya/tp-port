@@ -157,6 +157,11 @@ public:
     CMemBlock* getFreeFirst() const { return nullptr; }
     u32        getGroupID()   const { return 0; }
     void       setGroupID(u32 /*id*/) {}
+
+    // Used by fopMsgM_destroyExpHeap
+    bool check()   const { return true; }
+    bool isEmpty() const { return true; }
+    void destroy()       {}
 };
 
 // -----------------------------------------------------------------------

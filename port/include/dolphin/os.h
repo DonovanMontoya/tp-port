@@ -118,3 +118,5 @@ static inline u32  OSGetConsoleType(void) { return OS_CONSOLE_RETAIL; }
 // OS_REPORT convenience macros (always enabled on PC so debug output works)
 #define OS_REPORT(...)       OSReport(__VA_ARGS__)
 #define OS_REPORT_ERROR(...) OSReport_Error(__VA_ARGS__)
+// OS_WARNING — debug assertion/warning (no-op in release, log on PC)
+#define OS_WARNING(...)      OSReport(__VA_ARGS__)

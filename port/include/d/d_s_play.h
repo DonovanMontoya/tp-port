@@ -9,6 +9,8 @@
 #define D_S_D_S_PLAY_H
 
 #include "m_Do/m_Do_hostIO.h"
+#include "SSystem/SComponent/c_phase.h"
+#include "f_pc/f_pc_manager.h"
 
 class dScnPlay_c {
 public:

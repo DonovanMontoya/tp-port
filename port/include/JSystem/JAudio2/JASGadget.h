@@ -30,7 +30,12 @@ public:
     static void setInstance(T* p) { sInstance = p; }
     static T* sInstance;
 };
-template <typename T> T* JASGlobalInstance<T>::sInstance = nullptr;
+// NOTE: The out-of-class template definition is intentionally OMITTED here.
+// All sInstance definitions are provided as explicit out-of-class definitions
+// in m_Do_main.cpp and f_op_actor.cpp (one per specialisation).
+// Including the template definition in this header caused multiple-definition
+// linker errors when a TU both instantiated the template and provided an
+// explicit definition.  The game source provides all needed definitions.
 
 // ---------------------------------------------------------------------------
 // JASPtrTable — array of pointers with bounds-checked get/set

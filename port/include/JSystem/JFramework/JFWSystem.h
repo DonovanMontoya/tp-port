@@ -6,6 +6,7 @@
  */
 #include "port/types.h"
 #include "JSystem/JUtility/JUTAssert.h"
+#include "JSystem/JUtility/JUTConsole.h"
 
 // Forward declarations (avoid pulling in GX / GC headers)
 struct _GXRenderModeObj;
@@ -36,12 +37,11 @@ struct JFWSystem {
     static void firstInit() {}
     static void init()      {}
 
-    // System console — always return a valid object so m_Do_main.cpp can call
-    // setOutput()/setPosition() unconditionally.  Real console assigned by mDoMch_Create.
+    // System console — real console assigned by mDoMch_Create; fallback via factory stub.
     static JUTConsole*       getSystemConsole() {
         if (systemConsole) return systemConsole;
-        static JUTConsole sDefault;
-        return &sDefault;
+        static JUTConsole* sDefault = JUTConsole::create(64, nullptr, 0);
+        return sDefault;
     }
     static JKRExpHeap*       getSystemHeap()    { return systemHeap; }
     static JKRExpHeap*       getRootHeap()      { return rootHeap; }
