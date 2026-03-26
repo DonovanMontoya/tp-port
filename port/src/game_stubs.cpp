@@ -133,31 +133,10 @@ u8* dEnemyItem_c::mData = nullptr;
 GXColor g_blackColor = { 0, 0, 0, 255 };
 
 // ---------------------------------------------------------------------------
-// JASGlobalInstance specialization statics
-// Z2SeMgr::sInstance is already defined in m_Do_main.cpp
-// ---------------------------------------------------------------------------
-#include "Z2AudioLib/Z2AudioMgr.h"
-template<> Z2AudioMgr* JASGlobalInstance<Z2AudioMgr>::sInstance = nullptr;
-
-// ---------------------------------------------------------------------------
-// mDoAud_zelAudio_c static
-// ---------------------------------------------------------------------------
-#include "m_Do/m_Do_audio.h"
-u8 mDoAud_zelAudio_c::mInitFlag = 0;
-
-// ---------------------------------------------------------------------------
 // JFWDisplay static
 // ---------------------------------------------------------------------------
 #include "JSystem/JFramework/JFWDisplay.h"
 JFWDisplay* JFWDisplay::sManager = nullptr;
-
-// ---------------------------------------------------------------------------
-// JUTGamePad::C3ButtonReset statics
-// ---------------------------------------------------------------------------
-#include "JSystem/JUtility/JUTGamePad.h"
-callbackFn JUTGamePad::C3ButtonReset::sCallback    = nullptr;
-void*      JUTGamePad::C3ButtonReset::sCallbackArg = nullptr;
-bool       JUTGamePad::C3ButtonReset::sResetOccurred = false;
 
 // ---------------------------------------------------------------------------
 // mDoGph_gInf_c statics

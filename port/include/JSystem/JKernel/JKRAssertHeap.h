@@ -5,6 +5,7 @@
  * On PC we just alias it to JKRExpHeap.
  */
 #include "JSystem/JKernel/JKRHeap.h"
+#include "JSystem/JKernel/JKRThread.h"
 
 class JKRAssertHeap : public JKRExpHeap {
 public:

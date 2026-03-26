@@ -18,11 +18,8 @@
 #ifndef PLATFORM_GC
 #  define PLATFORM_GC 0
 #endif
-#ifndef PLATFORM_WII
-#  define PLATFORM_WII 0
-#endif
-#ifndef PLATFORM_SHIELD
-#  define PLATFORM_SHIELD 0
+#ifndef DEBUG
+#  define DEBUG 0
 #endif
 
 // -----------------------------------------------------------------------
@@ -47,4 +44,3 @@
 // Pull in gx.h early so GXGamma/GXRenderModeObj/etc. are defined before
 // any game header that forward-declares them with incompatible types.
 #include "dolphin/gx.h"
-

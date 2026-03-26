@@ -71,20 +71,26 @@ int main(int /*argc*/, char** /*argv*/)
     tp::window::Config winCfg;
     winCfg.width  = 854;   // widescreen 16:9
     winCfg.height = 480;
+    tp::log::info("About to initialize window");
     if (!tp::window::Init(winCfg)) {
         tp::log::error("Window init failed");
         DVDQuit();
         return 1;
     }
+    tp::log::info("Window initialized");
 
     // GXInit must be called after GL context creation
+    tp::log::info("About to initialize GX");
     GXInit(nullptr, 0);
+    tp::log::info("GX initialized");
 
     if (!PADInit()) {
         tp::log::warn("PADInit failed — keyboard-only mode");
     }
 
+    tp::log::info("About to initialize AX");
     AXInit();
+    tp::log::info("AX initialized");
 
     // ── Game init + loop ──────────────────────────────────────────────
     // main01() contains the full GC game boot sequence and the infinite

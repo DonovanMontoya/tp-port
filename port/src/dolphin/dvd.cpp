@@ -232,6 +232,7 @@ BOOL DVDOpenDir(const char* dirName, DVDDir* dir) {
 
 BOOL DVDReadDir(DVDDir* /*dir*/, DVDDirEntry* /*entry*/) { return FALSE; }
 BOOL DVDCloseDir(DVDDir* /*dir*/) { return TRUE; }
+BOOL DVDChangeDir(const char* /*dirName*/) { return TRUE; }
 
 DVDDiskID* DVDGetCurrentDiskID(void) { return &sDiskID; }
 s32  DVDGetDriveStatus(void) { return DVD_STATE_END; }

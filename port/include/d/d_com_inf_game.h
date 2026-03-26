@@ -8,7 +8,9 @@
 #define D_COM_D_COM_INF_GAME_H
 
 #include "port/types.h"
+#include "JSystem/JKernel/JKRArchive.h"
 #include "JSystem/JKernel/JKRHeap.h"
+#include "JSystem/JUtility/JUTTexture.h"
 #include "SSystem/SComponent/c_xyz.h"
 #include "SSystem/SComponent/c_lib.h"
 #include "d/d_event.h"
@@ -30,13 +32,16 @@ struct dComIfG_gameInfo_c {
 extern dComIfG_gameInfo_c g_dComIfG_gameInfo;
 
 // Forward declarations for types used in inline stubs below
+class JKRArchive;
 class csXyz;
 struct JPABaseEmitter;
 class dKy_tevstr_c;
 class dPa_levelEcallBack;
 struct _GXColor;
+typedef _GXColor GXColor;
 class camera_process_class;
 struct dStage_roomDt_c;
+class dStage_startStage_c;
 
 // Free functions
 inline void dComIfG_dumpResControl() {}
@@ -71,6 +76,12 @@ class fopAc_ac_c;
 inline fopAc_ac_c*           dComIfGp_getPlayer(int /*idx*/) { return nullptr; }
 inline camera_process_class* dComIfGp_getCamera(int /*idx*/) { return nullptr; }
 
+// Start stage accessors
+inline dStage_startStage_c* dComIfGp_getStartStage() { return nullptr; }
+inline void dComIfGp_setStartStage(dStage_startStage_c* /*p_startStage*/) {}
+inline const char* dComIfGp_getStartStageName() { return "F_SP102"; }
+inline s8 dComIfGp_getStartStageRoomNo() { return 0; }
+
 // Room control
 inline dStage_roomDt_c* dComIfGp_roomControl_getStatusRoomDt(int /*room_no*/) { return nullptr; }
 
@@ -81,18 +92,45 @@ inline u16 dComIfGs_getLife()    { return 0; }
 inline u16 dComIfGs_getMaxLife() { return 0; }
 // Item table (no data on PC)
 inline void* dComIfGp_getItemTable() { return nullptr; }
-// Start stage name
-inline const char* dComIfGp_getStartStageName() { return ""; }
 // Room control helpers
 inline bool dComIfGp_roomControl_checkStatusFlag(int /*roomNo*/, u8 /*flag*/) { return false; }
 
-// Particle stubs — all return nullptr / 0 / no-op on PC
-// u32-handle variants (particles tracked by handle)
-inline u32 dComIfGp_particle_set(u32 /*h*/, u16 /*id*/, const cXyz* /*pos*/,
-                                  const csXyz* /*rot*/, const cXyz* /*scale*/) { return 0; }
-inline u32 dComIfGp_particle_set(u32 /*h*/, u16 /*id*/, const cXyz* /*pos*/,
-                                  const dKy_tevstr_c* /*tev*/) { return 0; }
-// JPABaseEmitter* variants
+// Particle stubs — all return nullptr / no-op on PC
+inline u32 dComIfGp_particle_set(u32 /*key*/, u16 /*efxId*/, const cXyz* /*pos*/,
+                                  const dKy_tevstr_c* /*tev*/, const csXyz* /*rot*/,
+                                  const cXyz* /*scale*/, u8 /*alpha*/,
+                                  dPa_levelEcallBack* /*cb*/, s8 /*roomNo*/,
+                                  const GXColor* /*prim*/, const GXColor* /*env*/,
+                                  const cXyz* /*particleScale*/) {
+    return 0;
+}
+inline u32 dComIfGp_particle_set(u32 /*key*/, u16 /*efxId*/, const cXyz* /*pos*/,
+                                  const csXyz* /*rot*/, const cXyz* /*scale*/,
+                                  u8 /*alpha*/, dPa_levelEcallBack* /*cb*/,
+                                  s8 /*roomNo*/, const GXColor* /*prim*/,
+                                  const GXColor* /*env*/,
+                                  const cXyz* /*particleScale*/) {
+    return 0;
+}
+inline JPABaseEmitter* dComIfGp_particle_set(u16 /*efxId*/, const cXyz* /*pos*/,
+                                              const dKy_tevstr_c* /*tev*/,
+                                              const csXyz* /*rot*/,
+                                              const cXyz* /*scale*/, u8 /*alpha*/,
+                                              dPa_levelEcallBack* /*cb*/,
+                                              s8 /*roomNo*/, const GXColor* /*prim*/,
+                                              const GXColor* /*env*/,
+                                              const cXyz* /*particleScale*/) {
+    return nullptr;
+}
+inline JPABaseEmitter* dComIfGp_particle_set(u16 /*efxId*/, const cXyz* /*pos*/,
+                                              const csXyz* /*rot*/,
+                                              const cXyz* /*scale*/, u8 /*alpha*/,
+                                              dPa_levelEcallBack* /*cb*/,
+                                              s8 /*roomNo*/, const GXColor* /*prim*/,
+                                              const GXColor* /*env*/,
+                                              const cXyz* /*particleScale*/) {
+    return nullptr;
+}
 inline JPABaseEmitter* dComIfGp_particle_set(u16, const cXyz*, const csXyz*, const cXyz*) {
     return nullptr;
 }
@@ -101,9 +139,13 @@ inline JPABaseEmitter* dComIfGp_particle_set(u16, const cXyz*, const dKy_tevstr_
     return nullptr;
 }
 // Variant used by fopEn_enemy_c ball model effects
-inline JPABaseEmitter* dComIfGp_particle_set(u16 /*id*/, u16 /*efxId*/,
-                                              const cXyz* /*pos*/, const dKy_tevstr_c* /*tev*/) {
-    return nullptr;
+inline u32 dComIfGp_particle_set(u32 /*key*/, u16 /*efxId*/, const cXyz* /*pos*/,
+                                  const dKy_tevstr_c* /*tev*/) {
+    return 0;
+}
+inline u32 dComIfGp_particle_set(u32 /*key*/, u16 /*efxId*/, const cXyz* /*pos*/,
+                                  const csXyz* /*rot*/, const cXyz* /*scale*/) {
+    return 0;
 }
 inline void dComIfGp_particle_setSimple(u16, const cXyz*, u8, _GXColor&, float) {}
 inline void dComIfGp_particle_setSimple(u16, const cXyz*, u8, _GXColor&, float,
@@ -129,21 +171,20 @@ inline void* dComIfG_getObjectRes(const char* /*name*/, int /*idx*/) { return nu
 extern JKRExpHeap* zeldaHeap;
 extern JKRExpHeap* gameHeap;
 extern JKRExpHeap* archiveHeap;
-inline JKRExpHeap* mDoExt_getZeldaHeap()   { return zeldaHeap; }
-inline JKRExpHeap* mDoExt_getGameHeap()    { return gameHeap; }
-inline JKRExpHeap* mDoExt_getArchiveHeap() { return archiveHeap; }
-inline JKRExpHeap* mDoExt_getJ2dHeap()     { return nullptr; }
+JKRExpHeap* mDoExt_getZeldaHeap();
+JKRExpHeap* mDoExt_getGameHeap();
+JKRExpHeap* mDoExt_getArchiveHeap();
+JKRExpHeap* mDoExt_getJ2dHeap();
 inline JKRExpHeap* mDoExt_getHostIOHeap()   { return nullptr; }
-inline JKRExpHeap* mDoExt_getCommandHeap() { return nullptr; }
+JKRExpHeap* mDoExt_getCommandHeap();
 inline JKRHeap*    mDoExt_setCurrentHeap(JKRHeap* h) { return JKRSetCurrentHeap(h); }
-inline JKRExpHeap* mDoExt_getAssertHeap()  { return nullptr; }
 
 // f_op actor manager init — defined in f_op_actor_mng.cpp
 void fopAcM_initManager();
 
 // Audio (defined in m_Do_audio.cpp / port stubs)
 extern JKRSolidHeap* g_mDoAud_audioHeap;
-inline void mDoAud_Execute() {}
+void mDoAud_Execute();
 
 // -----------------------------------------------------------------------
 // Message / heap lock stubs — used by f_op_msg_mng.cpp
@@ -166,6 +207,13 @@ inline dMsgObject_c* dComIfGp_getMsgObjectClass() { return nullptr; }
 // Attention system accessor — returns nullptr; dAttention_c defined in d_camera.h
 class dAttention_c;
 inline dAttention_c* dComIfGp_getAttention() { return nullptr; }
+inline u32 dComIfGs_getPEventBit() { return 0; }
+
+// Resource archives
+inline JKRArchive* dComIfGp_getCardIconResArchive() {
+    static JKRArchive archive;
+    return &archive;
+}
 
 // 2D draw list submission — no-op on PC (no J2DGraph rendering)
 inline void dComIfGd_set2DOpa(dDlst_base_c* /*dlst*/)    {}

@@ -54,9 +54,9 @@ public:
     static OSTick    getVideoLastTick() { return sVideoLastTick; }
 
 private:
-    static JUTVideo* sManager;
-    static OSTick    sVideoLastTick;
-    static OSTick    sVideoInterval;
+    inline static JUTVideo* sManager = nullptr;
+    inline static OSTick    sVideoLastTick = 0;
+    inline static OSTick    sVideoInterval = 0;
 
     GXRenderModeObj* mRenderObj;
 };

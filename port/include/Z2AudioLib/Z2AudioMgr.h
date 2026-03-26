@@ -9,6 +9,10 @@
 #define Z2AUDIOMGR_H
 
 #include "JSystem/JAudio2/JASGadget.h"
+#include "JSystem/JKernel/JKRHeap.h"
+
+class JKRArchive;
+class JKRSolidHeap;
 
 class Z2AudioMgr : public JASGlobalInstance<Z2AudioMgr> {
 public:
@@ -18,9 +22,19 @@ public:
         return JASGlobalInstance<Z2AudioMgr>::getInstance();
     }
 
-    void resetProcess(int, bool)  {}
-    bool checkFirstWaves()        { return true; }
-    void loadStaticWaves()        {}
+    void init(JKRSolidHeap* /*heap*/, u32 /*memSize*/, void* /*baaData*/, JKRArchive* /*seqArc*/) {}
+    void setEventBit(u32 /*bits*/) {}
+    void gframeProcess() {}
+    void setOutputMode(u32 /*mode*/) {}
+    void setSceneName(char* /*spot*/, s32 /*room*/, s32 /*layer*/) {}
+    void load1stDynamicWave() {}
+    void loadStaticWaves() {}
+    void setFadeOutStart(u8 /*param*/) {}
+    void setFadeInStart(u8 /*param*/) {}
+    void resetProcess(u32 /*param*/, bool /*hard*/) {}
+    void resetRecover() {}
+    bool hasReset() const { return true; }
+    bool checkFirstWaves() { return true; }
 };
 
 inline Z2AudioMgr* Z2GetAudioMgr() {

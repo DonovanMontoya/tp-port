@@ -21,6 +21,7 @@ class mDoAud_zelAudio_c : public Z2AudioMgr {
 public:
     mDoAud_zelAudio_c() : Z2AudioMgr() {}
     ~mDoAud_zelAudio_c() {}
+    void reset();
 
     static void onInitFlag()   { mInitFlag  = true;  }
     static void onResetFlag()  { mResetFlag = true;  }
@@ -45,6 +46,8 @@ void mDoAud_setSceneName(char const* spot, s32 room, s32 layer);
 s32  mDoAud_load1stDynamicWave();
 void mDoAud_setFadeInStart(u8 param_0);
 void mDoAud_setFadeOutStart(u8 param_0);
+inline void mDoAud_setOutputMode(u32 mode) { Z2AudioMgr::getInterface()->setOutputMode(mode); }
+inline void mDoAud_loadStaticWaves() { Z2AudioMgr::getInterface()->loadStaticWaves(); }
 
 // All sound/link calls are no-ops on PC ----------------------------------------
 inline void mDoAud_seDeleteObject(Vec*)        {}

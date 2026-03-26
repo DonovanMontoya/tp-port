@@ -5,6 +5,7 @@
  * All methods are no-ops; no GX framebuffer, no OS exception vectors on PC.
  */
 #include "JSystem/JKernel/JKRThread.h"
+#include "JSystem/JUtility/JUTGamePad.h"
 #include "JSystem/JSupport/JSUList.h"
 #include "port/types.h"
 #include <cstdarg>
@@ -12,7 +13,6 @@
 // Forward declare GC types we can't use on PC
 class JUTConsole;
 class JUTDirectPrint;
-class JUTGamePad;
 struct OSContext;
 typedef unsigned short OSError;
 typedef void (*JUTExceptionUserCallback)(u16, OSContext*, u32, u32);

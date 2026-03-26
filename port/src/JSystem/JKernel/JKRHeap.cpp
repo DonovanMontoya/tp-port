@@ -8,6 +8,7 @@
 // then set them up via a lazy accessor to avoid SIOF.
 JKRHeap* JKRHeap::sSystemHeap  = nullptr;
 JKRHeap* JKRHeap::sCurrentHeap = nullptr;
+JKRHeap* JKRHeap::sRootHeap2   = nullptr;
 
 // Allocate the root heap on first use so static init order is irrelevant.
 static JKRExpHeap* getOrCreateRootHeap() {
@@ -19,6 +20,7 @@ static JKRExpHeap* getOrCreateRootHeap() {
         s_root = new(s_buf) JKRExpHeap(0, nullptr, false);
         JKRHeap::sSystemHeap  = s_root;
         JKRHeap::sCurrentHeap = s_root;
+        JKRHeap::sRootHeap2   = s_root;
     }
     return s_root;
 }

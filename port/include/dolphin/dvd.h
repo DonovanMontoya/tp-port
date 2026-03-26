@@ -92,10 +92,14 @@ BOOL  DVDReadAsyncPrio(DVDFileInfo* fileInfo, void* addr, s32 length, s32 offset
 BOOL  DVDCancelAsync(DVDCommandBlock* block, DVDCBCallback callback);
 s32   DVDGetFileSize(DVDFileInfo* fileInfo);
 BOOL  DVDConvertPathToEntryNum(const char* path);
+static inline s32 DVDConvertPathToEntrynum(const char* path) {
+    return DVDConvertPathToEntryNum(path) ? 0 : -1;
+}
 
 BOOL  DVDOpenDir(const char* dirName, DVDDir* dir);
 BOOL  DVDReadDir(DVDDir* dir, DVDDirEntry* entry);
 BOOL  DVDCloseDir(DVDDir* dir);
+BOOL  DVDChangeDir(const char* dirName);
 BOOL  DVDChangeDiskAsync(DVDDiskID* id, DVDCBCallback callback);
 
 // Disk ID access

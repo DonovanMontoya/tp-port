@@ -10,6 +10,7 @@
 
 #include "port/types.h"
 #include "JSystem/JKernel/JKRHeap.h"
+#include "dolphin/os/OSThread.h"
 
 class JKRArchive;
 class JKRAssertHeap;
@@ -73,6 +74,28 @@ namespace mDoExt {
 inline JKRExpHeap* getHeap(int /*tag*/) { return nullptr; }
 
 } // namespace mDoExt
+
+OSThread* mDoExt_GetCurrentRunningThread();
+extern JKRExpHeap* zeldaHeap;
+extern JKRExpHeap* gameHeap;
+extern JKRExpHeap* archiveHeap;
+extern JKRExpHeap* commandHeap;
+extern JKRExpHeap* dbPrintHeap;
+extern JKRAssertHeap* assertHeap;
+JKRExpHeap* mDoExt_getZeldaHeap();
+JKRExpHeap* mDoExt_getGameHeap();
+JKRExpHeap* mDoExt_getArchiveHeap();
+JKRExpHeap* mDoExt_getArchiveHeapPtr();
+JKRExpHeap* mDoExt_getCommandHeap();
+JKRExpHeap* mDoExt_getDbPrintHeap();
+JKRExpHeap* mDoExt_getJ2dHeap();
+JKRExpHeap* mDoExt_createDbPrintHeap(u32 heapSize, JKRHeap* parentHeap);
+JKRAssertHeap* mDoExt_createAssertHeap(JKRHeap* parentHeap);
+JKRExpHeap* mDoExt_createCommandHeap(u32 heapSize, JKRHeap* parentHeap);
+JKRExpHeap* mDoExt_createArchiveHeap(u32 heapSize, JKRHeap* parentHeap);
+JKRExpHeap* mDoExt_createJ2dHeap(u32 heapSize, JKRHeap* parentHeap);
+JKRExpHeap* mDoExt_createZeldaHeap(u32 heapSize, JKRHeap* parentHeap);
+JKRExpHeap* mDoExt_createGameHeap(u32 heapSize, JKRHeap* parentHeap);
 
 // J3D model factory — returns nullptr on PC (no GX renderer)
 inline J3DModel* mDoExt_J3DModel__create(J3DModelData* /*md*/, u32 /*flags*/, u32 /*param*/) {

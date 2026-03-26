@@ -42,4 +42,5 @@ public:
     static void* getSDevice() { return nullptr; }
     static void  setMessageCount(int /*n*/) {}
     static int   getMessageCount()          { return 0; }
+    static void  setVisible(bool /*visible*/) {}
 };

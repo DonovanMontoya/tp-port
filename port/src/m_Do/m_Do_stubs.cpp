@@ -5,23 +5,90 @@
  * GC-specific dependencies to compile on PC; this file supplies the
  * minimum set of symbols that c_API*.cpp pulls in at link time.
  */
+#include <cstdarg>
+#include <cstdio>
+
 #include "m_Do/m_Do_controller_pad.h"
+#include "JSystem/JFramework/JFWSystem.h"
+#include "JSystem/JUtility/JUTDbPrint.h"
+#include "JSystem/JUtility/JUTException.h"
+#include "JSystem/JUtility/JUTGamePad.h"
+#include "Z2AudioLib/Z2AudioMgr.h"
+#include "Z2AudioLib/Z2SoundMgr.h"
+#include "JSystem/JKernel/JKRAram.h"
+#include "JSystem/JKernel/JKRDvdRipper.h"
+#include "JSystem/JKernel/JKRAramStream.h"
+#include "JSystem/JKernel/JKRDvdAramRipper.h"
 
-// ---------------------------------------------------------------------------
-// mDoCPd_c static data
-// ---------------------------------------------------------------------------
-JUTGamePad* mDoCPd_c::m_gamePad[4]       = {};
-interface_of_controller_pad mDoCPd_c::m_cpadInfo[4]      = {};
-interface_of_controller_pad mDoCPd_c::m_debugCpadInfo[4] = {};
+template <>
+Z2AudioMgr* JASGlobalInstance<Z2AudioMgr>::sInstance = nullptr;
 
-// ---------------------------------------------------------------------------
-// mDoCPd_c methods
-// ---------------------------------------------------------------------------
-void mDoCPd_c::create()       {}
-void mDoCPd_c::read()         {}
-void mDoCPd_c::recalibrate()  {}
-void mDoCPd_c::convert(interface_of_controller_pad* /*dst*/, JUTGamePad* /*src*/) {}
-void mDoCPd_c::LRlockCheck(interface_of_controller_pad* /*p*/) {}
+void JUTGamePad::CButton::clear() {
+    mButton = 0;
+    mTrigger = 0;
+    mRelease = 0;
+    mAnalogA = 0;
+    mAnalogB = 0;
+    mAnalogL = 0;
+    mAnalogR = 0;
+    mAnalogLf = 0.0f;
+    mAnalogRf = 0.0f;
+    mRepeat = 0;
+    mRepeatCount = 0;
+    mRepeatStart = 0;
+    mRepeatMask = 0;
+    mRepeatDelay = 0;
+    mRepeatRate = 0;
+}
+
+void JUTGamePad::CStick::clear() {
+    mPosX = 0.0f;
+    mPosY = 0.0f;
+    mValue = 0.0f;
+    mAngle = 0;
+    mRawX = 0;
+    mRawY = 0;
+}
+
+void JUTGamePad::CRumble::clear(JUTGamePad* /*pad*/) {
+    mFrame = 0;
+    mLength = 0;
+    mPattern = nullptr;
+    mFrameCount = 0;
+    field_0x10 = nullptr;
+}
+
+JUTGamePad::JUTGamePad(EPadPort port) : mRumble(this), mLink(this) {
+    mPortNum = port;
+    mErrorStatus = 0;
+    mPadRecord = nullptr;
+    mPadReplay = nullptr;
+    mButtonReset.mReset = false;
+    mResetHoldStartTime = 0;
+    field_0xa8 = 0;
+}
+
+JUTGamePad::~JUTGamePad() {}
+
+u32 JUTGamePad::read() {
+    return 0;
+}
+
+void JUTGamePad::clearForReset() {
+    C3ButtonReset::sResetOccurred = false;
+    C3ButtonReset::sResetSwitchPushing = false;
+}
+
+JUTGamePad* JUTGamePad::getGamePad(int port) {
+    if (port < 0 || port >= 4) {
+        return nullptr;
+    }
+    return mDoCPd_c::m_gamePad[port];
+}
+
+void JUTGamePad::CRumble::setEnabled(u32 mask) {
+    mEnabled = mask;
+}
 
 // ---------------------------------------------------------------------------
 // mDoGph_ graphics stubs (referenced from c_API.cpp function pointer table)
@@ -47,16 +114,52 @@ void mDoGph_BlankingOFF() {}
 // m_Do_ext heap globals (normally set up by mDoMch_Create / m_Do_ext.cpp)
 // ---------------------------------------------------------------------------
 #include "JSystem/JKernel/JKRHeap.h"
+#include "JSystem/JKernel/JKRAssertHeap.h"
 JKRExpHeap* zeldaHeap   = nullptr;
 JKRExpHeap* gameHeap    = nullptr;
 JKRExpHeap* archiveHeap = nullptr;
+JKRExpHeap* commandHeap = nullptr;
+JKRExpHeap* dbPrintHeap = nullptr;
+JKRAssertHeap* assertHeap = nullptr;
+JKRExpHeap* mDoExt_getZeldaHeap() { return zeldaHeap; }
+JKRExpHeap* mDoExt_getGameHeap() { return gameHeap; }
+JKRExpHeap* mDoExt_getArchiveHeap() { return archiveHeap; }
+JKRExpHeap* mDoExt_getArchiveHeapPtr() { return archiveHeap; }
+JKRExpHeap* mDoExt_getCommandHeap() { return commandHeap; }
+JKRExpHeap* mDoExt_getDbPrintHeap() { return dbPrintHeap; }
+JKRExpHeap* mDoExt_getJ2dHeap() { return nullptr; }
+JKRExpHeap* mDoExt_createDbPrintHeap(u32 heapSize, JKRHeap* parentHeap) {
+    dbPrintHeap = JKRExpHeap::create(heapSize, parentHeap, false);
+    return dbPrintHeap;
+}
+JKRAssertHeap* mDoExt_createAssertHeap(JKRHeap* parentHeap) {
+    assertHeap = JKRAssertHeap::create(0x10000, parentHeap, false);
+    return assertHeap;
+}
+JKRExpHeap* mDoExt_createCommandHeap(u32 heapSize, JKRHeap* parentHeap) {
+    commandHeap = JKRExpHeap::create(heapSize, parentHeap, false);
+    return commandHeap;
+}
+JKRExpHeap* mDoExt_createArchiveHeap(u32 heapSize, JKRHeap* parentHeap) {
+    archiveHeap = JKRExpHeap::create(heapSize, parentHeap, false);
+    return archiveHeap;
+}
+JKRExpHeap* mDoExt_createJ2dHeap(u32 heapSize, JKRHeap* parentHeap) {
+    return JKRExpHeap::create(heapSize, parentHeap, false);
+}
+JKRExpHeap* mDoExt_createZeldaHeap(u32 heapSize, JKRHeap* parentHeap) {
+    zeldaHeap = JKRExpHeap::create(heapSize, parentHeap, false);
+    return zeldaHeap;
+}
+JKRExpHeap* mDoExt_createGameHeap(u32 heapSize, JKRHeap* parentHeap) {
+    gameHeap = JKRExpHeap::create(heapSize, parentHeap, false);
+    return gameHeap;
+}
+OSThread* mDoExt_GetCurrentRunningThread() { return OSGetCurrentThread(); }
 
 // ---------------------------------------------------------------------------
 // m_Do_audio stubs
 // ---------------------------------------------------------------------------
-#include "JSystem/JKernel/JKRHeap.h"
-JKRSolidHeap* g_mDoAud_audioHeap = nullptr;
-
 // ---------------------------------------------------------------------------
 // DynamicLink / REL stubs
 // ---------------------------------------------------------------------------
@@ -69,31 +172,12 @@ JKRSolidHeap* g_mDoAud_audioHeap = nullptr;
 dComIfG_gameInfo_c g_dComIfG_gameInfo = {};
 
 // ---------------------------------------------------------------------------
-// m_Do_machine stubs
-// ---------------------------------------------------------------------------
-#include "m_Do/m_Do_machine.h"
-int  mDoMch_Create()       { return 1; }
-void mDoMch_HeapCheckAll() {}
-BOOL mDoMch_IsProgressiveMode() { return FALSE; }
-void mDoMch_HeapFreeFillAll()   {}
-
-// Zero-initialize then fill the fields we care about on PC
-GXRenderModeObj g_ntscZeldaProg = {};
-GXRenderModeObj* mDoMch_render_c::mRenderModeObj = &g_ntscZeldaProg;
-
-namespace mDoMch {
-    u8 mDebugFill       = 0;
-    u8 mDebugFillNotUse = 0;
-}
-
-// ---------------------------------------------------------------------------
-// m_Do_dvd_thread stubs
+// m_Do_dvd_thread non-debug statics
 // ---------------------------------------------------------------------------
 #include "m_Do/m_Do_dvd_thread.h"
-bool mDoDvdThd::SyncWidthSound = false;
-mDoDvdThd_callback_c* mDoDvdThd_callback_c::create(mDoDvdThd_callback_func /*f*/, void* /*arg*/) { return nullptr; }
-mDoDvdThd_toMainRam_c* mDoDvdThd_toMainRam_c::create(char const* /*path*/, u8 /*dir*/, JKRHeap* /*heap*/) { return nullptr; }
-mDoDvdThd_mountXArchive_c* mDoDvdThd_mountXArchive_c::create(char const* /*path*/, u8 /*dir*/, JKRArchive::EMountMode /*mode*/, JKRHeap* /*heap*/) { return nullptr; }
+u8 mDoDvdThd::verbose = 0;
+u8 mDoDvdThd::DVDLogoMode = 0;
+u8 mDoDvdThd::Report_DVDRead = 0;
 
 // ---------------------------------------------------------------------------
 // f_ap_game stubs — fapGm_Create/Execute/g_HIO/ctor now provided by
@@ -101,27 +185,141 @@ mDoDvdThd_mountXArchive_c* mDoDvdThd_mountXArchive_c::create(char const* /*path*
 // gates behind #if DEBUG need to be supplied here for non-debug builds.
 // ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// m_Do_Reset stubs
-// ---------------------------------------------------------------------------
-#include "m_Do/m_Do_Reset.h"
-mDoRstData* mDoRst::mResetData = nullptr;
-void mDoRst_reset(int, u32, int) {}
-void mDoRst_resetCallBack(int, void*) {}
-
-// ---------------------------------------------------------------------------
-// m_Do_MemCard stubs
-// ---------------------------------------------------------------------------
-#include "m_Do/m_Do_MemCard.h"
-mDoMemCd_Ctrl_c::mDoMemCd_Ctrl_c() {}
-mDoMemCd_Ctrl_c g_mDoMemCd_control;
-void mDoMemCd_Ctrl_c::update() {}
-
-// ---------------------------------------------------------------------------
 // JFWSystem static data
 // ---------------------------------------------------------------------------
-#include "JSystem/JFramework/JFWSystem.h"
+JKRExpHeap* JFWSystem::rootHeap = nullptr;
+JKRExpHeap* JFWSystem::systemHeap = nullptr;
+JKRThread* JFWSystem::mainThread = nullptr;
+JUTDbPrint* JFWSystem::debugPrint = nullptr;
+JUTResFont* JFWSystem::systemFont = nullptr;
+JUTConsoleManager* JFWSystem::systemConsoleManager = nullptr;
 JUTConsole* JFWSystem::systemConsole = nullptr;
+bool JFWSystem::sInitCalled = false;
+s32 JFWSystem::CSetUpParam::maxStdHeaps = 1;
+u32 JFWSystem::CSetUpParam::sysHeapSize = 0;
+u32 JFWSystem::CSetUpParam::fifoBufSize = 0;
+u32 JFWSystem::CSetUpParam::aramAudioBufSize = 0;
+u32 JFWSystem::CSetUpParam::aramGraphBufSize = 0;
+s32 JFWSystem::CSetUpParam::streamPriority = 0;
+s32 JFWSystem::CSetUpParam::decompPriority = 0;
+s32 JFWSystem::CSetUpParam::aPiecePriority = 0;
+ResFONT* JFWSystem::CSetUpParam::systemFontRes = nullptr;
+const GXRenderModeObj* JFWSystem::CSetUpParam::renderMode = nullptr;
+u32 JFWSystem::CSetUpParam::exConsoleBufferSize = 0;
+
+JUTException* JUTException::sErrorManager = nullptr;
+JUTExceptionUserCallback JUTException::sPreUserCallback = nullptr;
+JUTExceptionUserCallback JUTException::sPostUserCallback = nullptr;
+void* JUTException::sConsoleBuffer = nullptr;
+u32 JUTException::sConsoleBufferSize = 0;
+JUTConsole* JUTException::sConsole = nullptr;
+
+// ---------------------------------------------------------------------------
+// JUTConsole C ABI helpers
+// ---------------------------------------------------------------------------
+static JUTConsole* sReportConsole = nullptr;
+static JUTConsole* sWarningConsole = nullptr;
+
+extern "C" void JUTConsole_print_f_va_(JUTConsole* /*console*/, const char* fmt, va_list args) {
+    if (fmt) {
+        ::vprintf(fmt, args);
+    }
+}
+
+extern "C" void JUTSetReportConsole(JUTConsole* console) {
+    sReportConsole = console;
+}
+
+extern "C" JUTConsole* JUTGetReportConsole() {
+    return sReportConsole;
+}
+
+extern "C" void JUTSetWarningConsole(JUTConsole* console) {
+    sWarningConsole = console;
+}
+
+extern "C" JUTConsole* JUTGetWarningConsole() {
+    return sWarningConsole;
+}
+
+extern "C" void JUTWarningConsole_f_va(const char* fmt, va_list args) {
+    if (fmt) {
+        ::vprintf(fmt, args);
+    }
+}
+
+extern "C" void JUTReportConsole_f_va(const char* fmt, va_list args) {
+    if (fmt) {
+        ::vprintf(fmt, args);
+    }
+}
+
+extern "C" void JUTReportConsole_f(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    JUTReportConsole_f_va(fmt, args);
+    va_end(args);
+}
+
+extern "C" void JUTWarningConsole(const char* message) {
+    if (message) {
+        ::printf("%s", message);
+    }
+}
+
+extern "C" void JUTWarningConsole_f(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    JUTWarningConsole_f_va(fmt, args);
+    va_end(args);
+}
+
+extern "C" void JUTReportConsole(const char* message) {
+    if (message) {
+        ::printf("%s", message);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// JUTGamePad C3ButtonReset static data
+// ---------------------------------------------------------------------------
+u32 JUTGamePad::C3ButtonReset::sResetPattern = 0;
+u32 JUTGamePad::C3ButtonReset::sResetMaskPattern = 0;
+callbackFn JUTGamePad::C3ButtonReset::sCallback = nullptr;
+void* JUTGamePad::C3ButtonReset::sCallbackArg = nullptr;
+OSTime JUTGamePad::C3ButtonReset::sThreshold = 0;
+s32 JUTGamePad::C3ButtonReset::sResetOccurredPort = -1;
+bool JUTGamePad::C3ButtonReset::sResetOccurred = false;
+bool JUTGamePad::C3ButtonReset::sResetSwitchPushing = false;
+JSUList<JUTGamePad> JUTGamePad::mPadList(false);
+bool JUTGamePad::mListInitialized = false;
+PADStatus JUTGamePad::mPadStatus[4] = {};
+JUTGamePad::CButton JUTGamePad::mPadButton[4] = {};
+JUTGamePad::CStick JUTGamePad::mPadMStick[4] = {};
+JUTGamePad::CStick JUTGamePad::mPadSStick[4] = {};
+JUTGamePad::EStickMode JUTGamePad::sStickMode = JUTGamePad::EStickMode1;
+int JUTGamePad::sClampMode = JUTGamePad::EClampStick;
+u8 JUTGamePad::mPadAssign[4] = {};
+u32 JUTGamePad::sSuppressPadReset = 0;
+s32 JUTGamePad::sAnalogMode = 0;
+u32 JUTGamePad::sRumbleSupported = 0;
+u32 JUTGamePad::CRumble::sChannelMask[4] = {0, 0, 0, 0};
+u8 JUTGamePad::CRumble::mStatus[4] = {0, 0, 0, 0};
+u32 JUTGamePad::CRumble::mEnabled = 0;
+f32 JUTGamePad::CStick::sPressPoint = 0.5f;
+f32 JUTGamePad::CStick::sReleasePoint = 0.25f;
+
+JKRAram* JKRAram::sAramObject = nullptr;
+u32 JKRAram::sSZSBufferSize = 0x400;
+OSMessage JKRAram::sMessageBuffer[4] = {};
+OSMessageQueue JKRAram::sMessageQueue = {};
+JSUList<JKRAMCommand> JKRAram::sAramCommandList(false);
+u32 JKRDvdRipper::sSZSBufferSize = 0x400;
+u32 JKRDvdAramRipper::sSZSBufferSize = 0x400;
+bool JKRDvdAramRipper::errorRetry = false;
+JSUList<JKRADCommand> JKRDvdAramRipper::sDvdAramAsyncList(false);
+
+void JKRAramStream::setTransBuffer(u8* /*buffer*/, u32 /*bufferSize*/, JKRHeap* /*heap*/) {}
 
 // ---------------------------------------------------------------------------
 // fapGm_HIO_c stubs — constructor + static members

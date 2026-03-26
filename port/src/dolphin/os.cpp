@@ -45,43 +45,6 @@ void* OSGetMEM2ArenaHi(void) { return nullptr; }
 void  OSSetMEM2ArenaLo(void* /*lo*/) {}
 void  OSSetMEM2ArenaHi(void* /*hi*/) {}
 
-// -----------------------------------------------------------------------
-// Reporting
-// -----------------------------------------------------------------------
-void OSReport(const char* fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    fputs("[GC] ", stderr);
-    vfprintf(stderr, fmt, args);
-    va_end(args);
-}
-
-void OSReport_Error(const char* fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    fputs("[GC ERR] ", stderr);
-    vfprintf(stderr, fmt, args);
-    va_end(args);
-}
-
-void OSReport_Warning(const char* fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    fputs("[GC WRN] ", stderr);
-    vfprintf(stderr, fmt, args);
-    va_end(args);
-}
-
-void OSPanic(const char* file, int line, const char* fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    fprintf(stderr, "[GC PANIC] %s:%d: ", file, line);
-    vfprintf(stderr, fmt, args);
-    fputc('\n', stderr);
-    va_end(args);
-    abort();
-}
-
 void OSFatal(u32 /*fg*/, u32 /*bg*/, const char* msg) {
     fprintf(stderr, "[GC FATAL] %s\n", msg);
     abort();

@@ -29,11 +29,18 @@ static void GLAPIENTRY GLDebugCallback(GLenum /*src*/, GLenum type, GLuint /*id*
 namespace tp::window {
 
 bool Init(const Config& cfg) {
+    tp::log::info("window::Init begin");
     glfwSetErrorCallback(GLFWErrorCallback);
+#ifdef __APPLE__
+    glfwInitHint(GLFW_COCOA_CHDIR_RESOURCES, GLFW_FALSE);
+    glfwInitHint(GLFW_COCOA_MENUBAR, GLFW_FALSE);
+#endif
+    tp::log::info("Calling glfwInit");
     if (!glfwInit()) {
         tp::log::error("glfwInit failed");
         return false;
     }
+    tp::log::info("glfwInit succeeded");
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
@@ -45,21 +52,26 @@ bool Init(const Config& cfg) {
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     GLFWmonitor* monitor = cfg.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
+    tp::log::info("Calling glfwCreateWindow");
     sWindow = glfwCreateWindow(cfg.width, cfg.height, cfg.title, monitor, nullptr);
     if (!sWindow) {
         tp::log::error("glfwCreateWindow failed");
         glfwTerminate();
         return false;
     }
+    tp::log::info("glfwCreateWindow succeeded");
 
+    tp::log::info("Making GL context current");
     glfwMakeContextCurrent(sWindow);
     glfwSwapInterval(cfg.vsync ? 1 : 0);
 
+    tp::log::info("Loading GL via glad");
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         tp::log::error("gladLoadGLLoader failed");
         glfwTerminate();
         return false;
     }
+    tp::log::info("gladLoadGLLoader succeeded");
 
     // Enable debug output
     glEnable(GL_DEBUG_OUTPUT);

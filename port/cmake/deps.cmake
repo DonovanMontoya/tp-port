@@ -4,6 +4,13 @@
 # -----------------------------------------------------------------------
 include(FetchContent)
 
+# CMake 4 removed compatibility with projects that still declare
+# cmake_minimum_required(VERSION 3.0). glad v0.1.36 still does that, so
+# lower the policy floor for fetched subprojects to keep configure working.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 4.0)
+  set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+endif()
+
 # GLFW — windowing & OpenGL context
 FetchContent_Declare(glfw
   GIT_REPOSITORY https://github.com/glfw/glfw.git
@@ -26,6 +33,7 @@ set(GLAD_API          "gl=4.5" CACHE STRING "" FORCE)
 set(GLAD_GENERATOR    "c"      CACHE STRING "" FORCE)
 set(GLAD_EXTENSIONS   ""       CACHE STRING "" FORCE)
 set(GLAD_SPEC         "gl"     CACHE STRING "" FORCE)
+set(GLAD_REPRODUCIBLE ON       CACHE BOOL   "" FORCE)
 FetchContent_MakeAvailable(glad)
 
 # OpenAL Soft — audio (AX replacement)

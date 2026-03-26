@@ -27,6 +27,8 @@
 extern "C" {
 #endif
 
+#include "dolphin/os/OSThread.h"
+
 // -----------------------------------------------------------------------
 // Init / management
 // -----------------------------------------------------------------------
@@ -45,6 +47,8 @@ void  GXPixModeSync(void);
 void  GXTexModeSync(void);
 GXDrawSyncCallback GXSetDrawSyncCallback(GXDrawSyncCallback cb);
 GXDrawDoneCallback GXSetDrawDoneCallback(GXDrawDoneCallback cb);
+static inline OSThread* GXGetCurrentGXThread(void) { return nullptr; }
+static inline void GXSetCurrentGXThread(void) {}
 
 // -----------------------------------------------------------------------
 // Viewport / scissor

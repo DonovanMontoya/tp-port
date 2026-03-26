@@ -16,15 +16,15 @@
 extern "C" {
 #endif
 
-VIRetraceCallback VISetPreRetraceCallback(VIRetraceCallback cb);
-VIRetraceCallback VISetPostRetraceCallback(VIRetraceCallback cb);
-void VIInit(void);
-void VIWaitForRetrace(void);
-void VIConfigure(const GXRenderModeObj* rm);
-void VIConfigurePan(u16 xOrg, u16 yOrg, u16 width, u16 height);
-void VIFlush(void);
-void VISetNextFrameBuffer(void* fb);
-void VISetNextRightFrameBuffer(void* fb);
+static inline VIRetraceCallback VISetPreRetraceCallback(VIRetraceCallback cb) { return cb; }
+static inline VIRetraceCallback VISetPostRetraceCallback(VIRetraceCallback cb) { return cb; }
+static inline void VIInit(void) {}
+static inline void VIWaitForRetrace(void) {}
+static inline void VIConfigure(const GXRenderModeObj* /*rm*/) {}
+static inline void VIConfigurePan(u16 /*xOrg*/, u16 /*yOrg*/, u16 /*width*/, u16 /*height*/) {}
+static inline void VIFlush(void) {}
+static inline void VISetNextFrameBuffer(void* /*fb*/) {}
+static inline void VISetNextRightFrameBuffer(void* /*fb*/) {}
 
 static inline void  VISetBlack(BOOL black)          { (void)black; }
 static inline void  VISet3D(BOOL threeD)             { (void)threeD; }
