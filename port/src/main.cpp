@@ -48,6 +48,8 @@ static void RunGameLoop() {
 // Entry point
 // -----------------------------------------------------------------------
 #ifdef _WIN32
+#define NOMINMAX          // prevent Windows.h from defining min/max macros
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrev*/,
                    LPSTR /*cmdLine*/, int /*showCmd*/)
