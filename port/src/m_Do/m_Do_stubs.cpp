@@ -26,7 +26,7 @@ void mDoCPd_c::LRlockCheck(interface_of_controller_pad* /*p*/) {}
 // ---------------------------------------------------------------------------
 // mDoGph_ graphics stubs (referenced from c_API.cpp function pointer table)
 // ---------------------------------------------------------------------------
-void mDoGph_Create()      {}
+int  mDoGph_Create()      { return 1; }
 void mDoGph_BeforeOfDraw(){}
 void mDoGph_AfterOfDraw() {}
 void mDoGph_Painter()     {}
@@ -61,7 +61,7 @@ dComIfG_gameInfo_c g_dComIfG_gameInfo = {};
 // ---------------------------------------------------------------------------
 // m_Do_machine stubs
 // ---------------------------------------------------------------------------
-void mDoMch_Create()       {}
+int  mDoMch_Create()       { return 1; }
 void mDoMch_HeapCheckAll() {}
 
 // ---------------------------------------------------------------------------
@@ -98,17 +98,11 @@ void mDoMemCd_Ctrl_c::update() {}
 JUTConsole* JFWSystem::systemConsole = nullptr;
 
 // ---------------------------------------------------------------------------
-// HIO global (mDoHIO_entry_c subclass used in m_Do_main debug code)
+// HIO global — m_Do_main.cpp declares `extern fapGm_HIO_c g_HIO` so the
+// type must match exactly; fapGm_HIO_c is now concrete (genMessage no-op).
 // ---------------------------------------------------------------------------
-#include "m_Do/m_Do_hostIO.h"
-// g_HIO is of type mDoMain_HIO_c which is defined in m_Do_main.cpp.
-// Since we can't include m_Do_main.cpp's private class, just provide the
-// storage using a char buffer of the same size (8 bytes for vtable+pad).
-struct mDoMain_HIO_c_stub { virtual ~mDoMain_HIO_c_stub(){} void* pad[1]; };
-static mDoMain_HIO_c_stub s_HIO_storage;
-// g_HIO is referenced as an opaque global — reinterpret cast is safe
-// since we never call the debug methods in PLATFORM_PC=1 (non-DEBUG) builds.
-mDoHIO_entry_c& g_HIO = reinterpret_cast<mDoHIO_entry_c&>(s_HIO_storage);
+#include "f_ap/f_ap_game.h"
+fapGm_HIO_c g_HIO;
 
 // ---------------------------------------------------------------------------
 // DynamicModuleControlBase stub

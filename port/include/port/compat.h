@@ -165,11 +165,10 @@ inline void* __memcpy(void* d, const void* s, int n) { return memcpy(d, s, (size
 // handled in global.h via #ifdef __MWERKS__.
 
 // -----------------------------------------------------------------------
-// POINTER_ADD for non-GCC compilers (__typeof__ not available in MSVC)
+// POINTER_ADD — global.h uses __typeof__ which MSVC doesn't have.
+// Map __typeof__(x) → decltype(x) so global.h's own macro works on MSVC
+// and we avoid a C4005 redefinition by not defining POINTER_ADD ourselves.
 // -----------------------------------------------------------------------
 #ifdef _MSC_VER
-#  undef  POINTER_ADD
-#  define POINTER_ADD(ptr_, offset_) \
-       reinterpret_cast<decltype(ptr_)>(reinterpret_cast<uintptr_t>(ptr_) + \
-                                        static_cast<uintptr_t>(offset_))
+#  define __typeof__(x) decltype(x)
 #endif
