@@ -21,4 +21,15 @@ public:
 // Alias used by f_op_msg.cpp
 typedef dScnPlay_c dScnPly_c;
 
+// Debug register macros — all zero on PC (no HIO hardware)
+#ifndef TREG_F
+#define TREG_F(i)  (0.0f)
+#endif
+#ifndef IREG_F
+#define IREG_F(i)  (0.0f)
+#endif
+#ifndef AREG_F
+#define AREG_F(i)  (0.0f)
+#endif
+
 #endif /* D_S_D_S_PLAY_H */

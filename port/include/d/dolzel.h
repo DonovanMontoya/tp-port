@@ -53,6 +53,8 @@
 
 // J3D model and animation types — port stubs with minimal class bodies
 #include "JSystem/J3DGraphAnimator/J3DModel.h"
+// J3D view matrix system (provides j3dSys global)
+#include "JSystem/J3DGraphBase/J3DSys.h"
 
 // Forward declarations for other heavy GC subsystems
 class J3DAnmColor;
@@ -61,7 +63,13 @@ class J3DMaterial;
 class J3DTexture;
 struct J3DPacket;
 
-class JPABaseEmitter;
+// JPABaseEmitter — particle emitter stub; setRate() used by fopAcM_effHamonSet
+class JPABaseEmitter {
+public:
+    void setRate(f32) {}
+    void setParticleCallBackID(u8) {}
+    void setGlobalScale2D(f32, f32) {}
+};
 class JPAParticle;
 
 class Z2SoundStarter;

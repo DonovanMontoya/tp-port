@@ -13,12 +13,27 @@
 
 class J3DAnmTextureSRTKey;
 class J3DAnmTevRegKey;
+class J3DMaterial;
+
+// Minimal J3DJoint stub — getMin/getMax used by fopAcM_setCullSizeBox2
+class J3DJoint {
+public:
+    Vec* getMin() { return &mMin; }
+    Vec* getMax() { return &mMax; }
+private:
+    Vec mMin = {};
+    Vec mMax = {};
+};
 
 class J3DModelData {
 public:
     void entryTexMtxAnimator(J3DAnmTextureSRTKey* /*anm*/) {}
     void entryTevRegAnimator(J3DAnmTevRegKey* /*anm*/) {}
     const char* getJointName(u16 /*idx*/) const { return ""; }
+    u16  getMaterialNum()                 const { return 0; }
+    J3DMaterial* getMaterialNodePointer(u16 /*idx*/) const { return nullptr; }
+    J3DJoint*    getJointNodePointer(u16 /*idx*/)    const { return nullptr; }
+    u16  getShapeNum()                    const { return 0; }
 };
 
 class J3DModel {

@@ -12,10 +12,13 @@
 
 class daPy_py_c : public fopAc_ac_c {
 public:
-    // Methods used in f_op_actor_mng.cpp (non-debug paths)
-    static u32  checkNowWolf()   { return 0; }
-    bool checkWolf()             { return false; }
-    bool checkHorseRide()        { return false; }
+    static u32  checkNowWolf()              { return 0; }
+    bool checkWolf()                        { return false; }
+    bool checkHorseRide()                   { return false; }
+    bool checkFrontRoll()                   { return false; }
+    bool checkWolfDash()                    { return false; }
+    void onFrollCrashFlg(u32, BOOL)         {}
+    fpc_ProcID getGrabActorID() const       { return (fpc_ProcID)0xFFFFFFFF; }
 };
 
 // Accessor stubs — player actor is never spawned in our minimal boot

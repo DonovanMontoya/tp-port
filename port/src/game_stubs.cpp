@@ -14,6 +14,9 @@
 #include "d/d_meter2.h"
 #include "d/d_meter2_info.h"
 #include "d/d_msg_object.h"
+#include "JSystem/J3DGraphBase/J3DSys.h"
+#include "m_Do/m_Do_mtx.h"
+#include "m_Do/m_Do_ext.h"
 
 // ---------------------------------------------------------------------------
 // Environment / Kankyo globals
@@ -59,14 +62,8 @@ void dMeter2Info_c::getStringKanji(u32 /*msgId*/, char* /*buf*/,
 dEvt_info_c::dEvt_info_c()  {}
 void dEvt_info_c::beforeProc() {}
 
-// ---------------------------------------------------------------------------
-// Actor manager stubs — defined in f_op_actor_mng.cpp (deferred)
-// Provide minimal no-ops so f_op_actor.cpp links.
-// ---------------------------------------------------------------------------
-s32 fopAcM_cullingCheck(const fopAc_ac_c* /*actor*/) { return 0; }
-s32 fopAcM_delete(fopAc_ac_c* /*actor*/)             { return 1; }
-s32 fopAcM_delete(fpc_ProcID /*id*/)                 { return 1; }
-void fopAcM_DeleteHeap(fopAc_ac_c* /*actor*/)        {}
+// (fopAcM_cullingCheck, fopAcM_delete, fopAcM_DeleteHeap are now defined
+//  in src/f_op/f_op_actor_mng.cpp — removed from stubs)
 
 // ---------------------------------------------------------------------------
 // Suspension system stub (d/actor/d_a_suspend.h: daSus_c)
@@ -83,3 +80,61 @@ void daSus_c::check(fopAc_ac_c* /*actor*/) {}
 
 void JUTGamePad::CRumble::stopPatternedRumble(s16 /*port*/)          {}
 void JUTGamePad::CRumble::stopPatternedRumbleAtThePeriod()            {}
+
+// ---------------------------------------------------------------------------
+// J3DSys global and statics (J3DGraphBase/J3DSys.h)
+// ---------------------------------------------------------------------------
+J3DSys j3dSys;
+Mtx  J3DSys::mCurrentMtx;
+Vec  J3DSys::mCurrentS = {};
+
+// ---------------------------------------------------------------------------
+// mDoMtx_stack_c statics (m_Do/m_Do_mtx.h port stub)
+// ---------------------------------------------------------------------------
+Mtx  mDoMtx_stack_c::now;
+Mtx  mDoMtx_stack_c::buffer[16];
+Mtx* mDoMtx_stack_c::next;
+Mtx* mDoMtx_stack_c::end;
+
+// ---------------------------------------------------------------------------
+// DummyCheckHeap global (m_Do/m_Do_ext.h port stub)
+// ---------------------------------------------------------------------------
+DummyCheckHeap* dch = nullptr;
+
+// ---------------------------------------------------------------------------
+// Background system global — all methods are inline stubs in port/include/d/d_bg_s.h
+// ---------------------------------------------------------------------------
+#include "d/d_bg_s.h"
+#include "d/d_bg_s_lin_chk.h"
+#include "d/d_bg_s_spl_grp_chk.h"
+#include "d/d_bg_s_wtr_chk.h"
+#include "d/d_path.h"
+
+// Background system accessor — returns a static stub dBgS
+static dBgS s_bgsp;
+dBgS& dComIfG_Bgsp() { return s_bgsp; }
+
+// Path helper
+u8 dPath_GetPolyRoomPathVec(cBgS_PolyInfo const&, cXyz*, int*) { return 0; }
+
+// daTagStream_c static member
+#include "d/actor/d_a_tag_stream.h"
+daTagStream_c* daTagStream_c::m_top = nullptr;
+int daTagStream_c::checkArea(cXyz const*) { return 0; }
+
+// dEnemyItem_c static member
+#include "d/d_item.h"
+u8* dEnemyItem_c::mData = nullptr;
+
+// ---------------------------------------------------------------------------
+// dComIfGs_onActor — declared non-inline in f_op_actor_mng.h; stub here
+// ---------------------------------------------------------------------------
+void dComIfGs_onActor(int /*bitNo*/, int /*roomNo*/) {}
+
+// ---------------------------------------------------------------------------
+// mDoLib_clipper statics (m_Do/m_Do_lib.h)
+// ---------------------------------------------------------------------------
+#include "m_Do/m_Do_lib.h"
+J3DUClipper mDoLib_clipper::mClipper;
+f32         mDoLib_clipper::mSystemFar  = 100000.0f;
+f32         mDoLib_clipper::mFovyRate   = 1.0f;

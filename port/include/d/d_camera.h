@@ -77,4 +77,9 @@ struct dCamMapToolData {
 // Minimal horse forward declaration (used in dCamera_c sub-state)
 class daHorse_c;
 
+// Camera accessor — returns nullptr on PC (no active camera during stub run)
+// camera_class is defined in f_op/f_op_camera_mng.h, forward-declare here
+class camera_class;
+inline camera_class* dCam_getCamera() { return nullptr; }
+
 #endif /* D_D_CAMERA_H */

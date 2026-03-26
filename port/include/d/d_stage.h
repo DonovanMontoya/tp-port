@@ -47,8 +47,21 @@ struct dStage_roomDt_c {
 struct dStage_roomControl_c {
     static void onNoArcBank() {}
     dStage_roomDt_c* getStatusRoomDt(int /*room_no*/) { return nullptr; }
-    static int getProcID() { return -1; }
+    static int getProcID()               { return -1; }
+    static int getStatusProcID(int /*no*/) { return -1; }
 };
+
+// Object name info — used by dStage_searchName and fopAcM_fastCreate
+struct dStage_objectNameInf {
+    char name[8];
+    s16  procname;
+    s8   argument;
+};
+
+// Object name lookup — returns nullptr on PC (no room data loaded)
+inline dStage_objectNameInf* dStage_searchName(const char* /*name*/) { return nullptr; }
+inline const char* dStage_getName(s16 /*procName*/, s8 /*argument*/) { return "UNKNOWN"; }
+inline const char* dStage_getName2(s16 proc, s8 arg) { return dStage_getName(proc, arg); }
 
 // Camera/arrow data stubs — referenced by d_camera.h (dCamMapToolData members)
 struct stage_camera2_data_class {

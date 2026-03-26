@@ -82,4 +82,25 @@ inline J3DModel* mDoExt_J3DModel__create(J3DModelData* /*md*/, u32 /*flags*/, u3
 // Display list update — no-op on PC
 inline void mDoExt_modelUpdateDL(J3DModel* /*model*/) {}
 
+// Solid heap management stubs — GC memory model not used on PC
+inline JKRSolidHeap* mDoExt_createSolidHeap(s32 /*size*/, JKRHeap* /*heap*/, u32 /*align*/) {
+    return nullptr;
+}
+inline JKRSolidHeap* mDoExt_createSolidHeapFromGame(u32 /*size*/, u32 /*align*/) {
+    return nullptr;
+}
+inline JKRSolidHeap* mDoExt_createSolidHeapFromGameToCurrent(u32 /*size*/, u32 /*align*/) {
+    return nullptr;
+}
+inline void mDoExt_destroySolidHeap(JKRSolidHeap* /*heap*/) {}
+inline u32  mDoExt_adjustSolidHeap(JKRSolidHeap* /*heap*/)  { return 0; }
+
+// Dummy check heap — debug-only feature; null on PC
+class DummyCheckHeap {
+public:
+    JKRHeap* getHeap()        { return nullptr; }
+    void     setHeap(JKRHeap* /*h*/) {}
+};
+extern DummyCheckHeap* dch;
+
 #endif /* M_DO_M_DO_EXT_H */
