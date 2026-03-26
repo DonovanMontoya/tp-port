@@ -337,3 +337,11 @@ void mDoHIO_subRoot_c::updateChild(s8 /*no*/) {}
 
 void mDoHIO_deleteChild(s8 /*no*/) {}
 void mDoHIO_updateChild(s8 /*no*/) {}
+
+// ---------------------------------------------------------------------------
+// mDoDvdHack — DVD entry-number-to-name mapping (no DVD filesystem on PC)
+// ---------------------------------------------------------------------------
+#include "m_Do/m_Do_dvd_thread.h"
+namespace mDoDvdHack {
+    const char* ConvertEntrynumToName(s32 /*entry*/) { return nullptr; }
+}
