@@ -10,6 +10,16 @@
 
 #include "port/types.h"
 
+// Particle callback stubs — no actual particle rendering on PC
+class JPABaseEmitter;
+class JPABaseParticle {};
+
+class JPAParticleCallBack {
+public:
+    virtual ~JPAParticleCallBack() {}
+    virtual void draw(JPABaseEmitter*, JPABaseParticle*) {}
+};
+
 struct dPa_control_c {
     static bool isStatus(int /*flag*/) { return false; }
     static void offStatus(int /*flag*/) {}

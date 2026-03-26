@@ -131,9 +131,12 @@ set(GAME_SOURCES
   # ── Game app framework ───────────────────────────────────────────────
   ${DECOMP_SRC}/f_ap/f_ap_game.cpp
 
-  # ── Scene files (title / logo) ────────────────────────────────────────
+  # ── Scene files ────────────────────────────────────────────────────────
   ${DECOMP_SRC}/d/d_s_title.cpp
   ${DECOMP_SRC}/d/d_s_logo.cpp
+  ${DECOMP_SRC}/d/d_s_menu.cpp
+  # d_s_play.cpp (gameplay scene) deferred — depends on ~80 unsupported subsystems
+  # ${DECOMP_SRC}/d/d_s_play.cpp
 
   # ── Main module ───────────────────────────────────────────────────────
   ${DECOMP_SRC}/m_Do/m_Do_main.cpp

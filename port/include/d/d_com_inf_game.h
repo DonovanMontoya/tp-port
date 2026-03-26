@@ -221,6 +221,12 @@ inline void dComIfGp_setItemTable(void*)                 {}
 inline void dComIfGp_particle_create()                   {}
 inline void dComIfGp_particle_createCommon(void*)        {}
 
+// J3DDrawBuffer accessors — stub returns nullptr (no rendering on PC)
+inline J3DDrawBuffer* dComIfGd_getOpaListBG()            { return nullptr; }
+inline J3DDrawBuffer* dComIfGd_getOpaList()              { return nullptr; }
+inline J3DDrawBuffer* dComIfGd_getXluList()              { return nullptr; }
+inline J3DDrawBuffer* dComIfGd_getOpaListFilter()        { return nullptr; }
+
 // Black color global (used for fade effects)
 extern GXColor g_blackColor;
 
