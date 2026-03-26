@@ -26,7 +26,17 @@ void mDoCPd_c::LRlockCheck(interface_of_controller_pad* /*p*/) {}
 // ---------------------------------------------------------------------------
 // mDoGph_ graphics stubs (referenced from c_API.cpp function pointer table)
 // ---------------------------------------------------------------------------
+// c_API.cpp forward-declares mDoGph_Create() as returning void (wrong), while
+// m_Do_graphic.h (and m_Do_main.cpp) declare it as returning int.  On MSVC
+// the return type is encoded in the mangled name, producing two distinct
+// symbols.  Define the int version and alias the void symbol to it so both
+// TUs link without changing any game source.
 int  mDoGph_Create()      { return 1; }
+#ifdef _MSC_VER
+// ?mDoGph_Create@@YAXXZ  = void __cdecl mDoGph_Create(void)
+// ?mDoGph_Create@@YAHXZ  = int  __cdecl mDoGph_Create(void)
+#pragma comment(linker, "/alternatename:?mDoGph_Create@@YAXXZ=?mDoGph_Create@@YAHXZ")
+#endif
 void mDoGph_BeforeOfDraw(){}
 void mDoGph_AfterOfDraw() {}
 void mDoGph_Painter()     {}
@@ -98,10 +108,59 @@ void mDoMemCd_Ctrl_c::update() {}
 JUTConsole* JFWSystem::systemConsole = nullptr;
 
 // ---------------------------------------------------------------------------
-// HIO global — m_Do_main.cpp declares `extern fapGm_HIO_c g_HIO` so the
-// type must match exactly; fapGm_HIO_c is now concrete (genMessage no-op).
+// fapGm_HIO_c stubs — constructor + static members
 // ---------------------------------------------------------------------------
+// The constructor and all static members live in f_ap/f_ap_game.cpp which is
+// not yet compiled for the port.  Provide the minimum needed to link.
 #include "f_ap/f_ap_game.h"
+
+// Static member definitions (declared in header unconditionally; game source
+// only defines them under #if DEBUG, so we must provide them for non-debug).
+u8            fapGm_HIO_c::m_CpuTimerOn         = 0;
+u8            fapGm_HIO_c::m_CpuTimerOff        = 0;
+u8            fapGm_HIO_c::m_CpuTimerStart      = 0;
+u32           fapGm_HIO_c::m_CpuTimerTick       = 0;
+CaptureScreen* fapGm_HIO_c::mCaptureScreen      = nullptr;
+void*         fapGm_HIO_c::mCaptureScreenBuffer = nullptr;
+s16           fapGm_HIO_c::mCaptureScreenFlag    = 0;
+u16           fapGm_HIO_c::mCaptureScreenWidth   = 0;
+u16           fapGm_HIO_c::mCaptureScreenHeight  = 0;
+u16           fapGm_HIO_c::mCaptureScreenLinePf  = 0;
+u16           fapGm_HIO_c::mCaptureScreenLineNum = 0;
+u8            fapGm_HIO_c::mCaptureScreenNumH    = 0;
+u8            fapGm_HIO_c::mCaptureScreenNumV    = 0;
+u8            fapGm_HIO_c::mParticle254Fix       = 0;
+u8            fapGm_HIO_c::mCaptureMagnification = 1;
+u8            fapGm_HIO_c::mCaptureScreenDivH    = 1;
+u8            fapGm_HIO_c::mCaptureScreenDivV    = 1;
+u8            fapGm_HIO_c::mPackArchiveMode      = 1;
+
+fapGm_HIO_c::fapGm_HIO_c() {
+    mUsingHostIO       = false;   // no HIO channel on PC
+    mDisplayMeter      = false;
+    mDisplayPrint      = false;
+    mDisplay2D         = true;
+    mDisplayParticle   = true;
+    mDisplayProcessID  = false;
+    mMemBlockOff       = false;
+    mColor             = JUtility::TColor(255, 255, 255, 255);
+    mLROnValue         = 0.9f;
+    mLROffValue        = 0.6f;
+    mLetterTopColor          = JUtility::TColor(255, 150, 0, 255);
+    mLetterBottomColor       = JUtility::TColor(255, 120, 0, 255);
+    mLetterTopShadowColor    = JUtility::TColor(0, 0, 0, 255);
+    mLetterBottomShadowColor = JUtility::TColor(0, 0, 0, 255);
+    mLetterPositionX   = 0;
+    mLetterPositionY   = 10;
+    mLetterFontSize    = 27;
+    mLineSpacing       = 0;
+    mLetterSpacing     = 0;
+    mBackgroundAlpha   = 130;
+    mRegister0 = mRegister1 = mRegister2 = mRegister3 = 0;
+    field_0x04         = 0;
+}
+
+// g_HIO — type must match the `extern fapGm_HIO_c g_HIO` in f_ap_game.h
 fapGm_HIO_c g_HIO;
 
 // ---------------------------------------------------------------------------
