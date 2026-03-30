@@ -13,16 +13,20 @@
 class daPy_py_c : public fopAc_ac_c {
 public:
     static u32  checkNowWolf()              { return 0; }
+    static bool checkRoomRestartStart()     { return false; }
     bool checkWolf()                        { return false; }
     bool checkHorseRide()                   { return false; }
     bool checkFrontRoll()                   { return false; }
     bool checkWolfDash()                    { return false; }
     void onFrollCrashFlg(u32, BOOL)         {}
     fpc_ProcID getGrabActorID() const       { return (fpc_ProcID)0xFFFFFFFF; }
+    fpc_ProcID getAtnActorID() const        { return (fpc_ProcID)0xFFFFFFFF; }
+    struct {
+        s16 y = 0;
+    } shape_angle;
 };
 
 // Accessor stubs — player actor is never spawned in our minimal boot
-inline daPy_py_c* dComIfGp_getLinkPlayer()   { return nullptr; }
 inline daPy_py_c* daPy_getPlayerActorClass() { return nullptr; }
 inline daPy_py_c* daPy_getLinkPlayerActorClass() { return nullptr; }
 

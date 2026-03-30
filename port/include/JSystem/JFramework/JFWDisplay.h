@@ -9,27 +9,75 @@
 
 #include "port/types.h"
 #include "JSystem/JSupport/JSUList.h"
+#include "JSystem/JUtility/JUTVideo.h"
+#include "JSystem/JUtility/JUTXfb.h"
 
 // Forward declarations / minimal stubs to avoid pulling in GC headers
 class JKRHeap;
-class JUTVideo;
 
 #include "JSystem/JUtility/TColor.h"
 
-// Minimal JUTFader stub — m_Do_graphic.h calls setColor/startFadeIn/startFadeOut
+// Minimal JUTFader stub — enough for m_Do_graphic.cpp bring-up.
 class JUTFader {
 public:
-    void setColor(JUtility::TColor /*c*/) {}
-    bool startFadeIn(int /*frames*/)       { return true; }
-    bool startFadeOut(int /*frames*/)      { return true; }
-    bool isFinished()                      { return true; }
+    enum {
+        UNKSTATUS_0 = 0,
+        UNKSTATUS_1 = 1,
+        UNKSTATUS_2 = 2,
+    };
+
+    JUTFader() = default;
+    JUTFader(int /*x*/, int /*y*/, int /*w*/, int /*h*/, JUtility::TColor color) : mColor(color) {}
+
+    void setColor(JUtility::TColor c) { mColor = c; }
+    void setStatus(int status, int frames) {
+        mStatus = status;
+        mFramesRemaining = frames > 0 ? frames : 0;
+    }
+    int getStatus() {
+        tick();
+        return mStatus;
+    }
+    bool startFadeIn(int frames) {
+        if (frames <= 0) {
+            mStatus = UNKSTATUS_0;
+            mFramesRemaining = 0;
+            return false;
+        }
+        if (mStatus != UNKSTATUS_0 || mFramesRemaining > 0) {
+            tick();
+            return mStatus != UNKSTATUS_0;
+        }
+        mStatus = UNKSTATUS_0;
+        mFramesRemaining = frames;
+        tick();
+        return mStatus != UNKSTATUS_0;
+    }
+    bool startFadeOut(int frames) {
+        mStatus = UNKSTATUS_1;
+        mFramesRemaining = frames > 0 ? frames : 0;
+        return true;
+    }
+    bool isFinished() {
+        tick();
+        return mFramesRemaining == 0;
+    }
+
+private:
+    void tick() {
+        if (mFramesRemaining > 0) {
+            --mFramesRemaining;
+            if (mFramesRemaining == 0) {
+                mStatus = (mStatus == UNKSTATUS_1) ? UNKSTATUS_2 : UNKSTATUS_0;
+            }
+        }
+    }
+
+    JUtility::TColor mColor = {};
+    int mStatus = UNKSTATUS_0;
+    int mFramesRemaining = 0;
 };
 
-// Minimal JUTXfb stub — m_Do_graphic.h calls getDisplayingXfb
-class JUTXfb {
-public:
-    void* getDisplayingXfb() const { return nullptr; }
-};
 struct _GXRenderModeObj;
 typedef _GXRenderModeObj GXRenderModeObj;
 struct _GXColor;

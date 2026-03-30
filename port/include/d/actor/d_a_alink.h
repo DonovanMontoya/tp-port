@@ -15,6 +15,9 @@ public:
     static int getBallModelIdx() { return 0; }
     static int getBallBtkIdx()   { return 0; }
     static int getBallBrkIdx()   { return 0; }
+    void setLastSceneMode(void*) {}
 };
+
+inline daAlink_c* daAlink_getAlinkActorClass() { return nullptr; }
 
 #endif /* D_A_D_A_ALINK_H */

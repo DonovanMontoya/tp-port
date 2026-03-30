@@ -73,6 +73,21 @@ static u8 MemCardStack[STACK_SIZE];
 static OSThread MemCardThread;
 
 void mDoMemCd_Ctrl_c::ThdInit() {
+#if PLATFORM_PC
+    mCopyToPos = 0;
+    mProbeStat = 1;
+    mCardState = CARD_STATE_NO_CARD_e;
+    mCardCommand = COMM_NONE_e;
+    mChannel = SLOT_A;
+    field_0x1fc8 = 1;
+    mDataVersion = SAVEDATA_VERSION;
+    mSerialNo = 0;
+    OSInitMutex(&mMutex);
+    OSInitCond(&mCond);
+    tp::log::info("mDoMemCd_Ctrl_c::ThdInit: PC stub active");
+    return;
+#endif
+
     #if !PLATFORM_SHIELD
     CARDInit();
     #endif

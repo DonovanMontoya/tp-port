@@ -12,7 +12,11 @@
  * CMake include path ordering must place port/include first.
  */
 
+#ifdef __cplusplus
 #include <cstdint>
+#else
+#include <stdint.h>
+#endif
 
 // Primitive integer types used throughout the GC codebase
 typedef int8_t    s8;

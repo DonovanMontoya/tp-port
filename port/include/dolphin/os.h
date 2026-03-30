@@ -145,3 +145,7 @@ static inline int  OSGetProgressiveMode(void)          { return OS_PROGRESSIVE_M
 #ifndef OS_CORE_CLOCK
 #define OS_CORE_CLOCK  486000000
 #endif
+
+static inline long long OSTicksToMilliseconds(OSTime ticks) {
+    return static_cast<long long>((ticks * 1000) / OS_TIMER_CLOCK);
+}

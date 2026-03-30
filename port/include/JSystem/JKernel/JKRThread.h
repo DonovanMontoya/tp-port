@@ -130,6 +130,7 @@ private:
     TLoad              mLoadInfo;
     JKRHeap*           mCurrentHeap;
     s32                mCurrentHeapError;
+    bool               mOwnsThreadRecord;
 
     // PC-only backing
     std::thread* _thread;

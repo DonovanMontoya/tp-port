@@ -7,6 +7,8 @@
 #include "f_pc/f_pc_manager.h"
 #include "f_op/f_op_scene_mng.h"
 #include "m_Do/m_Do_hostIO.h"
+#include "f_pc/f_pc_name.h"
+#include "port/port.h"
 
 #if DEBUG
 #pragma nosyminline on
@@ -43,9 +45,20 @@ static int fopScn_Delete(void* i_this) {
 static int fopScn_Create(void* i_this) {
     scene_class* scene = (scene_class*)i_this;
     int ret;
+    if (fpcM_GetName(i_this) == fpcNm_LOGO_SCENE_e ||
+        fpcM_GetName(i_this) == fpcNm_MENU_SCENE_e) {
+        tp::log::info("fopScn_Create: proc=%d firstCreating=%d",
+                      fpcM_GetName(i_this), fpcM_IsFirstCreating(i_this));
+    }
 
     if (fpcM_IsFirstCreating(i_this)) {
         scene_process_profile_definition* profile = (scene_process_profile_definition*)fpcM_GetProfile(i_this);
+        if (fpcM_GetName(i_this) == fpcNm_LOGO_SCENE_e ||
+            fpcM_GetName(i_this) == fpcNm_MENU_SCENE_e) {
+            tp::log::info("fopScn_Create: proc=%d profile=%p submethod=%p",
+                          fpcM_GetName(i_this), profile,
+                          profile != NULL ? profile->submethod : NULL);
+        }
         scene->submethod = profile->submethod;
 
         fopScnTg_Init(&scene->scene_tag, i_this);
@@ -59,6 +72,10 @@ static int fopScn_Create(void* i_this) {
 
 
     ret = fpcMtd_Create((process_method_class*)scene->submethod, scene);
+    if (fpcM_GetName(i_this) == fpcNm_LOGO_SCENE_e ||
+        fpcM_GetName(i_this) == fpcNm_MENU_SCENE_e) {
+        tp::log::info("fopScn_Create: proc=%d ret=%d", fpcM_GetName(i_this), ret);
+    }
     return ret;
 }
 

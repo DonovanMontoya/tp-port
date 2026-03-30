@@ -9,11 +9,17 @@
 
 #include "port/types.h"
 #include "f_op/f_op_actor.h"
+#include "d/d_attention.h"
 #include "d/d_com_inf_actor.h"
+#include "d/d_eye_hl.h"
 #include "d/d_kankyo.h"
 #include "d/d_meter2.h"
 #include "d/d_meter2_info.h"
 #include "d/d_msg_object.h"
+#include "d/d_save_HIO.h"
+#include "d/d_s_play.h"
+#include "d/d_stage.h"
+#include "d/d_vibration.h"
 #include "JSystem/J3DGraphAnimator/J3DCluster.h"
 #include "JSystem/J3DGraphAnimator/J3DMaterialAnm.h"
 #include "JSystem/J3DGraphAnimator/J3DMaterialAttach.h"
@@ -26,11 +32,20 @@
 #include "JSystem/JMath/JMath.h"
 #include "JSystem/JUtility/JUTNameTab.h"
 #include "JSystem/JUtility/JUTResFont.h"
+#include "JSystem/J2DGraph/J2DPicture.h"
+#include "JSystem/J2DGraph/J2DScreen.h"
+#include "JSystem/J2DGraph/J2DTextBox.h"
 #include "m_Do/m_Do_mtx.h"
 #include "Z2AudioLib/Z2Creature.h"
 #include "dolphin/gd/GDBase.h"
 #include "dolphin/gf/GFPixel.h"
 #include "../../include/m_Do/m_Do_ext.h"
+#include "../../include/d/d_menu_collect.h"
+#include "../../include/d/d_pane_class_alpha.h"
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 // ---------------------------------------------------------------------------
 // Environment / Kankyo globals
@@ -47,6 +62,32 @@ dComIfAc_info_c   g_dComIfAc_gameInfo;
 // Message object HIO (d_msg_object.h)
 // ---------------------------------------------------------------------------
 dMsgObject_HIO_c g_MsgObject_HIO_c;
+dSvBit_HIO_c g_save_bit_HIO;
+
+dSvBit_childTransformHIO_c::dSvBit_childTransformHIO_c() {}
+void dSvBit_childTransformHIO_c::init() {}
+dSvBit_childDarknessHIO_c::dSvBit_childDarknessHIO_c() {}
+void dSvBit_childDarknessHIO_c::init() {}
+dSvBit_childOtherHIO_c::dSvBit_childOtherHIO_c() {}
+void dSvBit_childOtherHIO_c::init() {}
+dSvBit_childTbPerfectionHIO_c::dSvBit_childTbPerfectionHIO_c() {}
+void dSvBit_childTbPerfectionHIO_c::init() {}
+dSvBit_childSwZoneHIO_c::dSvBit_childSwZoneHIO_c() {}
+void dSvBit_childSwZoneHIO_c::init() {}
+dSvBit_childSwPerfectionHIO_c::dSvBit_childSwPerfectionHIO_c() {}
+void dSvBit_childSwPerfectionHIO_c::init() {}
+dSvBit_childSwOneZoneHIO_c::dSvBit_childSwOneZoneHIO_c() {}
+void dSvBit_childSwOneZoneHIO_c::init() {}
+dSvBit_childSwDungeonHIO_c::dSvBit_childSwDungeonHIO_c() {}
+void dSvBit_childSwDungeonHIO_c::init() {}
+dSvBit_childItZoneHIO_c::dSvBit_childItZoneHIO_c() {}
+void dSvBit_childItZoneHIO_c::init() {}
+dSvBit_childItPerfectionHIO_c::dSvBit_childItPerfectionHIO_c() {}
+void dSvBit_childItPerfectionHIO_c::init() {}
+dSvBit_childItOneZoneHIO_c::dSvBit_childItOneZoneHIO_c() {}
+void dSvBit_childItOneZoneHIO_c::init() {}
+dSvBit_childItDungeonHIO_c::dSvBit_childItDungeonHIO_c() {}
+void dSvBit_childItDungeonHIO_c::init() {}
 
 // ---------------------------------------------------------------------------
 // Meter2 globals and stubs (d_meter2_info.h / d_meter2.h)
@@ -69,6 +110,9 @@ void dMeter2Info_c::getStringKana(u32 /*msgId*/, char* /*buf*/,
                                    JMSMesgEntry_c* /*entry*/) {}
 void dMeter2Info_c::getStringKanji(u32 /*msgId*/, char* /*buf*/,
                                     JMSMesgEntry_c* /*entry*/) {}
+void dMeter2Info_setCloth(u8 /*i_clothId*/, bool /*i_offItemBit*/) {}
+void dMeter2Info_setSword(u8 /*i_itemId*/, bool /*i_offItemBit*/) {}
+void dMeter2Info_setShield(u8 /*i_itemId*/, bool /*i_offItemBit*/) {}
 
 // ---------------------------------------------------------------------------
 // Event system stubs (f_op_actor.h: dEvt_info_c)
@@ -83,6 +127,8 @@ void dEvt_info_c::beforeProc() {}
 // Suspension system stub (d/actor/d_a_suspend.h: daSus_c)
 // ---------------------------------------------------------------------------
 #include "d/actor/d_a_suspend.h"
+void daSus_c::reset() {}
+void daSus_c::execute() {}
 void daSus_c::check(fopAc_ac_c* /*actor*/) {}
 
 // ---------------------------------------------------------------------------
@@ -114,27 +160,33 @@ u32 j3dDefaultViewNo = 0;
 #include "d/d_bg_s_wtr_chk.h"
 #include "d/d_path.h"
 
-// Background system accessor — returns a static stub dBgS
-static dBgS s_bgsp;
-dBgS& dComIfG_Bgsp() { return s_bgsp; }
-
 // Path helper
 u8 dPath_GetPolyRoomPathVec(cBgS_PolyInfo const&, cXyz*, int*) { return 0; }
+
+// Stage helpers used by the real opening/gameplay scene bootstrap
+bool dStage_roomControl_c::resetArchiveBank(int) { return true; }
+u32 dStage_stagInfo_GetParticleNo(stage_stag_info_class*, int) { return 255; }
+void dStage_infoCreate() {}
+void dStage_Create() {}
+void dStage_Delete() {}
 
 // daTagStream_c static member
 #include "d/actor/d_a_tag_stream.h"
 daTagStream_c* daTagStream_c::m_top = nullptr;
 int daTagStream_c::checkArea(cXyz const*) { return 0; }
 
+// daYkgr_c process-wide state
+#include "d/actor/d_a_ykgr.h"
+JPABaseEmitter* daYkgr_c::m_emitter = nullptr;
+bool daYkgr_c::m_flag = false;
+bool daYkgr_c::m_alpha_flag = true;
+u8 daYkgr_c::m_alpha = 255;
+f32 daYkgr_c::m_aim_rate = 0.0f;
+dPath* daYkgr_c::m_path = nullptr;
+
 // dEnemyItem_c static member
 #include "d/d_item.h"
 u8* dEnemyItem_c::mData = nullptr;
-
-// ---------------------------------------------------------------------------
-// g_blackColor — fade color global used by d_s_logo.cpp
-// ---------------------------------------------------------------------------
-#include "dolphin/gx/GXStruct.h"
-GXColor g_blackColor = { 0, 0, 0, 255 };
 
 // ---------------------------------------------------------------------------
 // JFWDisplay static
@@ -146,36 +198,269 @@ JFWDisplay* JFWDisplay::sManager = nullptr;
 // mDoGph_gInf_c statics
 // ---------------------------------------------------------------------------
 #include "m_Do/m_Do_graphic.h"
-JUTFader*   mDoGph_gInf_c::mFader = nullptr;
 
 // ---------------------------------------------------------------------------
 // dTres_c and dMpath_c createWork stubs
 // ---------------------------------------------------------------------------
 #include "d/d_tresure.h"
 int dTres_c::createWork() { return 0; }
+void dTres_c::create() {}
+void dTres_c::remove() {}
 
 #include "d/d_map_path_dmap.h"
 void dMpath_c::createWork() {}
+void dMpath_c::create() {}
+void dMpath_c::remove() {}
 
-// ---------------------------------------------------------------------------
-// dComIfGs_onActor — declared non-inline in f_op_actor_mng.h; stub here
-// ---------------------------------------------------------------------------
-void dComIfGs_onActor(int /*bitNo*/, int /*roomNo*/) {}
+// Opening/gameplay scene service stubs
+dAttention_c::dAttention_c(fopAc_ac_c* actor, u32 padNo) { Init(actor, padNo); }
+int dAttention_c::Run() { return 1; }
+void dAttention_c::Draw() {}
 
-// ---------------------------------------------------------------------------
-// mDoLib_clipper statics (m_Do/m_Do_lib.h)
-// ---------------------------------------------------------------------------
-#include "m_Do/m_Do_lib.h"
-J3DUClipper mDoLib_clipper::mClipper;
-f32         mDoLib_clipper::mSystemFar  = 100000.0f;
-f32         mDoLib_clipper::mFovyRate   = 1.0f;
+void dScnPly_env_otherHIO_c::listenPropertyEvent(const JORPropertyEvent*) {}
+void dScnPly_env_debugHIO_c::listenPropertyEvent(const JORPropertyEvent*) {}
 
-// ---------------------------------------------------------------------------
-// dScnPly_c statics — defined in d_s_play.cpp which is not yet enabled
-// ---------------------------------------------------------------------------
-#include "d/d_s_play.h"
-s8 dScnPly_c::pauseTimer     = 0;
-s8 dScnPly_c::nextPauseTimer = 0;
+dEyeHL_c* dEyeHL_mng_c::m_obj = nullptr;
+void dEyeHL_mng_c::update() {}
+
+int dVibration_c::Run() { return 1; }
+void dVibration_c::Init() {}
+void dVibration_c::Pause() {}
+void dVibration_c::Remove() {}
+
+f32 dMenu_Collect3D_c::mViewOffsetY = -100.0f;
+
+CPaneMgrAlpha::CPaneMgrAlpha()
+    : mPane(new J2DPane()), heap(nullptr), mpFirstStackAlpha(nullptr), field_0x10(nullptr),
+      mChildPaneCount(0), mAlphaTimer(0), mInitAlpha(255), mFlags(0) {
+    if (mPane != nullptr) {
+        mPane->setAlpha(mInitAlpha);
+    }
+}
+
+CPaneMgrAlpha::CPaneMgrAlpha(J2DScreen* screen, u64 tag, u8, JKRExpHeap* expHeap)
+    : CPaneMgrAlpha() {
+    heap = expHeap;
+    if (screen != nullptr) {
+        J2DPane* pane = screen->search(tag);
+        if (pane != nullptr) {
+            delete mPane;
+            mPane = pane;
+            mInitAlpha = pane->getAlpha();
+        }
+    }
+}
+
+CPaneMgrAlpha::~CPaneMgrAlpha() {}
+
+void CPaneMgrAlpha::setAlpha(u8 alpha) {
+    if (mPane != nullptr) {
+        mPane->setAlpha(alpha);
+    }
+}
+
+bool CPaneMgrAlpha::alphaAnime(s16 timer, u8, u8 endAlpha, u8) {
+    if (mPane != nullptr) {
+        mPane->setAlpha(endAlpha);
+    }
+    mAlphaTimer = timer;
+    return true;
+}
+
+bool CPaneMgrAlpha::alphaAnimeLoop(s16 timer, u8, u8 endAlpha, u8) {
+    if (mPane != nullptr) {
+        mPane->setAlpha(endAlpha);
+    }
+    mAlphaTimer = timer;
+    return true;
+}
+
+namespace {
+J2DPane* tp_stub_title_root_pane() {
+    static J2DPane pane;
+    return &pane;
+}
+
+J2DTextBox* tp_stub_title_textbox() {
+    static J2DTextBox box;
+    return &box;
+}
+}  // namespace
+
+JGeometry::TBox2<f32> J2DPane::static_mBounds;
+
+J2DPane::J2DPane()
+    : field_0x4(0), mKind(0), mInfoTag(0), mUserInfoTag(0), mBounds(), mGlobalBounds(),
+      mClipRect(), mVisible(true), mCullMode(0), mAlpha(255), mColorAlpha(255),
+      mIsInfluencedAlpha(false), mConnected(false), mRotAxis('z'), mBasePosition(0),
+      mRotateX(0.0f), mRotateY(0.0f), mRotateZ(0.0f), mRotateOffsetX(0.0f),
+      mRotateOffsetY(0.0f), mScaleX(1.0f), mScaleY(1.0f), mTranslateX(0.0f),
+      mTranslateY(0.0f), mPaneTree(this), mTransform(nullptr)
+#if !(PLATFORM_WII || PLATFORM_SHIELD)
+      , _fc(0)
+#endif
+{
+    std::memset(mPositionMtx, 0, sizeof(mPositionMtx));
+    std::memset(mGlobalMtx, 0, sizeof(mGlobalMtx));
+}
+
+J2DPane::~J2DPane() {}
+
+void J2DPane::move(f32 x, f32 y) {
+    mTranslateX = x;
+    mTranslateY = y;
+}
+
+void J2DPane::add(f32 x, f32 y) {
+    mTranslateX += x;
+    mTranslateY += y;
+}
+
+void J2DPane::resize(f32 x, f32 y) {
+    mBounds.f.x = mBounds.i.x + x;
+    mBounds.f.y = mBounds.i.y + y;
+}
+
+J2DPane* J2DPane::search(u64) { return nullptr; }
+J2DPane* J2DPane::searchUserInfo(u64) { return nullptr; }
+bool J2DPane::isUsed(const ResTIMG*) { return false; }
+bool J2DPane::isUsed(const ResFONT*) { return false; }
+void J2DPane::setCullBack(_GXCullMode cmode) { mCullMode = static_cast<u8>(cmode); }
+void J2DPane::makeMatrix(f32, f32, f32, f32) {}
+void J2DPane::clearAnmTransform() {}
+void J2DPane::setAnimation(J2DAnmBase*) {}
+void J2DPane::setAnimation(J2DAnmTransform*) {}
+void J2DPane::setVisibileAnimation(J2DAnmVisibilityFull*) {}
+void J2DPane::setVtxColorAnimation(J2DAnmVtxColor*) {}
+const J2DAnmTransform* J2DPane::animationTransform(const J2DAnmTransform* transform) {
+    return transform;
+}
+const J2DAnmTransform* J2DPane::animationPane(const J2DAnmTransform* transform) {
+    return transform;
+}
+
+J2DScreen::J2DScreen() : J2DPane(), mScissor(false), mMaterialNum(0), mMaterials(nullptr),
+                         mTexRes(nullptr), mFontRes(nullptr), mNameTable(nullptr), mColor() {}
+
+J2DScreen::~J2DScreen() {}
+
+u16 J2DScreen::getTypeID() const { return 17; }
+void J2DScreen::calcMtx() {}
+void J2DScreen::drawSelf(f32, f32, Mtx*) {}
+J2DPane* J2DScreen::searchUserInfo(u64) { return nullptr; }
+bool J2DScreen::isUsed(ResTIMG const*) { return false; }
+bool J2DScreen::isUsed(ResFONT const*) { return false; }
+void J2DScreen::setAnimation(J2DAnmColor*) {}
+void J2DScreen::setAnimation(J2DAnmTextureSRTKey*) {}
+void J2DScreen::setAnimation(J2DAnmVtxColor*) {}
+void J2DScreen::setAnimation(J2DAnmTexPattern*) {}
+void J2DScreen::setAnimation(J2DAnmVisibilityFull*) {}
+void J2DScreen::setAnimation(J2DAnmTevRegKey*) {}
+void J2DScreen::setAnimation(J2DAnmBase*) {}
+void J2DScreen::setAnimationVF(J2DAnmVisibilityFull*) {}
+void J2DScreen::setAnimationVC(J2DAnmVtxColor*) {}
+J2DPane* J2DScreen::createPane(J2DScrnBlockHeader const&, JSURandomInputStream*, J2DPane*, u32) {
+    return nullptr;
+}
+J2DPane* J2DScreen::createPane(J2DScrnBlockHeader const&, JSURandomInputStream*, J2DPane*, u32,
+                               JKRArchive*) {
+    return nullptr;
+}
+
+bool J2DScreen::setPriority(char const*, u32, JKRArchive*) {
+    return true;
+}
+
+void J2DScreen::draw(f32, f32, J2DGrafContext const*) {}
+
+J2DPane* J2DScreen::search(u64 tag) {
+    if (tag == MULTI_CHAR('n_all')) {
+        return tp_stub_title_root_pane();
+    }
+
+    return tp_stub_title_textbox();
+}
+
+J2DTextBox::J2DTextBox()
+    : J2DPane(), mFont(nullptr), mCharColor(), mGradientColor(), field_0x10c(0.0f),
+      field_0x110(0.0f), mCharSpacing(0.0f), mLineSpacing(0.0f), mFontSizeX(0.0f),
+      mFontSizeY(0.0f), mStringPtr(nullptr), mWhiteColor(), mBlackColor(), mFlags(0),
+      mTextFontOwned(false), mStringLength(0) {}
+
+J2DTextBox::~J2DTextBox() {
+    ::free(mStringPtr);
+    mStringPtr = nullptr;
+}
+
+u16 J2DTextBox::getTypeID() const { return 19; }
+void J2DTextBox::resize(f32 x, f32 y) { J2DPane::resize(x, y); }
+bool J2DTextBox::setConnectParent(bool connected) { mConnected = connected; return true; }
+void J2DTextBox::drawSelf(f32, f32, Mtx*) {}
+void J2DTextBox::drawSelf(f32, f32) {}
+bool J2DTextBox::isUsed(ResTIMG const*) { return false; }
+bool J2DTextBox::isUsed(ResFONT const*) { return false; }
+void J2DTextBox::rewriteAlpha() {}
+void J2DTextBox::draw(f32, f32) {}
+void J2DTextBox::draw(f32, f32, f32, J2DTextBoxHBinding) {}
+void J2DTextBox::setFont(JUTFont* font) { mFont = font; }
+bool J2DTextBox::setBlack(JUtility::TColor black) {
+    mBlackColor = black;
+    return true;
+}
+
+char* J2DTextBox::getStringPtr() const {
+    return mStringPtr;
+}
+
+s32 J2DTextBox::setString(s16 length, char const* string, ...) {
+    if (length <= 0) {
+        return 0;
+    }
+
+    if (mStringPtr == nullptr || mStringLength < static_cast<u16>(length)) {
+        ::free(mStringPtr);
+        mStringPtr = static_cast<char*>(::calloc(static_cast<size_t>(length), 1));
+        mStringLength = length;
+    }
+
+    va_list args;
+    va_start(args, string);
+    std::vsnprintf(mStringPtr, static_cast<size_t>(length), string, args);
+    va_end(args);
+    return std::strlen(mStringPtr);
+}
+
+J2DPicture::J2DPicture() : J2DPane() {
+    mTexture[0] = nullptr;
+    mTexture[1] = nullptr;
+    mTextureNum = 0;
+    field_0x109 = 0;
+}
+
+J2DPicture::~J2DPicture() {}
+
+void J2DPicture::drawSelf(f32, f32) {}
+void J2DPicture::drawSelf(f32, f32, Mtx*) {}
+void J2DPicture::initiate(ResTIMG const*, ResTLUT const*) {}
+bool J2DPicture::prepareTexture(u8) { return true; }
+bool J2DPicture::insert(ResTIMG const*, JUTPalette*, u8, f32) { return true; }
+bool J2DPicture::insert(char const*, JUTPalette*, u8, f32) { return true; }
+bool J2DPicture::insert(JUTTexture*, u8, f32) { return true; }
+bool J2DPicture::remove(u8) { return true; }
+bool J2DPicture::remove(JUTTexture*) { return true; }
+void J2DPicture::draw(f32, f32, f32, f32, bool, bool, bool) {}
+void J2DPicture::drawOut(JGeometry::TBox2<f32> const&, JGeometry::TBox2<f32> const&) {}
+void J2DPicture::setBlendColorRatio(f32, f32) {}
+void J2DPicture::setBlendAlphaRatio(f32, f32) {}
+const ResTIMG* J2DPicture::changeTexture(ResTIMG const* timg, u8) { return timg; }
+const ResTIMG* J2DPicture::changeTexture(char const*, u8) { return nullptr; }
+const ResTIMG* J2DPicture::changeTexture(ResTIMG const* timg, u8, JUTPalette*) { return timg; }
+const ResTIMG* J2DPicture::changeTexture(char const*, u8, JUTPalette*) { return nullptr; }
+u8 J2DPicture::getUsableTlut(u8 value) { return value; }
+bool J2DPicture::isUsed(ResTIMG const*) { return false; }
+void J2DPicture::drawFullSet(f32, f32, f32, f32, Mtx*) {}
+void J2DPicture::drawTexCoord(f32, f32, f32, f32, s16, s16, s16, s16, s16, s16, s16, s16,
+                              Mtx*) {}
 
 // ---------------------------------------------------------------------------
 // Low-level GD / GF / JMath shims used by m_Do_ext.cpp

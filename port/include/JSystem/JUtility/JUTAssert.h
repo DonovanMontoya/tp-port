@@ -10,26 +10,30 @@
 // Debug assertion macros (disabled in release; OSPanic handled in logging.h)
 #if DEBUG
 #  define JUT_CONFIRM(LINE, COND) \
-       ((COND) ? (void)0 : (tp::log::error("Confirm failed: %s line %d", __FILE__, (int)(LINE)), abort()))
+       do { if (!(COND)) { tp::log::error("Confirm failed: %s line %d", __FILE__, (int)(LINE)); abort(); } } while (0);
 #  define JUT_ASSERT(LINE, COND) \
-       ((COND) ? (void)0 : (tp::log::error("Assert failed: %s line %d", __FILE__, (int)(LINE)), abort()))
+       do { if (!(COND)) { tp::log::error("Assert failed: %s line %d", __FILE__, (int)(LINE)); abort(); } } while (0);
 #  define JUT_ASSERT_MSG(LINE, COND, MSG) \
-       ((COND) ? (void)0 : (tp::log::error("Assert failed (%s): %s line %d", (MSG), __FILE__, (int)(LINE)), abort()))
+       do { if (!(COND)) { tp::log::error("Assert failed (%s): %s line %d", (MSG), __FILE__, (int)(LINE)); abort(); } } while (0);
 #  define JUT_ASSERT_MSG_F(LINE, COND, MSG, ...) \
-       ((COND) ? (void)0 : (tp::log::error("Assert failed: %s line %d", __FILE__, (int)(LINE)), abort()))
+       do { if (!(COND)) { tp::log::error("Assert failed: %s line %d", __FILE__, (int)(LINE)); abort(); } } while (0);
 #  define J3D_PANIC(LINE, COND, MSG) \
-       ((COND) != 0 ? (void)0 : (tp::log::error("%s: %s line %d", (MSG), __FILE__, (int)(LINE)), abort()))
+       do { if (!(COND)) { tp::log::error("%s: %s line %d", (MSG), __FILE__, (int)(LINE)); abort(); } } while (0);
 #  define JUT_PANIC(LINE, TEXT) \
-       (tp::log::error("%s: %s line %d", (TEXT), __FILE__, (int)(LINE)), abort())
+       do { tp::log::error("%s: %s line %d", (TEXT), __FILE__, (int)(LINE)); abort(); } while (0);
+#  define JUT_WARN_DEVICE(LINE, DEVICE, ...) do { (void)sizeof(DEVICE); tp::log::error(__VA_ARGS__); } while (0);
+#  define JUT_WARN(LINE, ...) JUT_WARN_DEVICE((LINE), JUTAssertion::getSDevice(), __VA_ARGS__);
 #  define ASSERTLINE(LINE, COND) JUT_ASSERT((LINE), (COND));
 #else
-#  define JUT_CONFIRM(LINE, COND)                  ((void)0)
-#  define JUT_ASSERT(LINE, COND)                  ((void)0)
-#  define JUT_ASSERT_MSG(LINE, COND, MSG)          ((void)0)
-#  define JUT_ASSERT_MSG_F(LINE, COND, MSG, ...)   ((void)0)
-#  define J3D_PANIC(LINE, COND, MSG)               ((void)0)
-#  define JUT_PANIC(LINE, TEXT)                    ((void)0)
-#  define ASSERTLINE(LINE, COND)                   ((void)0)
+#  define JUT_CONFIRM(LINE, COND) do { (void)sizeof(COND); } while (0);
+#  define JUT_ASSERT(LINE, COND) do { (void)sizeof(COND); } while (0);
+#  define JUT_ASSERT_MSG(LINE, COND, MSG) do { (void)sizeof(COND); (void)sizeof(MSG); } while (0);
+#  define JUT_ASSERT_MSG_F(LINE, COND, MSG, ...) do { (void)sizeof(COND); (void)sizeof(MSG); } while (0);
+#  define J3D_PANIC(LINE, COND, MSG) do { (void)sizeof(COND); (void)sizeof(MSG); } while (0);
+#  define JUT_PANIC(LINE, TEXT) do { (void)sizeof(TEXT); } while (0);
+#  define JUT_WARN_DEVICE(LINE, DEVICE, ...) do { (void)sizeof(LINE); (void)sizeof(DEVICE); } while (0);
+#  define JUT_WARN(LINE, ...) do { (void)sizeof(LINE); } while (0);
+#  define ASSERTLINE(LINE, COND) do { (void)sizeof(COND); } while (0);
 #endif
 
 // Minimal JUTAssertion class stub (used by J3D etc.)

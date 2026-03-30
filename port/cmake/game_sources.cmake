@@ -1,168 +1,142 @@
 # -----------------------------------------------------------------------
 # Game source list
 #
-# Add files here incrementally as they are verified to compile cleanly
-# under a standard C++17 compiler with the port abstraction layer.
+# ACGC-style experiment:
+#   Compile the decomp broadly by default, then maintain a small exclusion
+#   list for translation units that still need more platform work.
 #
-# Workflow:
-#   1. Add a source file to GAME_SOURCES below.
-#   2. Build and fix compile errors (usually missing stubs or GC types).
-#   3. Repeat until the full game compiles.
+# This flips the old workflow on its head:
+#   old: add files manually once they compile
+#   new: compile everything and carve out blockers
 # -----------------------------------------------------------------------
 
 set(DECOMP_SRC "${CMAKE_CURRENT_SOURCE_DIR}/../src")
-set(DECOMP_INC "${CMAKE_CURRENT_SOURCE_DIR}/../include")
 
-set(GAME_SOURCES
-
-  # ── SSystem/SComponent — utility/math (minimal dependencies) ─────────
-  ${DECOMP_SRC}/SSystem/SComponent/c_counter.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_request.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_phase.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_node.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_node_iter.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_list.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_list_iter.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_tree.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_tree_iter.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_tag.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_tag_iter.cpp
-
-  # ── SSystem/SComponent — 3-D math geometry primitives ─────────────────
-  ${DECOMP_SRC}/SSystem/SComponent/c_m3d_g_vtx.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_m3d_g_cir.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_m3d_g_cps.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_m3d_g_lin.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_m3d_g_pla.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_m3d_g_sph.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_m3d_g_tri.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_m3d_g_cyl.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_m3d_g_aab.cpp
-
-  # ── SSystem/SComponent — math & angles ───────────────────────────────
-  ${DECOMP_SRC}/SSystem/SComponent/c_math.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_angle.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_sxyz.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_xyz.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_m2d.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_m3d.cpp
-
-  # ── SSystem/SComponent — background/collision helpers ─────────────────
-  ${DECOMP_SRC}/SSystem/SComponent/c_bg_w.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_bg_s_chk.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_bg_s_lin_chk.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_bg_s_gnd_chk.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_bg_s_poly_info.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_bg_s_shdw_draw.cpp
-
-  # ── SSystem/SComponent — common library & API wrappers ────────────────
-  ${DECOMP_SRC}/SSystem/SComponent/c_lib.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_API.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_API_graphic.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_API_controller_pad.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_cc_s.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_cc_d.cpp
-  ${DECOMP_SRC}/SSystem/SComponent/c_malloc.cpp
-
-  # ── SSystem/SStandard ─────────────────────────────────────────────────
-  ${DECOMP_SRC}/SSystem/SStandard/s_basic.cpp
-
-  # ── f_pc framework (process manager, creators, executors, etc.) ──────
-  ${DECOMP_SRC}/f_pc/f_pc_base.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_create_iter.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_create_req.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_create_tag.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_creator.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_debug_sv.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_delete_tag.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_deletor.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_draw.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_draw_priority.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_executor.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_fstcreate_req.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_layer.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_layer_iter.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_layer_tag.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_leaf.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_line.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_line_iter.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_line_tag.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_load.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_manager.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_method.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_method_iter.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_method_tag.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_node.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_node_req.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_pause.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_priority.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_profile.cpp
-  # f_pc_profile_lst.cpp references all scene/actor profiles — use port stub
-  # until those files are enabled:
-  # ${DECOMP_SRC}/f_pc/f_pc_profile_lst.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_searcher.cpp
-  ${DECOMP_SRC}/f_pc/f_pc_stdcreate_req.cpp
-
-  # ── f_op framework — actor files with dolzel.h port stub ─────────────
-  ${DECOMP_SRC}/f_op/f_op_actor.cpp
-  ${DECOMP_SRC}/f_op/f_op_actor_mng.cpp
-  ${DECOMP_SRC}/f_op/f_op_actor_map.cpp
-  ${DECOMP_SRC}/f_op/f_op_msg_mng.cpp
-  ${DECOMP_SRC}/f_op/f_op_actor_iter.cpp
-  ${DECOMP_SRC}/f_op/f_op_actor_tag.cpp
-  ${DECOMP_SRC}/f_op/f_op_camera.cpp
-  ${DECOMP_SRC}/f_op/f_op_camera_mng.cpp
-  ${DECOMP_SRC}/f_op/f_op_draw_iter.cpp
-  ${DECOMP_SRC}/f_op/f_op_draw_tag.cpp
-  ${DECOMP_SRC}/f_op/f_op_kankyo.cpp
-  ${DECOMP_SRC}/f_op/f_op_kankyo_mng.cpp
-  ${DECOMP_SRC}/f_op/f_op_msg.cpp
-  ${DECOMP_SRC}/f_op/f_op_overlap.cpp
-  ${DECOMP_SRC}/f_op/f_op_overlap_mng.cpp
-  ${DECOMP_SRC}/f_op/f_op_overlap_req.cpp
-  ${DECOMP_SRC}/f_op/f_op_scene.cpp
-  ${DECOMP_SRC}/f_op/f_op_scene_iter.cpp
-  ${DECOMP_SRC}/f_op/f_op_scene_mng.cpp
-  ${DECOMP_SRC}/f_op/f_op_scene_pause.cpp
-  ${DECOMP_SRC}/f_op/f_op_scene_req.cpp
-  ${DECOMP_SRC}/f_op/f_op_scene_tag.cpp
-  ${DECOMP_SRC}/f_op/f_op_view.cpp
-
-  # ── Game app framework ───────────────────────────────────────────────
-  ${DECOMP_SRC}/f_ap/f_ap_game.cpp
-
-  # ── Scene files ────────────────────────────────────────────────────────
-  ${DECOMP_SRC}/d/d_s_title.cpp
-  ${DECOMP_SRC}/d/d_s_logo.cpp
-  ${DECOMP_SRC}/d/d_s_menu.cpp
-  # d_s_play.cpp (gameplay scene) deferred — depends on ~80 unsupported subsystems
-  # ${DECOMP_SRC}/d/d_s_play.cpp
-
-  # ── Main module ───────────────────────────────────────────────────────
-  ${DECOMP_SRC}/m_Do/m_Do_DVDError.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_audio.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_controller_pad.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_dvd_thread.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_ext.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_ext2.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_hostIO.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_MemCard.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_MemCardRWmng.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_machine.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_machine_exception.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_main.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_mtx.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_printf.cpp
-  ${DECOMP_SRC}/m_Do/m_Do_Reset.cpp
-  # ${DECOMP_SRC}/m_Do/m_Do_graphic.cpp
-  # ${DECOMP_SRC}/m_Do/m_Do_audio.cpp
-  # ${DECOMP_SRC}/m_Do/m_Do_controller_pad.cpp
-  # ${DECOMP_SRC}/m_Do/m_Do_dvd_thread.cpp
-  # ${DECOMP_SRC}/m_Do/m_Do_heap.cpp
-  # ${DECOMP_SRC}/m_Do/m_Do_memCardRW.cpp
+file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS
+  "${DECOMP_SRC}/*.c"
+  "${DECOMP_SRC}/*.cpp"
 )
 
-# Always compile the port bootstrap
+file(GLOB TP_PORT_ACTOR_SOURCES CONFIGURE_DEPENDS
+  "${DECOMP_SRC}/d/actor/*.cpp"
+)
+
+set(TP_PORT_ACTOR_KEEP_SOURCES
+  "${DECOMP_SRC}/d/actor/d_a_title.cpp"
+)
+
+list(REMOVE_ITEM TP_PORT_ACTOR_SOURCES ${TP_PORT_ACTOR_KEEP_SOURCES})
+
+file(GLOB TP_PORT_TOPLEVEL_ACTOR_SUPPORT_SOURCES CONFIGURE_DEPENDS
+  "${DECOMP_SRC}/d/d_a*.cpp"
+)
+
+file(GLOB TP_PORT_TOPLEVEL_D_SOURCES CONFIGURE_DEPENDS
+  "${DECOMP_SRC}/d/*.cpp"
+)
+
+set(TP_PORT_TOPLEVEL_D_KEEP_SOURCES
+  "${DECOMP_SRC}/d/d_attention.cpp"
+  "${DECOMP_SRC}/d/d_com_inf_game.cpp"
+  "${DECOMP_SRC}/d/d_resorce.cpp"
+  "${DECOMP_SRC}/d/d_save.cpp"
+  "${DECOMP_SRC}/d/d_s_logo.cpp"
+  "${DECOMP_SRC}/d/d_s_menu.cpp"
+  "${DECOMP_SRC}/d/d_s_play.cpp"
+  "${DECOMP_SRC}/d/d_s_title.cpp"
+  "${DECOMP_SRC}/d/d_simple_model.cpp"
+)
+
+list(REMOVE_ITEM TP_PORT_TOPLEVEL_D_SOURCES ${TP_PORT_TOPLEVEL_D_KEEP_SOURCES})
+
+set(TP_PORT_EXCLUDED_GAME_SOURCES
+  # Actor code is the biggest gameplay dependency fan-out in the project.
+  # Exclude the whole slice for now so the fast-port branch can reach a
+  # runnable title/menu executable before backfilling gameplay actors.
+  ${TP_PORT_ACTOR_SOURCES}
+  ${TP_PORT_TOPLEVEL_ACTOR_SUPPORT_SOURCES}
+  ${TP_PORT_TOPLEVEL_D_SOURCES}
+
+  # REL loader path still assumes a GC-specific archive / heap / 32-bit pointer
+  # environment. Keep it out until the PC module-loading model is redesigned.
+  "${DECOMP_SRC}/DynamicLink.cpp"
+  "${DECOMP_SRC}/c/c_dylink.cpp"
+
+  # f_pc_profile_lst references nearly every scene and actor profile.
+  # Keep using the port-side stub until the full profile table is viable.
+  "${DECOMP_SRC}/f_pc/f_pc_profile_lst.cpp"
+
+  # Particle callback integration is still missing pieces of the JPA/JGeometry
+  # shim surface. Defer it until the particle subsystem gets a focused pass.
+  "${DECOMP_SRC}/c/c_damagereaction.cpp"
+
+  # These units still rely on GC-specific heap/card paths that are not wired
+  # up cleanly in the port layer yet.
+  "${DECOMP_SRC}/m_Do/m_Do_heap.cpp"
+  "${DECOMP_SRC}/m_Do/m_Do_memCardRW.cpp"
+  "${DECOMP_SRC}/m_Re/m_Re_controller_pad.cpp"
+
+  # The Z2AudioCS speaker pipeline still mixes Revolution GX/OS headers into
+  # host builds and needs a dedicated porting pass instead of ad hoc fixes.
+  "${DECOMP_SRC}/Z2AudioCS/SpkData.cpp"
+  "${DECOMP_SRC}/Z2AudioCS/SpkMixingBuffer.cpp"
+  "${DECOMP_SRC}/Z2AudioCS/SpkSound.cpp"
+  "${DECOMP_SRC}/Z2AudioCS/SpkSpeakerCtrl.cpp"
+  "${DECOMP_SRC}/Z2AudioCS/SpkSystem.cpp"
+  "${DECOMP_SRC}/Z2AudioCS/SpkTable.cpp"
+  "${DECOMP_SRC}/Z2AudioCS/SpkWave.cpp"
+  "${DECOMP_SRC}/Z2AudioCS/Z2AudioCS.cpp"
+
+  # The higher-level Z2 audio runtime depends on substantial JAudio/JAU
+  # behavior that is not implemented in the host stubs yet. Defer the entire
+  # subsystem so the fast-port branch can keep probing other game systems.
+  "${DECOMP_SRC}/Z2AudioLib/Z2Audience.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2AudioArcLoader.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2AudioMgr.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2Calc.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2Creature.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2DebugSys.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2EnvSeMgr.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2FxLineMgr.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2LinkMgr.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2Param.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2SceneMgr.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2SeMgr.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2SeqMgr.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2SoundHandles.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2SoundInfo.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2SoundMgr.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2SoundObjMgr.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2SoundObject.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2SoundPlayer.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2SoundStarter.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2SpeechMgr2.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2StatusMgr.cpp"
+  "${DECOMP_SRC}/Z2AudioLib/Z2WolfHowlMgr.cpp"
+
+  # Hardware debugger / emulator integration sources are not relevant to the
+  # native port and drag C-only SDK assumptions into the build.
+  "${DECOMP_SRC}/NdevExi2A/DebuggerDriver.c"
+  "${DECOMP_SRC}/NdevExi2A/exi2.c"
+  "${DECOMP_SRC}/REL/executor.c"
+  "${DECOMP_SRC}/amcstubs/AmcExi2Stubs.c"
+  "${DECOMP_SRC}/lingcod/LingcodPatch.c"
+  "${DECOMP_SRC}/odemuexi2/DebuggerDriver.c"
+  "${DECOMP_SRC}/odenotstub/odenotstub.c"
+)
+
+list(REMOVE_ITEM GAME_SOURCES ${TP_PORT_EXCLUDED_GAME_SOURCES})
+list(SORT GAME_SOURCES)
+
+# Always compile the port bootstrap alongside the decomp sources.
 list(APPEND GAME_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp"
+)
+
+list(LENGTH GAME_SOURCES TP_PORT_GAME_SOURCE_COUNT)
+list(LENGTH TP_PORT_EXCLUDED_GAME_SOURCES TP_PORT_EXCLUDED_SOURCE_COUNT)
+
+message(STATUS
+  "TP PC port broad-compile experiment: ${TP_PORT_GAME_SOURCE_COUNT} game sources, "
+  "${TP_PORT_EXCLUDED_SOURCE_COUNT} explicit exclusions"
 )

@@ -53,6 +53,10 @@ public:
     fopAc_ac_c* getPtT()     { return nullptr; }
     fopAc_ac_c* getPtI()     { return nullptr; }
     fopAc_ac_c* getPtD()     { return nullptr; }
+    void setPtT(void*) {}
+    void setPtI(void*) {}
+    void setPtI_Id(fpc_ProcID) {}
+    void setPtD(void*) {}
 
     // Cull rate
     f32  getCullRate()        { return 1.0f; }

@@ -152,6 +152,7 @@ static void cb(void* param_0) {
     mDoDvdThd_command_c* pCmd = *(mDoDvdThd_command_c**)param_0;
     s32 result = pCmd->execute();
     if (result != 1) {
+        tp::log::error("DVD command failed: cmd=%p", pCmd);
         OSReport_Error("mDoDvdThd_param_c::mainLoop() コマンドの実行が失敗しました。\n");
     }
 }
@@ -164,7 +165,9 @@ void mDoDvdThd_param_c::mainLoop() {
             if (mDoDvdThd::SyncWidthSound) {
                 JASDvd::getThreadPointer()->sendCmdMsg(cb, &command, 4);
             } else {
+                tp::log::info("DVD command begin: %p", command);
                 cb(&command);
+                tp::log::info("DVD command end: %p done=%d", command, command->mIsDone);
             }
         }
     }
@@ -186,11 +189,16 @@ mDoDvdThd_callback_c::mDoDvdThd_callback_c(mDoDvdThd_callback_func pFunc, void* 
 mDoDvdThd_callback_c* mDoDvdThd_callback_c::create(mDoDvdThd_callback_func pFunc, void* pData) {
     mDoDvdThd_callback_c* callCmd =
         new (mDoExt_getCommandHeap(), -4) mDoDvdThd_callback_c(pFunc, pData);
+    tp::log::info("mDoDvdThd_callback_c::create: func=%p data=%p cmd=%p heap=%p",
+                  reinterpret_cast<void*>(pFunc), pData, callCmd, mDoExt_getCommandHeap());
     if (callCmd != NULL) {
         mDoDvdThd::l_param.addition(callCmd);
         if (mDoDvdThd::DVDLogoMode) {
             OS_REPORT("\x1b[34m<DVD> callback %08x %08x %08x\n\x1b[m", callCmd, pFunc, pData);
         }
+    } else {
+        tp::log::error("mDoDvdThd_callback_c::create: allocation failed func=%p data=%p",
+                       reinterpret_cast<void*>(pFunc), pData);
     }
     return callCmd;
 }
@@ -198,6 +206,10 @@ mDoDvdThd_callback_c* mDoDvdThd_callback_c::create(mDoDvdThd_callback_func pFunc
 s32 mDoDvdThd_callback_c::execute() {
     mResult = mFunction(mData);
     mIsDone = true;
+    if (mResult == NULL) {
+        tp::log::error("DVD callback command failed: func=%p data=%p",
+                       reinterpret_cast<void*>(mFunction), mData);
+    }
     return mResult != NULL;
 }
 
@@ -310,6 +322,10 @@ s32 mDoDvdThd_mountArchive_c::execute() {
 #endif
     }
     mIsDone = true;
+    if (mArchive == NULL) {
+        tp::log::error("DVD mountArchive command failed: entry=%d heap=%p direction=%u",
+                       mEntryNumber, heap, mMountDirection);
+    }
     return mArchive != NULL;
 }
 
@@ -409,6 +425,12 @@ s32 mDoDvdThd_mountXArchive_c::execute() {
     }
 #endif
     mIsDone = true;
+    if (!result) {
+        tp::log::error("DVD mountXArchive command failed: entry=%d path=%s mode=%d heap=%p",
+                       mEntryNum,
+                       DVDGetPathFromEntrynum(mEntryNum) ? DVDGetPathFromEntrynum(mEntryNum) : "(unknown)",
+                       mMountMode, heap);
+    }
     return result;
 }
 
@@ -434,6 +456,7 @@ s32 mDoDvdThd_getResource_c::execute() {
     }
 #endif
     if (!mResource) {
+        tp::log::error("DVD resource command failed: archive=%p resourceId=%u", mArchive, mResourceId);
         OSReport_Error("mDoDvdThd_getResource_c::execute() リソース取得に失敗\n");
     }
     mIsDone = true;
@@ -501,5 +524,11 @@ s32 mDoDvdThd_toMainRam_c::execute() {
     }
 #endif
     mIsDone = true;
+    if (mData == NULL) {
+        tp::log::error("DVD toMainRam command failed: entry=%d path=%s heap=%p",
+                       mEntryNum,
+                       DVDGetPathFromEntrynum(mEntryNum) ? DVDGetPathFromEntrynum(mEntryNum) : "(unknown)",
+                       heap);
+    }
     return mData != NULL;
 }

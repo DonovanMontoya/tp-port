@@ -49,6 +49,8 @@ public:
     fopAc_ac_c* GetActorPointer(cBgS_PolyInfo const& info) const {
         return GetActorPointer(info.GetBgIndex());
     }
+
+    static void* ConvDzb(void* res) { return res; }
 };
 
 // dBgS — game-level background system stub
@@ -74,6 +76,8 @@ public:
     bool ChkMoveBG_NoDABg(cBgS_PolyInfo const&)                    { return false; }
     bool GetPolyAttackThrough(cBgS_PolyInfo const&)                { return false; }
     bool CheckRoofChk(dBgS_GndChk*)                                { return false; }
+    void ClrMoveFlag()                                             {}
+    void Move()                                                    {}
 };
 
 // Background system global accessor — defined in game_stubs.cpp

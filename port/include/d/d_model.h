@@ -10,4 +10,11 @@
 class dMdl_obj_c;
 class dMdl_c;
 
+class dMdl_mng_c {
+public:
+    static void create() {}
+    static void reset() {}
+    static void remove() {}
+};
+
 #endif /* D_D_MODEL_H */

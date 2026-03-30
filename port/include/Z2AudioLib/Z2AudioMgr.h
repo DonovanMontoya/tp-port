@@ -23,7 +23,7 @@ public:
     }
 
     void init(JKRSolidHeap* /*heap*/, u32 /*memSize*/, void* /*baaData*/, JKRArchive* /*seqArc*/) {}
-    void setEventBit(u32 /*bits*/) {}
+    void setEventBit(void* /*bits*/) {}
     void gframeProcess() {}
     void setOutputMode(u32 /*mode*/) {}
     void setSceneName(char* /*spot*/, s32 /*room*/, s32 /*layer*/) {}

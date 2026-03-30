@@ -106,58 +106,53 @@ public:
         : mHeap(JKRGetCurrentHeap()), mMountMode(static_cast<u8>(mountMode)), mEntryNum(entryNum) {}
     virtual ~JKRArchive() {}
 
-    bool getDirEntry(SDirEntry*, u32) const { return false; }
-    void* getIdxResource(u32) { return nullptr; }
-    void* getResource(u16) { return nullptr; }
-    u32 readIdxResource(void*, u32, u32) { return 0; }
-    u32 readResource(void*, u32, u16) { return 0; }
-    u32 countResource() const { return 0; }
+    bool getDirEntry(SDirEntry*, u32) const;
+    void* getIdxResource(u32);
+    void* getResource(u16);
+    u32 readIdxResource(void*, u32, u32);
+    u32 readResource(void*, u32, u16);
+    u32 countResource() const;
     u8 getFileAttribute(u32) const { return 0; }
+    bool isFileEntry(u32) const;
 
-    SDIFileEntry* findNameResource(const char*) const { return nullptr; }
+    SDIFileEntry* findNameResource(const char*) const;
     bool isSameName(const char*, u32, u16) const { return false; }
     SDIDirEntry* findResType(u32) const { return nullptr; }
     SDIDirEntry* findDirectory(const char*, u32) const { return nullptr; }
     SDIFileEntry* findTypeResource(u32, const char*) const { return nullptr; }
     SDIFileEntry* findFsResource(const char*, u32) const { return nullptr; }
-    SDIFileEntry* findIdxResource(u32) const { return nullptr; }
+    SDIFileEntry* findIdxResource(u32) const;
     SDIFileEntry* findPtrResource(const void*) const { return nullptr; }
     SDIFileEntry* findIdResource(u16) const { return nullptr; }
 
     virtual bool becomeCurrent(const char*) override { return false; }
-    virtual void* getResource(const char*) override { return nullptr; }
-    virtual void* getResource(u32, const char*) override { return nullptr; }
-    virtual u32 readResource(void*, u32, const char*) override { return 0; }
-    virtual u32 readResource(void*, u32, u32, const char*) override { return 0; }
+    virtual void* getResource(const char*) override;
+    virtual void* getResource(u32, const char*) override;
+    virtual u32 readResource(void*, u32, const char*) override;
+    virtual u32 readResource(void*, u32, u32, const char*) override;
     virtual void removeResourceAll() override {}
     virtual bool removeResource(void*) override { return false; }
     virtual bool detachResource(void*) override { return false; }
-    virtual u32 getResSize(const void*) const override { return 0; }
-    virtual u32 countFile(const char*) const override { return 0; }
+    virtual u32 getResSize(const void*) const override;
+    virtual u32 countFile(const char*) const override;
     virtual JKRFileFinder* getFirstFile(const char*) const override { return nullptr; }
     virtual u32 getExpandedResSize(const void* res) const { return getResSize(res); }
     virtual void* fetchResource(SDIFileEntry*, u32*) { return nullptr; }
     virtual void* fetchResource(void*, u32, SDIFileEntry*, u32*) { return nullptr; }
     virtual void setExpandSize(SDIFileEntry*, u32) {}
     virtual u32 getExpandSize(SDIFileEntry*) const { return 0; }
-    virtual void unmount() {}
+    virtual void unmount();
 
     u32 countFile() const { return mArcInfoBlock ? mArcInfoBlock->num_file_entries : 0; }
     s32 countDirectory() const { return mArcInfoBlock ? static_cast<s32>(mArcInfoBlock->num_nodes) : 0; }
     u8 getMountMode() const { return mMountMode; }
 
     static JKRArchive* check_mount_already(s32, JKRHeap*) { return nullptr; }
-    static JKRArchive* mount(const char*, EMountMode, JKRHeap*, EMountDirection) {
-        return nullptr;
-    }
-    static JKRArchive* mount(void*, JKRHeap*, EMountDirection) {
-        return nullptr;
-    }
-    static JKRArchive* mount(s32, EMountMode, JKRHeap*, EMountDirection) {
-        return nullptr;
-    }
-    static void* getGlbResource(const char*, JKRArchive*) { return nullptr; }
-    static void* getGlbResource(u32, const char*, JKRArchive*) { return nullptr; }
+    static JKRArchive* mount(const char*, EMountMode, JKRHeap*, EMountDirection);
+    static JKRArchive* mount(void*, JKRHeap*, EMountDirection);
+    static JKRArchive* mount(s32, EMountMode, JKRHeap*, EMountDirection);
+    static void* getGlbResource(const char*, JKRArchive*);
+    static void* getGlbResource(u32, const char*, JKRArchive*);
 
     static JKRCompression convertAttrToCompressionType(int attr) {
         if (!(attr & 0x04)) {

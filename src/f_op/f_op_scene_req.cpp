@@ -9,6 +9,27 @@
 #include "f_op/f_op_scene_pause.h"
 #include "f_pc/f_pc_executor.h"
 #include "f_pc/f_pc_manager.h"
+#include "port/port.h"
+
+static bool shouldLogSceneReq(s16 proc_name) {
+    return proc_name == fpcNm_LOGO_SCENE_e || proc_name == fpcNm_MENU_SCENE_e ||
+           proc_name == fpcNm_OPENING_SCENE_e || proc_name == fpcNm_PLAY_SCENE_e;
+}
+
+static const char* sceneReqName(s16 proc_name) {
+    switch (proc_name) {
+    case fpcNm_LOGO_SCENE_e:
+        return "LOGO_SCENE";
+    case fpcNm_MENU_SCENE_e:
+        return "MENU_SCENE";
+    case fpcNm_OPENING_SCENE_e:
+        return "OPENING_SCENE";
+    case fpcNm_PLAY_SCENE_e:
+        return "PLAY_SCENE";
+    default:
+        return "UNKNOWN_SCENE";
+    }
+}
 
 static cPhs_Step fopScnRq_phase_ClearOverlap(scene_request_class* i_sceneReq) {
     return fopOvlpM_ClearOfReq() == 1 ? cPhs_NEXT_e : cPhs_INIT_e;
@@ -16,6 +37,21 @@ static cPhs_Step fopScnRq_phase_ClearOverlap(scene_request_class* i_sceneReq) {
 }
 
 static cPhs_Step fopScnRq_phase_Execute(scene_request_class* i_sceneReq) {
+    static fpc_ProcID s_last_request_id = fpcM_ERROR_PROCESS_ID_e;
+    static s16 s_last_proc_name = -1;
+    static fpc_ProcID s_last_creating_id = fpcM_ERROR_PROCESS_ID_e;
+    if (shouldLogSceneReq(i_sceneReq->create_request.name) &&
+        (s_last_request_id != i_sceneReq->create_request.request_id ||
+         s_last_proc_name != i_sceneReq->create_request.name ||
+         s_last_creating_id != i_sceneReq->create_request.creating_id))
+    {
+        s_last_request_id = i_sceneReq->create_request.request_id;
+        s_last_proc_name = i_sceneReq->create_request.name;
+        s_last_creating_id = i_sceneReq->create_request.creating_id;
+        tp::log::info("fopScnRq_phase_Execute: %s request=%p creating_id=%u",
+                      sceneReqName(i_sceneReq->create_request.name), i_sceneReq,
+                      i_sceneReq->create_request.creating_id);
+    }
     return fpcNdRq_Execute(&i_sceneReq->create_request);
 }
 
@@ -32,6 +68,11 @@ static cPhs_Step fopScnRq_phase_IsDoneOverlap(scene_request_class* i_sceneReq) {
 static BOOL l_fopScnRq_IsUsingOfOverlap;
 
 static cPhs_Step fopScnRq_phase_Done(scene_request_class* i_sceneReq) {
+    if (shouldLogSceneReq(i_sceneReq->create_request.name)) {
+        tp::log::info("fopScnRq_phase_Done: %s request=%p creating_id=%u",
+                      sceneReqName(i_sceneReq->create_request.name), i_sceneReq,
+                      i_sceneReq->create_request.creating_id);
+    }
     
     if (i_sceneReq->create_request.parameters != 1) {
         scene_class* scene = (scene_class*)fpcM_SearchByID(i_sceneReq->create_request.creating_id);
@@ -123,6 +164,12 @@ fpc_ProcID fopScnRq_Request(int i_reqType, scene_class* i_scene, s16 i_procName,
     scene_request_class* req = (scene_request_class*)fpcNdRq_Request(
         sizeof(scene_request_class), i_reqType, (process_node_class*)i_scene, i_procName, i_data,
         &submethod);
+
+    if (shouldLogSceneReq(i_procName)) {
+        tp::log::info("fopScnRq_Request: type=%d proc=%s(%d) fade=%d peek=%u req=%p",
+                      i_reqType, sceneReqName(i_procName), i_procName, i_fadename,
+                      i_peektime, req);
+    }
 
     if (req == NULL) {
         return fpcM_ERROR_PROCESS_ID_e;

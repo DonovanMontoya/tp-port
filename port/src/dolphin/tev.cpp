@@ -104,6 +104,12 @@ static GLuint sCurrentProgram = 0;
 // -----------------------------------------------------------------------
 // GLSL codegen helpers
 // -----------------------------------------------------------------------
+#if defined(__APPLE__)
+static const char* kGLSLVersion = "#version 410 core\n";
+#else
+static const char* kGLSLVersion = "#version 450 core\n";
+#endif
+
 static const char* ColorArgName(GXTevColorArg a, int stage) {
     static char buf[64];
     switch (a) {
@@ -165,7 +171,7 @@ static float BiasVal(GXTevBias b) {
 // -----------------------------------------------------------------------
 static std::string GenerateTEVShader(const TevState& tev) {
     std::ostringstream ss;
-    ss << "#version 450 core\n";
+    ss << kGLSLVersion;
 
     // Texture samplers
     for (int i = 0; i < 8; i++)
@@ -263,7 +269,6 @@ static std::string GenerateTEVShader(const TevState& tev) {
 
 // Vertex shader shared by all TEV programs
 static const char* kTEVVert = R"GLSL(
-#version 450 core
 layout(location=0) in vec3  aPos;
 layout(location=1) in vec4  aColor;
 layout(location=2) in vec2  aTexCoord0;

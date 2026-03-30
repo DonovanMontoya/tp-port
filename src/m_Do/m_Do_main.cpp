@@ -545,7 +545,7 @@ bool Debug_console(u32 i_padNo) {
                     }
 
                     DynamicModuleControlBase::dump();
-                    g_dComIfG_gameInfo.mResControl.dump();
+                    dComIfG_dumpResControl();
                 }
 
                 if (mDoCPd_c::getTrig(i_padNo) & PAD_BUTTON_RIGHT) {
@@ -558,8 +558,10 @@ bool Debug_console(u32 i_padNo) {
                     archiveHeap->dump_sort();
                 }
 
+                #if !PLATFORM_PC
                 JUTReport(30, 440, 1, "Press L+R trigger to control console.");
                 JUTReport(30, 450, 1, "Press [Z] trigger to close this window.");
+                #endif
             }
 
             console->setPosition(console_position_x, console_position_y);
@@ -592,15 +594,30 @@ s32 LOAD_COPYDATE(void*) {
 }
 
 static void debug() {
+    static bool sLoggedFirstDebugFrame = false;
+    const bool logFrame = !sLoggedFirstDebugFrame;
+    if (logFrame) {
+        tp::log::info("debug: enter");
+    }
+
     #if DEBUG
     if (mPrintFrameLine) {
         printFrameLine();
+        if (logFrame) {
+            tp::log::info("debug: printFrameLine complete");
+        }
     }
     #endif
 
     if (mDoMain::developmentMode) {
+        if (logFrame) {
+            tp::log::info("debug: developmentMode active");
+        }
         if (mCheckHeap) {
             CheckHeap(PAD_3);
+            if (logFrame) {
+                tp::log::info("debug: CheckHeap complete");
+            }
         }
 
         if ((mDoCPd_c::getGamePad(PAD_3)->getButton() & ~PAD_TRIGGER_Z) == PAD_TRIGGER_R &&
@@ -621,31 +638,60 @@ static void debug() {
             }
 
             debugDisplay();
+            if (logFrame) {
+                tp::log::info("debug: debugDisplay complete");
+            }
         }
 
         #if DEBUG
         if (!dDebugPad.Active()) {
+            if (logFrame) {
+                tp::log::info("debug: calling Debug_console");
+            }
             Debug_console(PAD_3);
+            if (logFrame) {
+                tp::log::info("debug: Debug_console complete");
+            }
         }
         #else
+        if (logFrame) {
+            tp::log::info("debug: calling Debug_console");
+        }
         Debug_console(PAD_3);
+        if (logFrame) {
+            tp::log::info("debug: Debug_console complete");
+        }
         #endif
         
         #if DEBUG
         fapGm_HIO_c::startCpuTimer();
+        if (logFrame) {
+            tp::log::info("debug: cpu timer started");
+        }
 
         if (fapGmHIO_getHostIO()) {
             JKRHeap* var_r30 = mDoExt_getHostIOHeap();
             JKRHeap* var_r29 = mDoExt_setCurrentHeap(var_r30);
             JOR_MESSAGELOOP();
             mDoExt_setCurrentHeap(var_r29);
+            if (logFrame) {
+                tp::log::info("debug: JOR_MESSAGELOOP complete");
+            }
         }
 
         fapGm_HIO_c::printCpuTimer("");
         fapGm_HIO_c::stopCpuTimer("ホストＩＯ");
         fapGm_HIO_c::printCpuTimer("\n↑↑↑↑↑↑↑↑↑↑　ＣＰＵ時間計測終了　↑↑↑↑↑↑↑↑↑↑\n");
         fapGm_HIO_c::offCpuTimer();
+        if (logFrame) {
+            tp::log::info("debug: host IO complete");
+        }
         #endif
+    }
+
+    if (logFrame) {
+        tp::log::info("debug: exit");
+        sLoggedFirstDebugFrame = true;
     }
 }
 
@@ -681,13 +727,18 @@ void main01(void) {
     #endif
 
     // setup FrameBuffer and ZBuffer, init display lists
+    tp::log::info("main01: calling mDoGph_Create");
     mDoGph_Create();
     tp::log::info("main01: mDoGph_Create complete");
 
     // Setup control pad
+    tp::log::info("main01: calling mDoCPd_c::create");
     mDoCPd_c::create();
     tp::log::info("main01: mDoCPd_c::create complete");
 
+#if PLATFORM_PC
+    tp::log::info("main01: skipping heap check target registration on PC");
+#else
     RootHeapCheck.setHeap((JKRExpHeap*)JKRGetRootHeap());
     SystemHeapCheck.setHeap((JKRExpHeap*)JKRGetSystemHeap());
     ZeldaHeapCheck.setHeap(mDoExt_getZeldaHeap());
@@ -696,6 +747,8 @@ void main01(void) {
     J2dHeapCheck.setHeap(mDoExt_getJ2dHeap());
     HostioHeapCheck.setHeap(mDoExt_getHostIOHeap());
     CommandHeapCheck.setHeap(mDoExt_getCommandHeap());
+    tp::log::info("main01: heap check targets registered");
+#endif
 
     #if DEBUG
     JKRHeap* var_r28 = mDoExt_getHostIOHeap();
@@ -709,6 +762,9 @@ void main01(void) {
     OSReport("\x1b[36mHOSTIOヒープ残り %u Bytes\n\x1b[m", local_34);
     #endif
 
+#if PLATFORM_PC
+    tp::log::info("main01: skipping system console lookup/setup on PC");
+#else
     JUTConsole* console = JFWSystem::getSystemConsole();
     tp::log::info("main01: system console = %p", console);
     if (console) {
@@ -716,10 +772,12 @@ void main01(void) {
                                                       JUTConsole::OUTPUT_NONE);
         console->setPosition(32, 42);
     }
+#endif
     tp::log::info("main01: console setup complete");
 
     mDoDvdThd_callback_c::create((mDoDvdThd_callback_func)LOAD_COPYDATE, NULL);
     tp::log::info("main01: LOAD_COPYDATE callback queued");
+    tp::log::info("main01: calling fapGm_Create");
     fapGm_Create(); // init framework
     tp::log::info("main01: fapGm_Create complete");
 
@@ -729,9 +787,11 @@ void main01(void) {
     g_presetHIO.field_0x4 = mDoHIO_createChild("状況ファイル", &g_presetHIO);
     #endif
 
+    tp::log::info("main01: calling fopAcM_initManager");
     fopAcM_initManager();
     tp::log::info("main01: fopAcM_initManager complete");
     mDisplayHeapSize = 0;
+    tp::log::info("main01: calling cDyl_InitAsync");
     cDyl_InitAsync(); // init RELs
     tp::log::info("main01: cDyl_InitAsync complete");
 

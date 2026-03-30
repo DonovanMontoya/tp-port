@@ -45,6 +45,7 @@ public:
     J3DDrawBuffer* getDrawBuffer(int type) {
         return (type >= 0 && type < 2) ? mDrawBuffer[type] : nullptr;
     }
+    void drawInit() {}
     void reinitGX() {}
 
     Mtx mViewMtx;

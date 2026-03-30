@@ -13,7 +13,9 @@
 #include "f_pc/f_pc_pause.h"
 #include "f_pc/f_pc_profile.h"
 #include "f_pc/f_pc_debug_sv.h"
+#include "f_pc/f_pc_name.h"
 #include "Z2AudioLib/Z2AudioMgr.h"
+#include "port/port.h"
 
 BOOL fpcBs_Is_JustOfType(int i_typeA, int i_typeB) {
     if (i_typeB == i_typeA) {
@@ -39,7 +41,17 @@ int fpcBs_MakeOfId() {
 }
 
 int fpcBs_Execute(base_process_class* i_proc) {
+    if (i_proc == NULL) {
+        return 0;
+    }
+
     int result = 1;
+    layer_class* exec_layer;
+
+    if (i_proc->profname == fpcNm_TITLE_e) {
+        tp::log::info("fpcBs_Execute: TITLE proc=%p methods=%p layer=%p",
+                      i_proc, i_proc->methods, i_proc->layer_tag.layer);
+    }
 
 #if DEBUG
     if (!fpcBs_Is_JustOfType(g_fpcBs_type, i_proc->type)) {
@@ -54,7 +66,13 @@ int fpcBs_Execute(base_process_class* i_proc) {
     if (result == 1) {
         layer_class* save_layer = fpcLy_CurrentLayer();
 
-        fpcLy_SetCurrentLayer(i_proc->layer_tag.layer);
+        exec_layer = i_proc->layer_tag.layer;
+        if (exec_layer == NULL) {
+            exec_layer = save_layer != NULL ? save_layer : fpcLy_RootLayer();
+            i_proc->layer_tag.layer = exec_layer;
+        }
+
+        fpcLy_SetCurrentLayer(exec_layer);
         result = fpcMtd_Execute(i_proc->methods, i_proc);
 
         fpcLy_SetCurrentLayer(save_layer);
@@ -71,10 +89,20 @@ void fpcBs_DeleteAppend(base_process_class* i_proc) {
 }
 
 int fpcBs_IsDelete(base_process_class* i_proc) {
+    if (i_proc == NULL) {
+        return 0;
+    }
+
     int result;
     layer_class* save_layer = fpcLy_CurrentLayer();
+    layer_class* delete_layer = i_proc->layer_tag.layer;
 
-    fpcLy_SetCurrentLayer(i_proc->layer_tag.layer);
+    if (delete_layer == NULL) {
+        delete_layer = save_layer != NULL ? save_layer : fpcLy_RootLayer();
+        i_proc->layer_tag.layer = delete_layer;
+    }
+
+    fpcLy_SetCurrentLayer(delete_layer);
     result = fpcMtd_IsDelete(i_proc->methods, i_proc);
 
     fpcLy_SetCurrentLayer(save_layer);
@@ -118,7 +146,15 @@ base_process_class* fpcBs_Create(s16 i_profname, fpc_ProcID i_procID, void* i_ap
     u32 size;
 
     pprofile = (process_profile_definition*)fpcPf_Get(i_profname);
+    if (i_profname == fpcNm_LOGO_SCENE_e || i_profname == fpcNm_MENU_SCENE_e) {
+        tp::log::info("fpcBs_Create: proc=%d profile=%p procID=%u append=%p",
+                      i_profname, pprofile, i_procID, i_append);
+    }
     size = pprofile->process_size + pprofile->unk_size;
+    if (i_profname == fpcNm_LOGO_SCENE_e || i_profname == fpcNm_MENU_SCENE_e) {
+        tp::log::info("fpcBs_Create: proc=%d process_size=0x%x unk_size=0x%x total=0x%x",
+                      i_profname, pprofile->process_size, pprofile->unk_size, size);
+    }
 
     pprocess = (base_process_class*)cMl::memalignB(-4, size);
     if (pprocess == NULL) {
@@ -143,6 +179,10 @@ base_process_class* fpcBs_Create(s16 i_profname, fpc_ProcID i_procID, void* i_ap
     pprocess->profile = pprofile;
     pprocess->append = i_append;
     pprocess->parameters = pprofile->parameters;
+    if (i_profname == fpcNm_LOGO_SCENE_e || i_profname == fpcNm_MENU_SCENE_e) {
+        tp::log::info("fpcBs_Create: proc=%d process=%p methods=%p profile_name=%d",
+                      i_profname, pprocess, pprocess->methods, pprocess->name);
+    }
     return pprocess;
 }
 

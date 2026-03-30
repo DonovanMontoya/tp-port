@@ -16,6 +16,8 @@ static fpc_ProcID l_scnRqID = fpcM_ERROR_PROCESS_ID_e;
 
 int fopScnM_ChangeReq(scene_class* i_scene, s16 i_procName, s16 param_3, u16 param_4) {
     fpc_ProcID request_id = fopScnRq_Request(2, i_scene, i_procName, NULL, param_3, param_4);
+    tp::log::info("fopScnM_ChangeReq: scene=%p proc=%d req_id=%d fade=%d peek=%u",
+                  i_scene, i_procName, request_id, param_3, param_4);
     if (request_id == fpcM_ERROR_PROCESS_ID_e) {
         return 0;
     }
@@ -34,10 +36,12 @@ int fopScnM_CreateReq(s16 i_procName, s16 param_2, u16 param_3, uintptr_t i_data
 
 u32 fopScnM_ReRequest(s16 i_procName, uintptr_t i_data) {
     if (l_scnRqID == fpcM_ERROR_PROCESS_ID_e) {
+        tp::log::info("fopScnM_ReRequest: no active request for proc=%d", i_procName);
         return 0;
     }
-
-    return fopScnRq_ReRequest(l_scnRqID, i_procName, (void*)i_data);
+    u32 ret = fopScnRq_ReRequest(l_scnRqID, i_procName, (void*)i_data);
+    tp::log::info("fopScnM_ReRequest: req_id=%d proc=%d ret=%u", l_scnRqID, i_procName, ret);
+    return ret;
 }
 
 void fopScnM_Management() {

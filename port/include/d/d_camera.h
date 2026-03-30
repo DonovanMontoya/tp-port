@@ -19,7 +19,6 @@
 
 // Forward declarations — types referenced in camera_process_class members
 class fopAc_ac_c;
-class dAttention_c;
 struct dStage_MapEvent_dt_c;
 
 // Minimal dCamInfo_c used inside dCamera_c
@@ -49,8 +48,14 @@ public:
     f32        mFar    = 100000.0f;
 };
 
-// Attention system forward declarations (full type in d_attention.h)
-dAttention_c* dComIfGp_getAttention();
+class dCameraBody_c {
+public:
+    int Mode() const { return 0; }
+};
+inline dCameraBody_c* dCam_getBody() {
+    static dCameraBody_c sBody;
+    return &sBody;
+}
 
 // Camera tool data — used by d_camera.h inline methods (needs stage types)
 #include "d/d_stage.h"

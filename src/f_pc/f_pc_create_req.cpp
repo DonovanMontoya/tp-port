@@ -12,6 +12,9 @@
 #include "f_pc/f_pc_executor.h"
 #include "f_pc/f_pc_layer.h"
 #include "f_pc/f_pc_debug_sv.h"
+#include "f_pc/f_pc_name.h"
+#include "f_pc/f_pc_profile.h"
+#include "port/port.h"
 
 BOOL fpcCtRq_isCreatingByID(create_tag* i_createTag, fpc_ProcID* i_id) {
     fpc_ProcID id = ((create_request*)i_createTag->base.mpTagData)->id;
@@ -81,6 +84,11 @@ BOOL fpcCtRq_IsDoing(create_request* i_request) {
 
 BOOL fpcCtRq_Do(create_request* i_request) {
     int phase = cPhs_COMPLEATE_e;
+    if (i_request != NULL && i_request->process != NULL &&
+        i_request->process->profile != NULL &&
+        i_request->process->profile->name == fpcNm_LOGO_SCENE_e) {
+        tp::log::info("fpcCtRq_Do: LOGO_SCENE request=%p process=%p", i_request, i_request->process);
+    }
 
     if (i_request->methods != NULL) {
         if (i_request->methods->phase_handler != NULL) {
@@ -94,6 +102,11 @@ BOOL fpcCtRq_Do(create_request* i_request) {
 
     switch (phase) {
     case cPhs_COMPLEATE_e: {
+        if (i_request != NULL && i_request->process != NULL &&
+            i_request->process->profile != NULL &&
+            i_request->process->profile->name == fpcNm_LOGO_SCENE_e) {
+            tp::log::info("fpcCtRq_Do: LOGO_SCENE phase complete process=%p", i_request->process);
+        }
         if (fpcEx_ToExecuteQ(i_request->process) == 0)
             return fpcCtRq_Cancel(i_request);
         else

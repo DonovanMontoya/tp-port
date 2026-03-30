@@ -51,6 +51,8 @@ static DVDDiskID sDiskID = {
 // FST (File System Table) — maps GC path → host path
 // -----------------------------------------------------------------------
 static std::unordered_map<std::string, std::string> sFSTMap;
+static std::unordered_map<std::string, s32> sPathToEntry;
+static std::unordered_map<s32, std::string> sEntryToPath;
 
 static bool HasExpectedGameDataLayout(const fs::path& root) {
     return fs::exists(root) && fs::exists(root / "files") && fs::exists(root / "sys");
@@ -75,11 +77,19 @@ static void BuildFSTMap(const fs::path& root) {
         tp::log::warn("DVD: game data dir '%s' has no 'files/' subdir", root.string().c_str());
         return;
     }
+    sPathToEntry.clear();
+    sEntryToPath.clear();
+    sEntryToPath[0] = "/";
+    s32 nextEntry = 1;
+
     for (auto& entry : fs::recursive_directory_iterator(filesDir)) {
         if (entry.is_regular_file()) {
             // Build virtual GC path: strip the filesDir prefix, prepend "/"
             std::string rel = "/" + fs::relative(entry.path(), filesDir).generic_string();
             sFSTMap[rel] = entry.path().string();
+            sPathToEntry[rel] = nextEntry;
+            sEntryToPath[nextEntry] = rel;
+            ++nextEntry;
         }
     }
     tp::log::info("DVD: indexed %zu files from '%s'", sFSTMap.size(), root.string().c_str());
@@ -97,6 +107,25 @@ static std::string ResolvePath(const char* gcPath) {
         if (kl == lower) return v;
     }
     return {};
+}
+
+static s32 ResolveEntryNum(const char* gcPath) {
+    auto it = sPathToEntry.find(gcPath);
+    if (it != sPathToEntry.end()) {
+        return it->second;
+    }
+
+    std::string lower = gcPath;
+    for (char& c : lower) c = static_cast<char>(tolower(c));
+    for (auto& [path, entry] : sPathToEntry) {
+        std::string cmp = path;
+        for (char& c : cmp) c = static_cast<char>(tolower(c));
+        if (cmp == lower) {
+            return entry;
+        }
+    }
+
+    return -1;
 }
 
 // -----------------------------------------------------------------------
@@ -148,10 +177,14 @@ void DVDInit(void) {
         candidates.emplace_back(envPath);
     }
     candidates.push_back(fs::current_path() / "gamedata");
+    candidates.push_back(fs::current_path() / "port" / "gamedata");
     fs::path exeDir = GetExecutableDir();
     if (!exeDir.empty()) {
         candidates.push_back(exeDir / "gamedata");
+        candidates.push_back(exeDir.parent_path() / "gamedata");
+        candidates.push_back(exeDir.parent_path() / "port" / "gamedata");
         candidates.push_back(exeDir.parent_path().parent_path() / "gamedata");
+        candidates.push_back(exeDir.parent_path().parent_path() / "port" / "gamedata");
     }
 
     for (const fs::path& candidate : candidates) {
@@ -209,6 +242,8 @@ BOOL DVDOpen(const char* fileName, DVDFileInfo* fileInfo) {
         return FALSE;
     }
 
+    tp::log::info("DVDOpen: %s -> %s", fileName, hostPath.c_str());
+
     FILE* fp = fopen(hostPath.c_str(), "rb");
     if (!fp) {
         tp::log::warn("DVD: cannot open: %s", hostPath.c_str());
@@ -221,6 +256,16 @@ BOOL DVDOpen(const char* fileName, DVDFileInfo* fileInfo) {
     fileInfo->_fp = fp;
     fileInfo->cb.state = DVD_STATE_END;
     return TRUE;
+}
+
+BOOL DVDFastOpen(s32 entrynum, DVDFileInfo* fileInfo) {
+    auto it = sEntryToPath.find(entrynum);
+    if (it == sEntryToPath.end() || entrynum == 0) {
+        tp::log::warn("DVD: invalid fast-open entry: %d", entrynum);
+        return FALSE;
+    }
+    tp::log::info("DVDFastOpen: %d -> %s", entrynum, it->second.c_str());
+    return DVDOpen(it->second.c_str(), fileInfo);
 }
 
 BOOL DVDClose(DVDFileInfo* fileInfo) {
@@ -270,8 +315,22 @@ s32 DVDGetFileSize(DVDFileInfo* fileInfo) {
     return static_cast<s32>(fileInfo->length);
 }
 
-BOOL DVDConvertPathToEntryNum(const char* path) {
-    return !ResolvePath(path).empty() ? TRUE : FALSE;
+s32 DVDConvertPathToEntrynum(const char* path) {
+    if (!path) {
+        return -1;
+    }
+    return ResolveEntryNum(path);
+}
+
+const char* DVDGetPathFromEntrynum(s32 entrynum) {
+    static std::string path;
+    auto it = sEntryToPath.find(entrynum);
+    if (it == sEntryToPath.end()) {
+        path.clear();
+        return nullptr;
+    }
+    path = it->second;
+    return path.c_str();
 }
 
 BOOL DVDOpenDir(const char* dirName, DVDDir* dir) {

@@ -49,7 +49,7 @@ void dispHeapInfo() {
         aramHeap->dump();
     }
     DynamicModuleControlBase::dump();
-    g_dComIfG_gameInfo.mResControl.dump();
+    dComIfG_dumpResControl();
 
     zelda->dump_sort();
     game->dump_sort();

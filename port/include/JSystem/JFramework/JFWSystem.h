@@ -7,6 +7,9 @@
 #include "port/types.h"
 #include "JSystem/JUtility/JUTAssert.h"
 #include "JSystem/JUtility/JUTConsole.h"
+#include "JSystem/JUtility/JUTDbPrint.h"
+#include "JSystem/JUtility/JUTProcBar.h"
+#include "JSystem/JUtility/JUTVideo.h"
 
 // Forward declarations (avoid pulling in GX / GC headers)
 struct _GXRenderModeObj;
@@ -34,8 +37,26 @@ struct JFWSystem {
         static u32                  exConsoleBufferSize;
     };
 
-    static void firstInit() {}
-    static void init()      {}
+    static void firstInit() {
+        if (!systemConsoleManager) {
+            systemConsoleManager = JUTConsoleManager::createManager(nullptr);
+        }
+        if (!JUTVideo::getManager()) {
+            JUTVideo::createManager(CSetUpParam::renderMode);
+        } else if (CSetUpParam::renderMode) {
+            JUTVideo::getManager()->setRenderMode(CSetUpParam::renderMode);
+        }
+        if (!JUTProcBar::getManager()) {
+            JUTProcBar::create();
+        }
+        if (!debugPrint) {
+            debugPrint = JUTDbPrint::create();
+        }
+    }
+    static void init() {
+        firstInit();
+        sInitCalled = true;
+    }
 
     // System console — real console assigned by mDoMch_Create; fallback via factory stub.
     static JUTConsole*       getSystemConsole() {

@@ -12,9 +12,23 @@
 
 
 static int fpcLnIt_MethodCall(create_tag_class* i_createTag, method_filter* i_filter) {
-    layer_class* layer = static_cast<base_process_class*>(i_createTag->mpTagData)->layer_tag.layer;
+    base_process_class* process = static_cast<base_process_class*>(i_createTag->mpTagData);
+    if (process == NULL) {
+        return 0;
+    }
+
+    layer_class* layer = process->layer_tag.layer;
     layer_class* save_layer = fpcLy_CurrentLayer();
     int ret;
+
+    if (layer == NULL) {
+        layer = save_layer != NULL ? save_layer : fpcLy_RootLayer();
+        process->layer_tag.layer = layer;
+    }
+
+    if (layer == NULL) {
+        return 0;
+    }
 
     fpcLy_SetCurrentLayer(layer);
     ret = cTgIt_MethodCall(i_createTag, i_filter);

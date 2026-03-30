@@ -302,7 +302,15 @@ J3DModelData* dRes_info_c::loaderBasicBmd(u32 i_tag, void* i_data) {
 int dRes_info_c::loadResource() {
     JUT_ASSERT(709, mRes == NULL);
 
+    const bool traceTitle = stricmp(mArchiveName, "Title") == 0;
+    if (traceTitle) {
+        tp::log::info("Title loadResource: begin archive=%p", mArchive);
+    }
+
     s32 countFile = mArchive->countFile();
+    if (traceTitle) {
+        tp::log::info("Title loadResource: files=%d dirs=%d", countFile, mArchive->countDirectory());
+    }
     mRes = new void*[countFile];
     if (mRes == NULL) {
         OSReport_Error("<%s.arc> setRes: res pointer buffer nothing !!\n", mArchiveName);
@@ -317,12 +325,22 @@ int dRes_info_c::loadResource() {
     for (int i = 0; i < mArchive->countDirectory(); i++) {
         u32 nodeType = node->type;
         u32 fileIndex = node->first_file_index;
+        if (traceTitle) {
+            tp::log::info("Title loadResource: dir=%d type=%08x entries=%d first=%u",
+                          i, nodeType, node->num_entries, fileIndex);
+        }
 
         for (int j = 0; j < node->num_entries; j++) {
             if (mArchive->isFileEntry(fileIndex)) {
 #if DEBUG
                 const char* tmp = mArchive->mStringTable + (mArchive->findIdxResource(fileIndex)->type_flags_and_name_offset & 0xFFFFFF);
 #endif
+                const char* traceName = mArchive->mStringTable +
+                    (mArchive->findIdxResource(fileIndex)->type_flags_and_name_offset & 0xFFFFFF);
+                if (traceTitle) {
+                    tp::log::info("Title loadResource: fileIndex=%u nodeType=%08x name=%s",
+                                  fileIndex, nodeType, traceName);
+                }
                 void* res = mArchive->getIdxResource(fileIndex);
 
                 if (res == NULL) {
@@ -388,10 +406,27 @@ int dRes_info_c::loadResource() {
                 } else if (nodeType == 'BMDR' || nodeType == 'BMDV' || nodeType == 'BMDE' ||
                            nodeType == 'BMWR' || nodeType == 'BMWE')
                 {
+#if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
+                    if (traceTitle) {
+                        tp::log::info("Title loadResource: model load begin index=%u type=%08x name=%s data=%p",
+                                      fileIndex, nodeType, traceName, res);
+                        tp::log::info("Title loadResource: skipping model postprocess for %s on host",
+                                      traceName);
+                    }
+#else
+                    if (traceTitle) {
+                        tp::log::info("Title loadResource: model load begin index=%u type=%08x name=%s data=%p",
+                                      fileIndex, nodeType, traceName, res);
+                    }
                     res = loaderBasicBmd(nodeType, res);
+                    if (traceTitle) {
+                        tp::log::info("Title loadResource: model load end index=%u type=%08x result=%p",
+                                      fileIndex, nodeType, res);
+                    }
                     if (res == NULL) {
                         return -1;
                     }
+#endif
                 } else if (nodeType == 'BMDG') {
                     res = (J3DModelData*)J3DModelLoaderDataBase::load(res, 0x59020010);
                     if (res == NULL) {
@@ -475,7 +510,8 @@ int dRes_info_c::loadResource() {
                     void* bas;
 
                     if (chunk->some_data_offset != 0xFFFFFFFF) {
-                        bas = (void*)(chunk->some_data_offset + (u32)res);
+                        bas = reinterpret_cast<void*>(chunk->some_data_offset +
+                                                      reinterpret_cast<uintptr_t>(res));
                     } else {
                         bas = NULL;
                     }
@@ -509,6 +545,9 @@ int dRes_info_c::loadResource() {
         node++;
     }
 
+    if (traceTitle) {
+        tp::log::info("Title loadResource: complete");
+    }
     return 0;
 }
 
@@ -587,6 +626,11 @@ int dRes_info_c::setRes() {
             return -1;
         }
 
+        const bool traceTitle = stricmp(mArchiveName, "Title") == 0;
+        if (traceTitle) {
+            tp::log::info("Title setRes: mounted archive=%p heap=%p", mArchive, heap);
+        }
+
         u32 r28;
 
         if (heap != NULL) {
@@ -595,6 +639,9 @@ int dRes_info_c::setRes() {
             JUT_ASSERT(1260, mDataHeap != NULL);
 
             int rt = loadResource();
+            if (traceTitle) {
+                tp::log::info("Title setRes: loadResource(heap) -> %d", rt);
+            }
             mDoExt_restoreCurrentHeap();
             r28 = mDoExt_adjustSolidHeap(mDataHeap);
             heap->unlock();
@@ -612,6 +659,9 @@ int dRes_info_c::setRes() {
                 return -1;
             }
             int rt = loadResource();
+            if (traceTitle) {
+                tp::log::info("Title setRes: loadResource(game) -> %d", rt);
+            }
             mDoExt_restoreCurrentHeap();
             r28 = mDoExt_adjustSolidHeap(mDataHeap);
 

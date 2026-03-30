@@ -30,6 +30,14 @@ BOOL fpcEx_IsExist(fpc_ProcID i_id) {
 }
 
 int fpcEx_Execute(base_process_class* i_proc) {
+    if (i_proc == NULL) {
+        return 0;
+    }
+
+    if (i_proc->profname == fpcNm_TITLE_e) {
+        tp::log::info("fpcEx_Execute: TITLE proc=%p init_state=%d pause=%d",
+                      i_proc, i_proc->state.init_state, fpcPause_IsEnable(i_proc, 1));
+    }
     if (i_proc->state.init_state != 2 || fpcPause_IsEnable(i_proc, 1) == TRUE)
         return 0;
 
@@ -37,7 +45,30 @@ int fpcEx_Execute(base_process_class* i_proc) {
 }
 
 int fpcEx_ToLineQ(base_process_class* i_proc) {
+    if (i_proc == NULL) {
+        return 0;
+    }
+
+    if (i_proc->layer_tag.layer == NULL) {
+        i_proc->layer_tag.layer = fpcLy_CurrentLayer();
+        if (i_proc->layer_tag.layer == NULL) {
+            i_proc->layer_tag.layer = fpcLy_RootLayer();
+        }
+    }
+
+    if (i_proc->layer_tag.layer == NULL || i_proc->layer_tag.layer->process_node == NULL) {
+        return 0;
+    }
+
     base_process_class* process = &i_proc->layer_tag.layer->process_node->base;
+
+    if (i_proc->profname == fpcNm_TITLE_e) {
+        tp::log::info("fpcEx_ToLineQ: TITLE proc=%p layer=%d list=%d line_in_use=%d",
+                      i_proc,
+                      i_proc->layer_tag.layer ? i_proc->layer_tag.layer->layer_id : -1,
+                      i_proc->priority.current_info.list_id,
+                      cTg_IsUse(&process->line_tag_.base));
+    }
 
     if (i_proc->layer_tag.layer->layer_id == fpcLy_ROOT_e || cTg_IsUse(&process->line_tag_.base) == TRUE) {
         int var_r28 = i_proc->priority.current_info.list_id;
@@ -53,6 +84,10 @@ int fpcEx_ToLineQ(base_process_class* i_proc) {
 #endif
 
         i_proc->state.init_state = 2;
+        if (i_proc->profname == fpcNm_TITLE_e) {
+            tp::log::info("fpcEx_ToLineQ: TITLE proc=%p queued init_state=%d", i_proc,
+                          i_proc->state.init_state);
+        }
         if (fpcBs_Is_JustOfType(g_fpcNd_type, i_proc->subtype)) {
             fpcLyIt_OnlyHere(&((process_node_class*)i_proc)->layer, (fpcLyIt_OnlyHereFunc)fpcEx_ToLineQ, i_proc);
         }
@@ -64,6 +99,10 @@ int fpcEx_ToLineQ(base_process_class* i_proc) {
 }
 
 int fpcEx_ExecuteQTo(base_process_class* i_proc) {
+    if (i_proc == NULL) {
+        return 0;
+    }
+
     if (fpcLyTg_QueueTo(&i_proc->layer_tag) == 1) {
         i_proc->state.init_state = 3;
         return 1;
@@ -73,7 +112,16 @@ int fpcEx_ExecuteQTo(base_process_class* i_proc) {
 }
 
 int fpcEx_ToExecuteQ(base_process_class* i_proc) {
+    if (i_proc == NULL) {
+        return 0;
+    }
+
     process_priority_class* priority = &i_proc->priority;
+    if (i_proc->profname == fpcNm_TITLE_e) {
+        tp::log::info("fpcEx_ToExecuteQ: TITLE proc=%p layer=%d list=%d prio=%d",
+                      i_proc, priority->current_info.layer_id, priority->current_info.list_id,
+                      priority->current_info.list_priority);
+    }
     if (fpcLyTg_ToQueue(&i_proc->layer_tag, priority->current_info.layer_id, priority->current_info.list_id, priority->current_info.list_priority) == 1) {
         fpcEx_ToLineQ(i_proc);
         return 1;

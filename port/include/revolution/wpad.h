@@ -19,11 +19,29 @@ extern "C" {
 #define WPAD_ERR_NO_CONTROLLER (-1)
 #define WPAD_ERR_BUSY        (-2)
 
+#define WPAD_BUTTON_LEFT   0x0001
+#define WPAD_BUTTON_RIGHT  0x0002
+#define WPAD_BUTTON_DOWN   0x0004
+#define WPAD_BUTTON_UP     0x0008
+#define WPAD_BUTTON_PLUS   0x0010
+#define WPAD_BUTTON_2      0x0100
+#define WPAD_BUTTON_1      0x0200
+#define WPAD_BUTTON_B      0x0400
+#define WPAD_BUTTON_A      0x0800
+#define WPAD_BUTTON_MINUS  0x1000
+#define WPAD_BUTTON_HOME   0x8000
+#define WPAD_BUTTON_Z      0x2000
+
 typedef struct WPADStatus {
     u16 button;
     s8  accX, accY, accZ;
     u8  err;
 } WPADStatus;
+
+typedef struct WPADInfo {
+    BOOL lowBat;
+    u32 devType;
+} WPADInfo;
 
 typedef void (*WPADConnectCallback)(s32 chan, s32 result);
 typedef void (*WPADSamplingCallback)(u32 freq);

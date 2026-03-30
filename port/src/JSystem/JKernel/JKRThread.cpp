@@ -100,6 +100,7 @@ JKRThread::JKRThread(u32 stack_size, int msg_count, int prio)
     , mStackSize(0)
     , mCurrentHeap(JKRHeap::sCurrentHeap)
     , mCurrentHeapError(0)
+    , mOwnsThreadRecord(true)
     , _thread(nullptr)
     , _running(false)
 {
@@ -122,6 +123,7 @@ JKRThread::JKRThread(JKRHeap* heap, u32 stack_size, int msg_count, int prio)
     , mStackSize(0)
     , mCurrentHeap(heap ? heap : JKRHeap::sCurrentHeap)
     , mCurrentHeapError(0)
+    , mOwnsThreadRecord(true)
     , _thread(nullptr)
     , _running(false)
 {
@@ -144,6 +146,7 @@ JKRThread::JKRThread(OSThread* thread, int msg_count)
     , mStackSize(0)
     , mCurrentHeap(JKRHeap::sCurrentHeap)
     , mCurrentHeapError(0)
+    , mOwnsThreadRecord(false)
     , _thread(nullptr)
     , _running(false)
 {
@@ -164,7 +167,10 @@ JKRThread::~JKRThread() {
     sThreadList.remove(&mThreadListLink);
     if (mMesgBuffer) { ::free(mMesgBuffer); mMesgBuffer = nullptr; }
     if (mStackMemory) { ::free(mStackMemory); mStackMemory = nullptr; }
-    if (mThreadRecord) { ::free(mThreadRecord); mThreadRecord = nullptr; }
+    if (mOwnsThreadRecord && mThreadRecord) {
+        ::free(mThreadRecord);
+        mThreadRecord = nullptr;
+    }
 }
 
 // ---------------------------------------------------------------------------

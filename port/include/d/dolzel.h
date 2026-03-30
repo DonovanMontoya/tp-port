@@ -36,6 +36,14 @@
 #include "SSystem/SComponent/c_m3d_g_cyl.h"
 #include "SSystem/SComponent/c_phase.h"
 
+#ifndef ASSERT
+#define ASSERT(expr) ((void)0)
+#endif
+
+#ifndef DEG_TO_RAD
+#define DEG_TO_RAD(x) ((x) * (static_cast<f32>(M_PI) / 180.0f))
+#endif
+
 // m_Do helpers — port stubs exist
 #include "m_Do/m_Do_hostIO.h"
 #ifndef TP_PORT_SKIP_M_DO_EXT
@@ -51,10 +59,13 @@
 #include "d/d_com_inf_game.h"
 #include "d/d_stage.h"
 #include "d/d_kankyo.h"
+#include "d/actor/d_a_player.h"
+#include "d/actor/d_a_alink.h"
 #include "m_Do/m_Do_mtx.h"
 
 // J3D model and animation types — port stubs with minimal class bodies
 #include "JSystem/J3DGraphAnimator/J3DModel.h"
+#include "JSystem/J2DGraph/J2DAnimation.h"
 // J3D view matrix system (provides j3dSys global)
 #include "JSystem/J3DGraphBase/J3DSys.h"
 
@@ -64,6 +75,8 @@ class J3DAnmTransformKey;
 class J3DMaterial;
 class J3DTexture;
 struct J3DPacket;
+class J2DScreen;
+class J2DAnmTextureSRTKey;
 
 // JPABaseEmitter — particle emitter stub; setRate() used by fopAcM_effHamonSet
 class JPABaseEmitter {

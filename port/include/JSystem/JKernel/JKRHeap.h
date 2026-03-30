@@ -79,6 +79,7 @@ public:
     static JKRHeap* sRootHeap2;
     static JKRHeap* getRootHeap()    { return sSystemHeap; }
     static JKRHeap* getCurrentHeap() { return sCurrentHeap; }
+    static JKRHeap* findFromRoot(JKRHeap* heap) { return heap ? heap : sSystemHeap; }
 
     JKRHeap* becomeSystemHeap() {
         JKRHeap* prev = sSystemHeap;
@@ -107,6 +108,8 @@ public:
     // ----- aligned alloc helper -----
     void* allocFromHead(u32 size, int align = 4) { return alloc(size, align); }
     void* allocFromTail(u32 size, int align = 4) { return alloc(size, align); }
+    void lock() {}
+    void unlock() {}
 
     // ----- operator new/delete for heap objects -----
     static void* operator_new(u32 size, JKRHeap* heap, int align = 4) {
@@ -136,6 +139,8 @@ public:
     }
     JKRSolidHeap(void* buf, u32 size, JKRHeap* parent, bool errFlag) : JKRHeap(buf, size, parent, errFlag) {}
     s32 adjustSize() { return 0; }
+    void* getStartAddr() { return nullptr; }
+    void* getEndAddr() { return nullptr; }
 };
 
 inline void JKRDestroySolidHeap(JKRSolidHeap* heap) {
@@ -212,6 +217,9 @@ inline JKRExpHeap* JKRCreateExpHeap(u32 size, JKRHeap* parent, bool errFlag) {
 inline void* JKRAllocFromHeap(JKRHeap* heap, u32 size, int align) {
     return heap ? heap->alloc(size, align) : nullptr;
 }
+inline void* JKRAlloc(u32 size, int align) {
+    return JKRAllocFromHeap(JKRGetCurrentHeap(), size, align);
+}
 inline void JKRFreeToHeap(JKRHeap* heap, void* ptr) {
     if (heap) {
         heap->free(ptr);
@@ -231,12 +239,23 @@ inline void JKRFree(void* ptr) {
 inline void JKRDestroyExpHeap(JKRExpHeap* heap) {
     delete heap;
 }
+inline JKRHeap* JKRFindHeap(const void* ptr) {
+    (void)ptr;
+    return JKRGetCurrentHeap();
+}
 
 inline void* operator new(std::size_t size, JKRHeap* heap, int align) {
     return heap ? heap->alloc(static_cast<u32>(size), align) : ::operator new(size);
 }
 
+inline void* operator new[](std::size_t size, JKRHeap* heap, int align) {
+    return heap ? heap->alloc(static_cast<u32>(size), align) : ::operator new[](size);
+}
+
 inline void operator delete(void* ptr, JKRHeap* /*heap*/, int /*align*/) noexcept {
     ::operator delete(ptr);
+}
+inline void operator delete[](void* ptr, JKRHeap* /*heap*/, int /*align*/) noexcept {
+    ::operator delete[](ptr);
 }
 inline void JKRFillMemory(u8* /*dst*/, u32 /*size*/, u8 /*val*/) {}

@@ -42,9 +42,15 @@ bool Init(const Config& cfg) {
     }
     tp::log::info("glfwInit succeeded");
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+    int glMajor = 4;
+    int glMinor = 5;
+#ifdef __APPLE__
+    glMinor = 1;
+#endif
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, glMajor);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, glMinor);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    tp::log::info("Requesting OpenGL context %d.%d", glMajor, glMinor);
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
@@ -73,18 +79,24 @@ bool Init(const Config& cfg) {
     }
     tp::log::info("gladLoadGLLoader succeeded");
 
-    // Enable debug output
+    tp::log::info("Configuring GL debug output");
+#if defined(__APPLE__)
+    tp::log::info("Skipping GL debug callback on macOS");
+#else
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glDebugMessageCallback(GLDebugCallback, nullptr);
+#endif
 
     // Key callback: Escape → close, F11 → toggle fullscreen
+    tp::log::info("Installing key callback");
     glfwSetKeyCallback(sWindow, [](GLFWwindow* w, int key, int /*sc*/, int action, int /*mod*/) {
         if (action == GLFW_PRESS) {
             if (key == GLFW_KEY_ESCAPE) glfwSetWindowShouldClose(w, GLFW_TRUE);
         }
     });
 
+    tp::log::info("Querying GL version string");
     tp::log::info("Window: %dx%d, GL %s", cfg.width, cfg.height, glGetString(GL_VERSION));
     return true;
 }
@@ -108,7 +120,14 @@ void EndFrame(void) {
 }
 
 bool IsOpen(void) {
-    return sWindow && !glfwWindowShouldClose(sWindow);
+    static bool s_logged_close = false;
+    bool open = sWindow && !glfwWindowShouldClose(sWindow);
+    if (!open && !s_logged_close) {
+        s_logged_close = true;
+        tp::log::warn("window::IsOpen -> false (sWindow=%p shouldClose=%d)",
+                      sWindow, sWindow ? glfwWindowShouldClose(sWindow) : -1);
+    }
+    return open;
 }
 
 void GetFramebufferSize(int* w, int* h) {

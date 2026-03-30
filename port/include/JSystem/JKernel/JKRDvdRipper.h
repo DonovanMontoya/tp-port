@@ -43,19 +43,12 @@ public:
     static u32  getSZSBufferSize()         { return sSZSBufferSize; }
     static bool isErrorRetry()             { return errorRetry; }
 
-    // All load variants are no-ops on PC — return nullptr
     static void* loadToMainRAM(char const*, u8*, JKRExpandSwitch, u32, JKRHeap*,
-                               EAllocDirection, u32, JKRCompression*, u32*) {
-        return nullptr;
-    }
+                               EAllocDirection, u32, JKRCompression*, u32*);
     static void* loadToMainRAM(s32, u8*, JKRExpandSwitch, u32, JKRHeap*,
-                               EAllocDirection, u32, JKRCompression*, u32*) {
-        return nullptr;
-    }
+                               EAllocDirection, u32, JKRCompression*, u32*);
     static void* loadToMainRAM(JKRDvdFile*, u8*, JKRExpandSwitch, u32, JKRHeap*,
-                               EAllocDirection, u32, JKRCompression*, u32*) {
-        return nullptr;
-    }
+                               EAllocDirection, u32, JKRCompression*, u32*);
 };
 
 // ---------------------------------------------------------------------------

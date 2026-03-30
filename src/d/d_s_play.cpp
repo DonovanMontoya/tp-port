@@ -74,10 +74,7 @@ static request_of_phase_process_class resPhase[1];
 
 static request_of_phase_process_class dylPhase[1];
 
-#if DEBUG
 static OSTime dylPreLoadTime0;
-#endif
-
 static OSTime dylPreLoadTime1;
 
 static OSTime resPreLoadTime0;
@@ -695,9 +692,50 @@ static u32 l_sceneChangeStartTick;
 #endif
 
 static int dScnPly_Execute(dScnPly_c* i_this) {
+    static fpc_ProcID s_opening_scene_id = fpcM_ERROR_PROCESS_ID_e;
+    static fpc_ProcID s_opening_title_id = fpcM_ERROR_PROCESS_ID_e;
+    static bool s_opening_title_res_requested = false;
+    static int s_opening_title_res_sync = -999;
     #if DEBUG
     fapGm_HIO_c::startCpuTimer();
     #endif
+
+    if (fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e) {
+        fpc_ProcID scene_id = fpcM_GetID(i_this);
+        if (s_opening_scene_id != scene_id) {
+            s_opening_scene_id = scene_id;
+            s_opening_title_id = fpcM_ERROR_PROCESS_ID_e;
+            s_opening_title_res_requested = false;
+            s_opening_title_res_sync = -999;
+        }
+
+        if (s_opening_title_id == fpcM_ERROR_PROCESS_ID_e) {
+            if (!s_opening_title_res_requested) {
+                int set_res = dComIfG_setObjectRes("Title", 0, NULL);
+                tp::log::info("dScnPly_Execute[PC]: preload Title arc -> %d", set_res);
+                s_opening_title_res_requested = set_res != 0;
+                if (!s_opening_title_res_requested) {
+                    return 1;
+                }
+            }
+
+            int sync = dComIfG_syncObjectRes("Title");
+            if (sync != s_opening_title_res_sync) {
+                s_opening_title_res_sync = sync;
+                tp::log::info("dScnPly_Execute[PC]: preload Title sync -> %d", sync);
+            }
+            if (sync < 0) {
+                tp::log::info("dScnPly_Execute[PC]: Title preload failed");
+                return 1;
+            }
+            if (sync > 0) {
+                return 1;
+            }
+
+            s_opening_title_id = fopAcM_create(fpcNm_TITLE_e, 0, NULL, -1, NULL, NULL, -1);
+            tp::log::info("dScnPly_Execute[PC]: requested TITLE actor -> %d", s_opening_title_id);
+        }
+    }
 
     i_this->offReset();
 
@@ -1055,6 +1093,14 @@ void dScnPly_c::offReset() {
 }
 
 static int phase_00(dScnPly_c* i_this) {
+    static bool s_logged[2] = {};
+    int name = fpcM_GetName(i_this);
+    if (!s_logged[name == fpcNm_OPENING_SCENE_e ? 1 : 0]) {
+        s_logged[name == fpcNm_OPENING_SCENE_e ? 1 : 0] = true;
+        tp::log::info("dScnPly phase_00: proc=%d startStage=%s room=%d point=%d layer=%d",
+                      name, dComIfGp_getStartStageName(), dComIfGp_getStartStageRoomNo(),
+                      dComIfGp_getStartStagePoint(), dComIfGp_getStartStageLayer());
+    }
     if (!i_this->resetGame()) {
         return cPhs_INIT_e;
     }
@@ -1089,6 +1135,11 @@ static int phase_00(dScnPly_c* i_this) {
 }
 
 static int phase_01(dScnPly_c* i_this) {
+    static bool s_logged = false;
+    if (!s_logged && fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e) {
+        s_logged = true;
+        tp::log::info("dScnPly phase_01: opening scene audio bootstrap");
+    }
     mDoAud_setHour(dKy_getdaytime_hour());
     mDoAud_setMinute(dKy_getdaytime_minute());
     mDoAud_setWeekday(dKy_get_dayofweek());
@@ -1117,6 +1168,14 @@ static int phase_0(dScnPly_c* i_this) {
 }
 
 static int phase_1(dScnPly_c* i_this) {
+    static bool s_logged[2] = {};
+    int name = fpcM_GetName(i_this);
+    if (!s_logged[name == fpcNm_OPENING_SCENE_e ? 1 : 0]) {
+        s_logged[name == fpcNm_OPENING_SCENE_e ? 1 : 0] = true;
+        tp::log::info("dScnPly phase_1: proc=%d stage=%s room=%d point=%d layer=%d",
+                      name, dComIfGp_getStartStageName(), dComIfGp_getStartStageRoomNo(),
+                      dComIfGp_getStartStagePoint(), dComIfGp_getStartStageLayer());
+    }
     dStage_roomControl_c::setProcID(fopScnM_GetID(i_this));
 
     dComIfGp_setStartStage(dComIfGp_getNextStartStage());
@@ -1302,7 +1361,21 @@ static int phase_1(dScnPly_c* i_this) {
 }
 
 static int phase_1_0(dScnPly_c* i_this) {
+    static bool s_logged = false;
+    if (!s_logged && fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e) {
+        s_logged = true;
+        tp::log::info("dScnPly phase_1_0: waiting for Stg_00");
+    }
     static char camparamarc[10] = "CamParam";
+
+    if (fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e && dComIfGp_getStartStageName()[0] == '\0') {
+        tp::log::info("dScnPly phase_1_0[PC]: opening scene has no start stage, skipping stage wait");
+        dStage_infoCreate();
+        dComIfG_setObjectRes("Event", (u8)0, NULL);
+        dComIfGp_setCameraParamFileName(0, camparamarc);
+        dComIfG_setObjectRes("CamParam", (u8)0, NULL);
+        return cPhs_NEXT_e;
+    }
 
     int rt = dComIfG_syncStageRes("Stg_00");
     JUT_ASSERT(2469, rt >= 0);
@@ -1319,7 +1392,19 @@ static int phase_1_0(dScnPly_c* i_this) {
 }
 
 static int phase_2(dScnPly_c* i_this) {
+    if (fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e && dComIfGp_getStartStageName()[0] == '\0') {
+        tp::log::info("dScnPly phase_2[PC]: opening scene skipping object resource sync");
+        dComIfGp_particle_readScene(255, &i_this->sceneCommand);
+        dMsgObject_readMessageGroup(&i_this->field_0x1d0);
+        return cPhs_NEXT_e;
+    }
+
     int rt = dComIfG_syncAllObjectRes();
+    static int s_last_sync = -999;
+    if (fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e && rt != s_last_sync) {
+        s_last_sync = rt;
+        tp::log::info("dScnPly phase_2: opening syncAllObjectRes -> %d", rt);
+    }
     if (rt >= 0 && rt != 0) {
         return cPhs_INIT_e;
     }
@@ -1343,6 +1428,16 @@ static int phase_2(dScnPly_c* i_this) {
 }
 
 static int phase_3(dScnPly_c* i_this) {
+    static bool s_logged = false;
+    if (!s_logged && fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e) {
+        s_logged = true;
+        tp::log::info("dScnPly phase_3: opening scene particle/msg sync");
+    }
+    if (fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e && dComIfGp_getStartStageName()[0] == '\0') {
+        tp::log::info("dScnPly phase_3[PC]: opening scene skipping particle/msg sync wait");
+        return cPhs_NEXT_e;
+    }
+
     if ((i_this->sceneCommand != NULL && !i_this->sceneCommand->sync()) || mDoAud_check1stDynamicWave()) {
         return cPhs_INIT_e;
     }
@@ -1367,6 +1462,11 @@ dScnPly_preset_HIO_c g_presetHIO;
 #endif
 
 static int phase_4(dScnPly_c* i_this) {
+    static bool s_logged = false;
+    if (!s_logged && fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e) {
+        s_logged = true;
+        tp::log::info("dScnPly phase_4: entering opening scene setup");
+    }
     #if VERSION == VERSION_SHIELD_DEBUG
     if (!dBgp_c::executeShare()) {
         return cPhs_INIT_e;
@@ -1427,7 +1527,7 @@ static int phase_4(dScnPly_c* i_this) {
     dComIfGp_setMsgExpHeap(heap2);
 
     if (fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e) {
-        fopAcM_create(fpcNm_TITLE_e, 0, NULL, -1, NULL, NULL, -1);
+        tp::log::info("dScnPly phase_4[PC]: deferring TITLE actor spawn until execute");
         #if DEBUG
         g_playerKind = 0;
         #endif
@@ -1490,6 +1590,11 @@ static int phase_4(dScnPly_c* i_this) {
 }
 
 static int phase_5(dScnPly_c* i_this) {
+    static bool s_logged = false;
+    if (!s_logged && fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e) {
+        s_logged = true;
+        tp::log::info("dScnPly phase_5: preload resources");
+    }
     if (preLoadNo >= 0) {
         int phase_state = cPhs_NEXT_e;
         int goodLoads = 0;
@@ -1525,6 +1630,11 @@ static int phase_5(dScnPly_c* i_this) {
 }
 
 static int phase_6(dScnPly_c* i_this) {
+    static bool s_logged = false;
+    if (!s_logged && fpcM_GetName(i_this) == fpcNm_OPENING_SCENE_e) {
+        s_logged = true;
+        tp::log::info("dScnPly phase_6: preload dyl");
+    }
     if (preLoadNo >= 0) {
         int phase_state = cPhs_NEXT_e;
         int goodLoads = 0;
@@ -1580,6 +1690,17 @@ static int dScnPly_Create(scene_class* i_this) {
 
     dScnPly_c* a_this = (dScnPly_c*)i_this;
     int phase_state = dComLbG_PhaseHandler(&a_this->field_0x1c4, l_method, a_this);
+    static u8 s_last_phase_id[2] = {0xFF, 0xFF};
+    static int s_last_phase_state[2] = {0x7FFFFFFF, 0x7FFFFFFF};
+    int slot = fpcM_GetName(a_this) == fpcNm_OPENING_SCENE_e ? 1 : 0;
+    if (slot == 1 &&
+        (s_last_phase_id[slot] != a_this->field_0x1c4.id || s_last_phase_state[slot] != phase_state))
+    {
+        s_last_phase_id[slot] = a_this->field_0x1c4.id;
+        s_last_phase_state[slot] = phase_state;
+        tp::log::info("dScnPly_Create: opening phase_id=%u phase_state=%d",
+                      a_this->field_0x1c4.id, phase_state);
+    }
     return phase_state;
 }
 

@@ -478,7 +478,7 @@ void fapGm_dataMem::dumpTag() {
         printfTag(TagAtt_Fixed_e, TagType_Message_e, HeapType_ARAM_e, label, NULL, ((JKRAramArchive*)dComIfGp_getMsgArchive(i))->mBlock->getSize(), 0, NULL);
     }
 
-    g_dComIfG_gameInfo.mResControl.dumpTag();
+    tpPort_DumpResControlTag();
     u32 var_r28 = 0;
 
     for (int i = 0; i < 19; i++) {
@@ -535,7 +535,7 @@ void fapGm_dataMem::dumpCsv() {
         sprintf(getCsvEnd(), ",メッセージ(%d)枠ほか,%d,\n", i, ((JKRAramArchive*)dComIfGp_getMsgArchive(i))->mBlock->getSize());
     }
 
-    g_dComIfG_gameInfo.mResControl.dump(mCsv);
+    tpPort_DumpResControlCsv(mCsv);
 
     u32 memblock_total_size = 0;
     for (int i = 0; i < 19; i++) {

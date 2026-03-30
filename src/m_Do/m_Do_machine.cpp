@@ -735,9 +735,11 @@ void myGXVerifyCallback(GXWarningLevel param_1, u32 param_2, const char* param_3
 #endif
 
 int mDoMch_Create() {
+    tp::log::info("mDoMch_Create: begin");
     if (mDoMain::developmentMode == 0 || !(OSGetConsoleType() & 0x10000000)) {
         OSReportDisable();
     }
+    tp::log::info("mDoMch_Create: console/report config complete");
 
     JKRHeap::setDefaultDebugFill(mDoMch::mDebugFill);
     #if DEBUG
@@ -833,6 +835,7 @@ int mDoMch_Create() {
     #endif
     JFWSystem::setSysHeapSize(arenaSize);
     my_PrintHeap("システムヒープ", arenaSize);
+    tp::log::info("mDoMch_Create: heap sizes computed");
 
     if (arenaSize) {
         // Fakematch to force arenaSize into a register for debug.
@@ -875,11 +878,16 @@ int mDoMch_Create() {
     #endif
 
     JFWSystem::setRenderMode(mDoMch_render_c::getRenderModeObj());
+    tp::log::info("mDoMch_Create: calling JFWSystem::firstInit");
     JFWSystem::firstInit();
+    tp::log::info("mDoMch_Create: JFWSystem::firstInit complete");
     JKRExpHeap* dbPrintHeap = mDoExt_createDbPrintHeap(dbPrintHeapSize, JKRGetRootHeap());
+    tp::log::info("mDoMch_Create: dbPrint heap = %p", dbPrintHeap);
     JUTDbPrint::start(NULL, dbPrintHeap);
     mDoExt_createAssertHeap(JKRGetRootHeap());
+    tp::log::info("mDoMch_Create: calling JFWSystem::init");
     JFWSystem::init();
+    tp::log::info("mDoMch_Create: JFWSystem::init complete");
 
     if (mDoMain::developmentMode == 0) {
         JUTAssertion::setVisible(false);
@@ -900,6 +908,7 @@ int mDoMch_Create() {
     // Command Heap size: 4 KB
     heap = mDoExt_createCommandHeap(commandHeapSize, rootHeap);
     my_SysPrintHeap("コマンドヒープ", heap, commandHeapSize);
+    tp::log::info("mDoMch_Create: command heap created");
 
     #if DEBUG
     heap = DynamicModuleControlBase::createHeap(dynamicLinkHeapSize, rootHeap);
@@ -909,14 +918,17 @@ int mDoMch_Create() {
     // Archive Heap size: 9085 KB
     heap = mDoExt_createArchiveHeap(archiveHeapSize, rootHeap2);
     my_SysPrintHeap("アーカイブヒープ", heap, archiveHeapSize);
+    tp::log::info("mDoMch_Create: archive heap created");
 
     // J2D Heap size: 500 KB
     heap = mDoExt_createJ2dHeap(j2dHeapSize, rootHeap2);
     my_SysPrintHeap("Ｊ２Ｄ用ヒープ", heap, j2dHeapSize);
+    tp::log::info("mDoMch_Create: j2d heap created");
 
     // Game Heap size: 4408 KB
     heap = mDoExt_createGameHeap(gameHeapSize, rootHeap);
     my_SysPrintHeap("ゲームヒープ", heap, gameHeapSize);
+    tp::log::info("mDoMch_Create: game heap created");
 
     #if DEBUG
     JKRHeap* sp28 = rootHeap2;
@@ -933,6 +945,7 @@ int mDoMch_Create() {
     JKRHeap* zeldaHeap = mDoExt_createZeldaHeap(size, systemHeap);
     my_SysPrintHeap("ゼルダヒープ", zeldaHeap, size);
     JKRSetCurrentHeap(zeldaHeap);
+    tp::log::info("mDoMch_Create: zelda heap created and set current");
 
     #if DEBUG
     my_PrintHeap("システムヒープ", JKRGetSystemHeap()->getTotalFreeSize());
@@ -949,6 +962,7 @@ int mDoMch_Create() {
     JUTConsole* sysConsole = JFWSystem::getSystemConsole();
     sysConsole->setOutput(JUTConsole::OUTPUT_CONSOLE | JUTConsole::OUTPUT_OSREPORT);
     sysConsole->setPosition(16, 42);
+    tp::log::info("mDoMch_Create: system console configured");
 
     JUTException::setMapFile(MAP_FOLDER MAP_FILE);
     JUTException::setPreUserCallback(myExceptionCallback);
@@ -956,6 +970,7 @@ int mDoMch_Create() {
 
     cMl::init(mDoExt_getZeldaHeap());
     cM_initRnd(100, 100, 100);
+    tp::log::info("mDoMch_Create: math/random initialized");
     #if DEBUG
     GXSetVerifyLevel((GXWarningLevel)mDoMch::GXWarningLevel);
     GXSetVerifyCallback((GXVerifyCallback)&myGXVerifyCallback);
@@ -963,9 +978,13 @@ int mDoMch_Create() {
     JKRDvdRipper::setSZSBufferSize(0x4000);
     JKRDvdAramRipper::setSZSBufferSize(0x4000);
     JKRAram::setSZSBufferSize(0x2000);
+    tp::log::info("mDoMch_Create: DVD/ARAM buffers configured");
     mDoDvdThd::create(OSGetThreadPriority(OSGetCurrentThread()) - 2);
+    tp::log::info("mDoMch_Create: dvd thread created");
     mDoDvdErr_ThdInit();
+    tp::log::info("mDoMch_Create: dvd error thread initialized");
     mDoMemCd_ThdInit();
+    tp::log::info("mDoMch_Create: memcard thread initialized");
 
     return 1;
 }

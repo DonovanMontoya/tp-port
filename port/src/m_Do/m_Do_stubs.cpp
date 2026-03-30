@@ -7,9 +7,12 @@
  */
 #include <cstdarg>
 #include <cstdio>
+#include <cstdlib>
 
 #include "m_Do/m_Do_controller_pad.h"
+#include "m_Do/m_Do_graphic.h"
 #include "JSystem/JFramework/JFWSystem.h"
+#include "JSystem/JUtility/JUTTexture.h"
 #include "JSystem/JUtility/JUTDbPrint.h"
 #include "JSystem/JUtility/JUTException.h"
 #include "JSystem/JUtility/JUTGamePad.h"
@@ -19,9 +22,26 @@
 #include "JSystem/JKernel/JKRDvdRipper.h"
 #include "JSystem/JKernel/JKRAramStream.h"
 #include "JSystem/JKernel/JKRDvdAramRipper.h"
+#include "dolphin/pad.h"
+#include "../window/window.h"
+
+#include <cmath>
 
 template <>
 Z2AudioMgr* JASGlobalInstance<Z2AudioMgr>::sInstance = nullptr;
+
+namespace {
+#ifndef TP_PORT_USE_REAL_MDO_GRAPHIC
+JUTFader gPortFader;
+u8 gPortFrameBufferPixels[(FB_WIDTH / 2) * (FB_HEIGHT / 2) * 4] = {};
+u8 gPortZBufferPixels[(FB_WIDTH / 2) * (FB_HEIGHT / 2) * 4] = {};
+u8 gPortWideFrameBufferPixels[FB_WIDTH * FB_HEIGHT * 4] = {};
+ResTIMG gPortFrameBufferTimg = {};
+ResTIMG gPortZBufferTimg = {};
+ResTIMG gPortWideFrameBufferTimg = {};
+u32 gPortPresentedFrames = 0;
+#endif
+}  // namespace
 
 void JUTGamePad::CButton::clear() {
     mButton = 0;
@@ -66,12 +86,53 @@ JUTGamePad::JUTGamePad(EPadPort port) : mRumble(this), mLink(this) {
     mButtonReset.mReset = false;
     mResetHoldStartTime = 0;
     field_0xa8 = 0;
+    mButton.clear();
+    mMainStick.clear();
+    mSubStick.clear();
 }
 
 JUTGamePad::~JUTGamePad() {}
 
 u32 JUTGamePad::read() {
+    PADRead(mPadStatus);
+
+    for (int i = 0; i < 4; ++i) {
+        if (mPadStatus[i].err == PAD_ERR_NONE) {
+            u32 stick_status = mPadMStick[i].update(mPadStatus[i].stickX, mPadStatus[i].stickY,
+                                                    sStickMode, EMainStick,
+                                                    mPadButton[i].mButton)
+                               << 24;
+            stick_status |= mPadSStick[i].update(mPadStatus[i].substickX, mPadStatus[i].substickY,
+                                                 sStickMode, ESubStick,
+                                                 mPadButton[i].mButton)
+                            << 16;
+            mPadButton[i].update(&mPadStatus[i], stick_status);
+        } else {
+            mPadMStick[i].update(0, 0, sStickMode, EMainStick, 0);
+            mPadSStick[i].update(0, 0, sStickMode, ESubStick, 0);
+            mPadButton[i].update(nullptr, 0);
+        }
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        JUTGamePad* pad = mDoCPd_c::m_gamePad[i];
+        if (pad != nullptr) {
+            pad->update();
+        }
+    }
+
     return 0;
+}
+
+void JUTGamePad::update() {
+    if (mPortNum < EPort1 || mPortNum > EPort4) {
+        return;
+    }
+
+    mButton = mPadButton[mPortNum];
+    mMainStick = mPadMStick[mPortNum];
+    mSubStick = mPadSStick[mPortNum];
+    mErrorStatus = mPadStatus[mPortNum].err;
 }
 
 void JUTGamePad::clearForReset() {
@@ -90,25 +151,323 @@ void JUTGamePad::CRumble::setEnabled(u32 mask) {
     mEnabled = mask;
 }
 
+void JUTGamePad::CButton::update(const PADStatus* padStatus, u32 stickStatus) {
+    u32 buttons = stickStatus | (padStatus != nullptr ? padStatus->button : 0);
+    mTrigger = buttons & ~mButton;
+    mRelease = mButton & ~buttons;
+    mButton = buttons;
+    mRepeat = mTrigger;
+
+    if (padStatus != nullptr) {
+        mAnalogA = padStatus->analogA;
+        mAnalogB = padStatus->analogB;
+        mAnalogL = padStatus->triggerLeft;
+        mAnalogR = padStatus->triggerRight;
+    } else {
+        mAnalogA = 0;
+        mAnalogB = 0;
+        mAnalogL = 0;
+        mAnalogR = 0;
+    }
+
+    mAnalogLf = static_cast<f32>(mAnalogL) / 150.0f;
+    mAnalogRf = static_cast<f32>(mAnalogR) / 150.0f;
+}
+
+u32 JUTGamePad::CStick::update(s8 x, s8 y, JUTGamePad::EStickMode mode,
+                               JUTGamePad::EWhichStick stick, u32 buttons) {
+    const s32 clamp = stick == EMainStick ? 54 : 42;
+
+    mRawX = x;
+    mRawY = y;
+    mPosX = static_cast<f32>(x) / static_cast<f32>(clamp);
+    mPosY = static_cast<f32>(y) / static_cast<f32>(clamp);
+    mValue = std::sqrt((mPosX * mPosX) + (mPosY * mPosY));
+
+    if (mValue > 1.0f) {
+        if (mode == EStickMode1) {
+            mPosX /= mValue;
+            mPosY /= mValue;
+        }
+        mValue = 1.0f;
+    }
+
+    if (mValue > 0.0f) {
+        if (mPosY == 0.0f) {
+            mAngle = mPosX > 0.0f ? 0x4000 : -0x4000;
+        } else {
+            mAngle = static_cast<s16>((0x8000 / 3.1415926f) * std::atan2(mPosX, -mPosY));
+        }
+    } else {
+        mAngle = 0;
+    }
+
+    return getButton(buttons >> (stick == EMainStick ? 24 : 16));
+}
+
+u32 JUTGamePad::CStick::getButton(u32 buttons) {
+    u32 button = buttons & (PAD_BUTTON_UP | PAD_BUTTON_DOWN | PAD_BUTTON_LEFT | PAD_BUTTON_RIGHT);
+
+    if (-sReleasePoint < mPosX && mPosX < sReleasePoint) {
+        button &= ~(PAD_BUTTON_LEFT | PAD_BUTTON_RIGHT);
+    } else if (mPosX <= -sPressPoint) {
+        button &= ~PAD_BUTTON_RIGHT;
+        button |= PAD_BUTTON_LEFT;
+    } else if (mPosX >= sPressPoint) {
+        button &= ~PAD_BUTTON_LEFT;
+        button |= PAD_BUTTON_RIGHT;
+    }
+
+    if (-sReleasePoint < mPosY && mPosY < sReleasePoint) {
+        button &= ~(PAD_BUTTON_UP | PAD_BUTTON_DOWN);
+    } else if (mPosY <= -sPressPoint) {
+        button &= ~PAD_BUTTON_UP;
+        button |= PAD_BUTTON_DOWN;
+    } else if (mPosY >= sPressPoint) {
+        button &= ~PAD_BUTTON_DOWN;
+        button |= PAD_BUTTON_UP;
+    }
+
+    return button;
+}
+
 // ---------------------------------------------------------------------------
 // mDoGph_ graphics stubs (referenced from c_API.cpp function pointer table)
 // ---------------------------------------------------------------------------
+#ifndef TP_PORT_USE_REAL_MDO_GRAPHIC
 // c_API.cpp forward-declares mDoGph_Create() as returning void (wrong), while
 // m_Do_graphic.h (and m_Do_main.cpp) declare it as returning int.  On MSVC
 // the return type is encoded in the mangled name, producing two distinct
 // symbols.  Define the int version and alias the void symbol to it so both
 // TUs link without changing any game source.
-int  mDoGph_Create()      { return 1; }
+static void InitPortRenderTargets() {
+    gPortFrameBufferTimg.format = GX_TF_RGB5A3;
+    gPortFrameBufferTimg.width = FB_WIDTH / 2;
+    gPortFrameBufferTimg.height = FB_HEIGHT / 2;
+    gPortFrameBufferTimg.minFilter = GX_LINEAR;
+    gPortFrameBufferTimg.magFilter = GX_LINEAR;
+    gPortFrameBufferTimg.mipmapCount = 1;
+    gPortFrameBufferTimg.imageOffset = 0;
+
+    gPortZBufferTimg = gPortFrameBufferTimg;
+    gPortWideFrameBufferTimg = gPortFrameBufferTimg;
+    gPortWideFrameBufferTimg.width = FB_WIDTH;
+    gPortWideFrameBufferTimg.height = FB_HEIGHT;
+}
+
+int mDoGph_Create() {
+    tp::log::info("mDoGph_Create: begin");
+    if (JFWDisplay::getManager() == nullptr) {
+        tp::log::info("mDoGph_Create: creating JFWDisplay manager");
+        JFWDisplay::createManager(nullptr, nullptr, 2, false);
+    }
+
+    InitPortRenderTargets();
+    tp::log::info("mDoGph_Create: render targets initialized");
+
+    mDoGph_gInf_c::mFader = &gPortFader;
+    JFWDisplay::getManager()->setFader(mDoGph_gInf_c::mFader);
+    tp::log::info("mDoGph_Create: fader installed");
+
+    mDoGph_gInf_c::mFrameBufferTimg = &gPortFrameBufferTimg;
+    mDoGph_gInf_c::mFrameBufferTex = gPortFrameBufferPixels;
+    mDoGph_gInf_c::mZbufferTimg = &gPortZBufferTimg;
+    mDoGph_gInf_c::mZbufferTex = gPortZBufferPixels;
+#if WIDESCREEN_SUPPORT
+    mDoGph_gInf_c::m_fullFrameBufferTimg = &gPortWideFrameBufferTimg;
+    mDoGph_gInf_c::m_fullFrameBufferTex = gPortWideFrameBufferPixels;
+#endif
+    mDoGph_gInf_c::mFadeColor = mDoGph_gInf_c::mBackColor;
+    mDoGph_gInf_c::mFadeRate = 0.0f;
+    mDoGph_gInf_c::mFadeSpeed = 0.0f;
+    mDoGph_gInf_c::mFade = 0;
+    mDoGph_gInf_c::mBlureFlag = 0;
+    mDoGph_gInf_c::mBlureRate = 0;
+    tp::log::info("mDoGph_Create: complete");
+    return 1;
+}
 #ifdef _MSC_VER
 // ?mDoGph_Create@@YAXXZ  = void __cdecl mDoGph_Create(void)
 // ?mDoGph_Create@@YAHXZ  = int  __cdecl mDoGph_Create(void)
 #pragma comment(linker, "/alternatename:?mDoGph_Create@@YAXXZ=?mDoGph_Create@@YAHXZ")
 #endif
-void mDoGph_BeforeOfDraw(){}
-void mDoGph_AfterOfDraw() {}
-void mDoGph_Painter()     {}
+void mDoGph_BeforeOfDraw() {}
+
+void mDoGph_AfterOfDraw() {
+    if (JFWDisplay::getManager() != nullptr) {
+        JFWDisplay::getManager()->endRender();
+    }
+    tp::window::EndFrame();
+}
+
+void mDoGph_Painter() {
+    if (!tp::window::IsOpen()) {
+        tp::log::warn("mDoGph_Painter: window closed, terminating port");
+        std::exit(0);
+    }
+
+    tp::window::BeginFrame();
+    mDoGph_gInf_c::beginRender();
+
+    ++gPortPresentedFrames;
+    if (gPortPresentedFrames <= 3) {
+        tp::log::info("mDoGph_Painter: host frame %u", gPortPresentedFrames);
+    }
+}
 void mDoGph_BlankingON()  {}
 void mDoGph_BlankingOFF() {}
+void mDoGph_drawFilterQuad(s8, s8) {}
+
+void mDoGph_gInf_c::create() {
+    mDoGph_Create();
+}
+
+void mDoGph_gInf_c::beginRender() {
+    if (JFWDisplay::getManager() != nullptr) {
+        JFWDisplay::getManager()->beginRender();
+    }
+}
+
+void mDoGph_gInf_c::fadeOut(f32 fadeSpeed, _GXColor& fadeColor) {
+    mFade = 1;
+    mFadeSpeed = fadeSpeed;
+    mFadeRate = fadeSpeed > 0.0f ? 1.0f : 0.0f;
+    mFadeColor = fadeColor;
+    if (mFader != nullptr) {
+        mFader->setColor(*reinterpret_cast<JUtility::TColor*>(&fadeColor));
+    }
+}
+
+void mDoGph_gInf_c::fadeOut(f32 fadeSpeed) {
+    fadeOut(fadeSpeed, mBackColor);
+}
+
+void mDoGph_gInf_c::fadeOut_f(f32 fadeSpeed, _GXColor& fadeColor) {
+    fadeOut(fadeSpeed, fadeColor);
+}
+
+void mDoGph_gInf_c::onBlure() {
+    mBlureFlag = 1;
+}
+
+void mDoGph_gInf_c::onBlure(const Mtx m) {
+    cMtx_copy(m, mBlureMtx);
+    onBlure();
+}
+
+void mDoGph_gInf_c::calcFade() {
+    mFade = 0;
+}
+
+#if PLATFORM_WII || PLATFORM_SHIELD
+bool mDoGph_gInf_c::csr_c::isPointer() {
+    return false;
+}
+
+void mDoGph_gInf_c::csr_c::particleExecute() {}
+
+void mDoGph_gInf_c::entryBaseCsr(csr_c* csr) {
+    m_baseCsr = csr;
+}
+
+void mDoGph_gInf_c::releaseCsr(void) {
+    m_csr = nullptr;
+}
+
+void mDoGph_gInf_c::entryCsr(csr_c* csr) {
+    m_csr = csr;
+}
+#endif
+
+#if WIDESCREEN_SUPPORT
+void mDoGph_gInf_c::setTvSize() {}
+
+void mDoGph_gInf_c::onWide() {
+    mWide = 1;
+}
+
+void mDoGph_gInf_c::offWide() {
+    mWide = 0;
+}
+
+u8 mDoGph_gInf_c::isWide() {
+    return mWide;
+}
+
+void mDoGph_gInf_c::onWideZoom() {
+    mWideZoom = 1;
+}
+
+void mDoGph_gInf_c::offWideZoom() {
+    mWideZoom = 0;
+}
+
+BOOL mDoGph_gInf_c::isWideZoom() {
+    return mWideZoom;
+}
+
+void mDoGph_gInf_c::setWideZoomProjection(Mtx44& m) {
+    (void)m;
+}
+
+void mDoGph_gInf_c::setWideZoomLightProjection(Mtx& m) {
+    (void)m;
+}
+#endif
+
+mDoGph_gInf_c::bloom_c mDoGph_gInf_c::m_bloom = {};
+GXTexObj mDoGph_gInf_c::mFrameBufferTexObj = {};
+GXTexObj mDoGph_gInf_c::mZbufferTexObj = {};
+Mtx mDoGph_gInf_c::mBlureMtx = {};
+GXColor mDoGph_gInf_c::mBackColor = {0, 0, 0, 0};
+GXColor mDoGph_gInf_c::mFadeColor = {0, 0, 0, 0};
+JUTFader* mDoGph_gInf_c::mFader = nullptr;
+ResTIMG* mDoGph_gInf_c::mFrameBufferTimg = nullptr;
+void* mDoGph_gInf_c::mFrameBufferTex = nullptr;
+ResTIMG* mDoGph_gInf_c::mZbufferTimg = nullptr;
+void* mDoGph_gInf_c::mZbufferTex = nullptr;
+f32 mDoGph_gInf_c::mFadeRate = 0.0f;
+f32 mDoGph_gInf_c::mFadeSpeed = 0.0f;
+u8 mDoGph_gInf_c::mBlureFlag = 0;
+u8 mDoGph_gInf_c::mBlureRate = 0;
+u8 mDoGph_gInf_c::mFade = 0;
+bool mDoGph_gInf_c::mAutoForcus = false;
+
+#if PLATFORM_WII || PLATFORM_SHIELD
+u32 mDoGph_gInf_c::csr_c::m_blurID = 0;
+cXyz mDoGph_gInf_c::csr_c::m_oldEffPos = cXyz::Zero;
+cXyz mDoGph_gInf_c::csr_c::m_oldOldEffPos = cXyz::Zero;
+cXyz mDoGph_gInf_c::csr_c::m_nowEffPos = cXyz::Zero;
+mDoGph_gInf_c::csr_c* mDoGph_gInf_c::m_baseCsr = nullptr;
+mDoGph_gInf_c::csr_c* mDoGph_gInf_c::m_csr = nullptr;
+cXyz mDoGph_gInf_c::m_nowEffPos = cXyz::Zero;
+cXyz mDoGph_gInf_c::m_oldEffPos = cXyz::Zero;
+cXyz mDoGph_gInf_c::m_oldOldEffPos = cXyz::Zero;
+#endif
+
+#if WIDESCREEN_SUPPORT
+GXTexObj mDoGph_gInf_c::m_fullFrameBufferTexObj = {};
+u8 mDoGph_gInf_c::mWide = 1;
+u8 mDoGph_gInf_c::mWideZoom = 0;
+ResTIMG* mDoGph_gInf_c::m_fullFrameBufferTimg = nullptr;
+void* mDoGph_gInf_c::m_fullFrameBufferTex = nullptr;
+f32 mDoGph_gInf_c::m_aspect = 608.0f / 448.0f;
+f32 mDoGph_gInf_c::m_scale = 1.0f;
+f32 mDoGph_gInf_c::m_invScale = 1.0f;
+f32 mDoGph_gInf_c::m_minXF = 0.0f;
+f32 mDoGph_gInf_c::m_minYF = 0.0f;
+int mDoGph_gInf_c::m_minX = 0;
+int mDoGph_gInf_c::m_minY = 0;
+f32 mDoGph_gInf_c::m_maxXF = FB_WIDTH - 1.0f;
+f32 mDoGph_gInf_c::m_maxYF = FB_HEIGHT - 1.0f;
+int mDoGph_gInf_c::m_maxX = FB_WIDTH - 1;
+int mDoGph_gInf_c::m_maxY = FB_HEIGHT - 1;
+int mDoGph_gInf_c::m_width = FB_WIDTH;
+int mDoGph_gInf_c::m_height = FB_HEIGHT;
+f32 mDoGph_gInf_c::m_heightF = FB_HEIGHT;
+f32 mDoGph_gInf_c::m_widthF = FB_WIDTH;
+#endif
+#endif
 
 // ---------------------------------------------------------------------------
 // m_Do_audio stubs
@@ -117,12 +476,6 @@ void mDoGph_BlankingOFF() {}
 // DynamicLink / REL stubs
 // ---------------------------------------------------------------------------
 #include "c/c_dylink.h"
-
-// ---------------------------------------------------------------------------
-// Game info global
-// ---------------------------------------------------------------------------
-#include "d/d_com_inf_game.h"
-dComIfG_gameInfo_c g_dComIfG_gameInfo = {};
 
 // ---------------------------------------------------------------------------
 // m_Do_dvd_thread non-debug statics

@@ -83,6 +83,7 @@ add_library(tp_port_impl STATIC ${PORT_SOURCES})
 target_include_directories(tp_port_impl PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
+target_compile_definitions(tp_port_impl PUBLIC TP_PORT_USE_REAL_MDO_GRAPHIC=1 TP_PORT_USE_REAL_TITLE=1)
 target_compile_options(tp_port_impl PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${PORT_FORCE_INCLUDE}>)
 target_link_libraries(tp_port_impl PUBLIC
   glfw
@@ -108,6 +109,7 @@ set_source_files_properties(
 add_executable(TwilightPrincess WIN32
   ${GAME_SOURCES}
 )
+target_compile_definitions(TwilightPrincess PRIVATE TP_PORT_USE_REAL_MDO_GRAPHIC=1 TP_PORT_USE_REAL_TITLE=1)
 
 target_compile_options(TwilightPrincess PRIVATE
   $<$<COMPILE_LANGUAGE:CXX>:${PORT_FORCE_INCLUDE}>

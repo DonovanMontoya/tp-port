@@ -12,6 +12,7 @@
 #include "d/d_debug_viewer.h"
 #include "m_Do/m_Do_Reset.h"
 #include "m_Do/m_Do_dvd_thread.h"
+#include "port/port.h"
 
 #if PLATFORM_WII || PLATFORM_SHIELD
 #include "Z2AudioCS/Z2AudioCS.h"
@@ -45,6 +46,17 @@ static void dummy() {
 #endif
 
 static void mDoAud_Create() {
+#if PLATFORM_PC
+    static bool sLoggedAudioStub = false;
+    if (!sLoggedAudioStub) {
+        tp::log::warn("mDoAud_Create: skipping audio archive bootstrap on PC");
+        sLoggedAudioStub = true;
+    }
+    mDoAud_zelAudio_c::onInitFlag();
+    mDoDvdThd::SyncWidthSound = false;
+    return;
+#endif
+
     if (l_affCommand == NULL) {
 #if DEBUG
         if (!mDoRst::getLogoScnFlag()) {
@@ -159,6 +171,9 @@ void mDoAud_Execute() {
             mDoAud_Create();
         }
     } else {
+#if PLATFORM_PC
+        return;
+#endif
 #if DEBUG
         static const char* l_outputModeName[3] = {"MONO", "STEREO", "DOLBY"};
         static const u32 l_outputMode[3] = {0, 1, 2};
@@ -188,23 +203,45 @@ void mDoAud_Execute() {
 }
 
 void mDoAud_setSceneName(char const* spot, s32 room, s32 layer) {
+#if PLATFORM_PC
+    (void)spot;
+    (void)room;
+    (void)layer;
+#else
     Z2AudioMgr::getInterface()->setSceneName((char*)spot, room, layer);
+#endif
 }
 
 s32 mDoAud_load1stDynamicWave() {
+#if PLATFORM_PC
+    return 1;
+#else
     Z2AudioMgr::getInterface()->load1stDynamicWave();
     return 1;
+#endif
 }
 
 void mDoAud_setFadeOutStart(u8 param_0) {
+#if PLATFORM_PC
+    (void)param_0;
+#else
     Z2AudioMgr::getInterface()->setFadeOutStart((u8)param_0);
+#endif
 }
 
 void mDoAud_setFadeInStart(u8 param_0) {
+#if PLATFORM_PC
+    (void)param_0;
+#else
     Z2AudioMgr::getInterface()->setFadeInStart((u8)param_0);
+#endif
 }
 
 void mDoAud_resetProcess() {
+#if PLATFORM_PC
+    mDoAud_zelAudio_c::onResetFlag();
+    return;
+#endif
     if (!mDoAud_zelAudio_c::isResetFlag()) {
         Z2AudioMgr::getInterface()->resetProcess(0x1E, false);
         mDoAud_zelAudio_c::onResetFlag();
@@ -212,6 +249,12 @@ void mDoAud_resetProcess() {
 }
 
 bool mDoAud_resetRecover() {
+#if PLATFORM_PC
+    if (mDoAud_zelAudio_c::isResetFlag()) {
+        mDoAud_zelAudio_c::offResetFlag();
+    }
+    return true;
+#endif
     if (mDoAud_zelAudio_c::isResetFlag()) {
         if (!Z2AudioMgr::getInterface()->hasReset()) {
             return 0;

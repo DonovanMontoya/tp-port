@@ -8,6 +8,7 @@
 #define TCOLOR_H
 
 #include "port/types.h"
+#include "dolphin/gx/GXStruct.h"
 
 namespace JUtility {
 
@@ -18,6 +19,7 @@ struct TColor {
     TColor(u8 r, u8 g, u8 b, u8 a): r(r),    g(g),    b(b),    a(a)    {}
     TColor(u32 u)                  : r((u>>24)&0xff), g((u>>16)&0xff),
                                      b((u>>8)&0xff),  a(u&0xff)         {}
+    TColor(const GXColor& c)       : r(c.r), g(c.g), b(c.b), a(c.a) {}
 
     operator u32() const { return ((u32)r<<24)|((u32)g<<16)|((u32)b<<8)|a; }
 

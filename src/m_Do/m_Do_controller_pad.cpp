@@ -17,7 +17,9 @@ interface_of_controller_pad mDoCPd_c::m_cpadInfo[4];
 interface_of_controller_pad mDoCPd_c::m_debugCpadInfo[4];
 
 void mDoCPd_c::create() {
+    tp::log::info("mDoCPd_c::create: begin");
     #if PLATFORM_GCN || PLATFORM_SHIELD
+    tp::log::info("mDoCPd_c::create: allocating port 1");
     m_gamePad[0] = new JUTGamePad(JUTGamePad::EPort1);
     #endif
 
@@ -26,6 +28,7 @@ void mDoCPd_c::create() {
         m_gamePad[0] = new JUTGamePad(JUTGamePad::EPort1);
         #endif
 
+        tp::log::info("mDoCPd_c::create: allocating debug pads 2-4");
         m_gamePad[1] = new JUTGamePad(JUTGamePad::EPort2);
         m_gamePad[2] = new JUTGamePad(JUTGamePad::EPort3);
         m_gamePad[3] = new JUTGamePad(JUTGamePad::EPort4);
@@ -38,13 +41,20 @@ void mDoCPd_c::create() {
         m_gamePad[2] = NULL;
         m_gamePad[3] = NULL;
     }
+    tp::log::info("mDoCPd_c::create: pad allocation complete");
 
     #if PLATFORM_GCN || PLATFORM_SHIELD
     if (!mDoRst::isReset()) {
+        tp::log::info("mDoCPd_c::create: installing reset callback");
         JUTGamePad::clearResetOccurred();
         JUTGamePad::setResetCallback(mDoRst_resetCallBack, NULL);
     }
     #endif
+    #if PLATFORM_PC
+    tp::log::info("mDoCPd_c::create: skipping reset callback on PC");
+    JUTGamePad::clearResetOccurred();
+    #endif
+    tp::log::info("mDoCPd_c::create: setting analog mode");
     JUTGamePad::setAnalogMode(3);
 
     interface_of_controller_pad* cpad = &m_cpadInfo[0];
@@ -53,6 +63,7 @@ void mDoCPd_c::create() {
         cpad->mHoldLockR = cpad->mTrigLockR = false;
         cpad++;
     }
+    tp::log::info("mDoCPd_c::create: complete");
 }
 
 void mDoCPd_c::read() {

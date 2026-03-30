@@ -946,6 +946,7 @@ int cDyl_LinkASync(s16 i_ProfName) {
 
 static int cDyl_InitCallback(void* param_0) {
     JUT_ASSERT(335, !cDyl_Initialized);
+    tp::log::info("cDyl_InitCallback: begin");
 
     #if PLATFORM_GCN
     JKRHeap* parentHeap = mDoExt_getArchiveHeap();
@@ -954,6 +955,7 @@ static int cDyl_InitCallback(void* param_0) {
     #endif
 
     JKRFileCache* loader = JKRMountDvdDrive("/", parentHeap, NULL);
+    tp::log::info("cDyl_InitCallback: mounted dvd drive loader=%p", loader);
     DynamicModuleControl::initialize();
 
     #if PLATFORM_GCN
@@ -963,6 +965,7 @@ static int cDyl_InitCallback(void* param_0) {
     #else
     void* strTbl = JKRGetResource("/dvd/str/Final/Release/frameworkF.str");
     #endif
+    tp::log::info("cDyl_InitCallback: framework string table=%p", strTbl);
 
     JKRDetachResource(strTbl, loader);
     JKRUnmountDvdDrive(loader);
@@ -971,8 +974,10 @@ static int cDyl_InitCallback(void* param_0) {
     DynamicModuleControl dmc("f_pc_profile_lst");
     dmc.link();
     cDyl_Initialized = true;
+    tp::log::info("cDyl_InitCallback: requesting LOGO_SCENE");
 
     fopScnM_CreateReq(fpcNm_LOGO_SCENE_e, 0x7FFF, 0, 0);
+    tp::log::info("cDyl_InitCallback: complete");
     return 1;
 }
 
@@ -982,6 +987,7 @@ void cDyl_InitAsync() {
     cCc_Init();
     JUT_ASSERT(367, cDyl_DVD == NULL);
     cDyl_DVD = mDoDvdThd_callback_c::create((mDoDvdThd_callback_func)cDyl_InitCallback, NULL);
+    tp::log::info("cDyl_InitAsync: callback command=%p", cDyl_DVD);
 }
 
 BOOL cDyl_InitAsyncIsDone() {

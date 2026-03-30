@@ -36,6 +36,8 @@ class daObjCarry_c : public fopAc_ac_c {
 public:
     static void make_prm_bokkuri(u32* /*o_params*/, csXyz* /*o_paramsEx*/,
                                   u8 /*itemNo*/, u8 /*itemBit*/, u8 /*itemType*/, u8 /*p5*/) {}
+    static void clrSaveFlag() {}
+    static void setSaveFlag() {}
 };
 
 #endif /* D_A_OBJ_CARRY_H */

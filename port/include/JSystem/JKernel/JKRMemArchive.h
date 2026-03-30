@@ -14,16 +14,14 @@ enum JKRMemBreakFlag {
 
 class JKRMemArchive : public JKRArchive {
 public:
-    JKRMemArchive(s32 /*entryNum*/, JKRArchive::EMountDirection /*dir*/)
-        : JKRArchive(), mArcHeader(nullptr), mArchiveData(nullptr), mIsOpen(true) {}
+    JKRMemArchive(s32 entryNum, JKRArchive::EMountDirection dir);
 
-    JKRMemArchive(void* /*data*/, u32 /*size*/, JKRMemBreakFlag /*flag*/)
-        : JKRArchive(), mArcHeader(nullptr), mArchiveData(nullptr), mIsOpen(true) {}
+    JKRMemArchive(void* data, u32 size, JKRMemBreakFlag flag);
 
-    virtual ~JKRMemArchive() {}
+    virtual ~JKRMemArchive();
 
-    bool open(s32 /*entryNum*/, JKRArchive::EMountDirection /*dir*/) { mIsOpen = true; return true; }
-    bool open(void* /*data*/, u32 /*size*/, JKRMemBreakFlag /*flag*/) { mIsOpen = true; return true; }
+    bool open(s32 entryNum, JKRArchive::EMountDirection dir);
+    bool open(void* data, u32 size, JKRMemBreakFlag flag);
     bool isMounted() const { return mIsOpen; }
 
     /* vt[09] */ virtual void removeResourceAll() override {}

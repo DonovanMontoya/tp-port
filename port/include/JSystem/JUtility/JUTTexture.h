@@ -3,6 +3,7 @@
  * port/include/JSystem/JUtility/JUTTexture.h
  * PC port stub — GX texture wrapper; no GX on PC so all methods are no-ops.
  */
+#include "dolphin/gx.h"
 #include "port/types.h"
 
 class JKRHeap;
@@ -39,6 +40,7 @@ public:
     // Load from file / memory — no-op on PC
     bool load(const char* /*path*/, JKRHeap* /*heap*/ = nullptr) { return false; }
     bool load(const void* /*data*/, u32 /*size*/)                 { return false; }
+    bool load(GXTexMapID /*id*/)                                  { return true; }
 
     // Drawing — no-op on PC
     void draw(f32 /*x*/, f32 /*y*/, f32 /*w*/, f32 /*h*/) const {}

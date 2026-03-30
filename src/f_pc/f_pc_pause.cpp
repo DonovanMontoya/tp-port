@@ -9,6 +9,10 @@
 #include <cstdint>
 
 int fpcPause_IsEnable(void* i_proc, u8 i_flag) {
+    if (i_proc == NULL) {
+        return 0;
+    }
+
     if ((((base_process_class*)i_proc)->pause_flag & i_flag) == i_flag) {
         return 1;
     } else {

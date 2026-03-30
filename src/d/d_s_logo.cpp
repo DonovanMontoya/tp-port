@@ -176,6 +176,18 @@ static s16 const l_preLoad_dylKeyTbl[14] = {
     fpcNm_Obj_Yousei_e,
 };
 
+static inline u16 tpLogoBootTimer(u16 frames) {
+#if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
+    return 1;
+#else
+    return frames;
+#endif
+}
+
+#if PLATFORM_PC
+static bool s_pcLogoInactive = false;
+#endif
+
 bool dScnLogo_c::preLoad_dyl() {
     bool ret = true;
     int var_r28 = 14;
@@ -229,7 +241,7 @@ void dScnLogo_c::progInDraw() {
 
     if (mTimer == 0) {
         mExecCommand = EXEC_PROG_SEL;
-        mTimer = 600;
+        mTimer = tpLogoBootTimer(600);
         field_0x20e = 30;
         field_0x210 = field_0x20e;
         field_0x212 = 0;
@@ -388,17 +400,17 @@ void dScnLogo_c::progOutDraw() {
         #endif
         {
             mExecCommand = EXEC_PROG_CHANGE;
-            mTimer = 150;
+            mTimer = tpLogoBootTimer(150);
         } else if (field_0x218 == 0 && field_0x209 != 0) {
             #if PLATFORM_WII || PLATFORM_SHIELD
-            mTimer = 90;
+            mTimer = tpLogoBootTimer(90);
             mExecCommand = EXEC_NINTENDO_IN;
             #else
             if (mDoRst::getWarningDispFlag() != 0) {
-                mTimer = 90;
+                mTimer = tpLogoBootTimer(90);
                 mExecCommand = EXEC_NINTENDO_IN;
             } else {
-                mTimer = 120;
+                mTimer = tpLogoBootTimer(120);
                 mExecCommand = EXEC_WARNING_IN;
             }
             #endif
@@ -406,7 +418,7 @@ void dScnLogo_c::progOutDraw() {
             mDoGph_gInf_c::startFadeIn(30);
         } else {
             mExecCommand = EXEC_PROG_SET;
-            mTimer = 150;
+            mTimer = tpLogoBootTimer(150);
             mDoGph_gInf_c::startFadeIn(30);
         }
     }
@@ -417,7 +429,7 @@ void dScnLogo_c::progSetDraw() {
 
     if (mTimer == 0) {
         mExecCommand = EXEC_PROG_SET2;
-        mTimer = 30;
+        mTimer = tpLogoBootTimer(30);
         mDoGph_gInf_c::startFadeOut(30);
     }
 }
@@ -427,9 +439,9 @@ void dScnLogo_c::progSet2Draw() {
 
     if (mTimer == 0) {
         if (getProgressiveMode() != 0) {
-            mTimer = 150;
+            mTimer = tpLogoBootTimer(150);
         } else {
-            mTimer = 30;
+            mTimer = tpLogoBootTimer(30);
         }
 
         mExecCommand = EXEC_PROG_CHANGE;
@@ -454,10 +466,10 @@ void dScnLogo_c::progChangeDraw() {
         mTimer = 90;
         #else
         if (mDoRst::getWarningDispFlag() != 0) {
-            mTimer = 90;
+            mTimer = tpLogoBootTimer(90);
             mExecCommand = EXEC_NINTENDO_IN;
         } else {
-            mTimer = 120;
+            mTimer = tpLogoBootTimer(120);
             mExecCommand = EXEC_WARNING_IN;
         }
         #endif
@@ -471,7 +483,7 @@ void dScnLogo_c::warningInDraw() {
 
     if (mTimer == 0) {
         mExecCommand = EXEC_WARNING_DISP;
-        mTimer = 3510;
+        mTimer = tpLogoBootTimer(3510);
         field_0x20e = 30;
         field_0x210 = field_0x20e;
         field_0x212 = 1;
@@ -507,7 +519,7 @@ void dScnLogo_c::warningDispDraw() {
     #endif
     {
         mExecCommand = EXEC_WARNING_OUT;
-        mTimer = 30;
+        mTimer = tpLogoBootTimer(30);
         mDoGph_gInf_c::startFadeOut(30);
         mDoRst::setWarningDispFlag(1);
     }
@@ -517,7 +529,7 @@ void dScnLogo_c::warningOutDraw() {
     dComIfGd_set2DOpa(mWarning);
 
     if (mTimer == 0) {
-        mTimer = 90;
+        mTimer = tpLogoBootTimer(90);
         mExecCommand = EXEC_NINTENDO_IN;
         mDoGph_gInf_c::startFadeIn(30);
     }
@@ -528,7 +540,7 @@ void dScnLogo_c::nintendoInDraw() {
 
     if (mTimer == 0) {
         mExecCommand = EXEC_NINTENDO_OUT;
-        mTimer = 30;
+        mTimer = tpLogoBootTimer(30);
         mDoGph_gInf_c::startFadeOut(30);
     }
 }
@@ -538,7 +550,7 @@ void dScnLogo_c::nintendoOutDraw() {
 
     if (mTimer == 0) {
         mExecCommand = EXEC_DOLBY_IN;
-        mTimer = 90;
+        mTimer = tpLogoBootTimer(90);
         mDoGph_gInf_c::startFadeIn(30);
     }
 }
@@ -548,7 +560,7 @@ void dScnLogo_c::dolbyInDraw() {
 
     if (mTimer == 0) {
         mExecCommand = EXEC_DOLBY_OUT;
-        mTimer = 30;
+        mTimer = tpLogoBootTimer(30);
         mDoGph_gInf_c::startFadeOut(30);
     }
 }
@@ -558,7 +570,7 @@ void dScnLogo_c::dolbyOutDraw() {
 
     if (mTimer == 0) {
         mExecCommand = EXEC_DOLBY_OUT2;
-        mTimer = 30;
+        mTimer = tpLogoBootTimer(30);
         mDoGph_gInf_c::startFadeIn(30);
     }
 }
@@ -686,38 +698,100 @@ void dScnLogo_c::dvdWaitDraw() {
     dComIfGd_set2DOpa(mStrapImg);
     #endif
 
-    if (!dComIfG_syncAllObjectRes()) {
+    #if PLATFORM_PC
+    if (field_0x20b == 0) {
+        field_0x20b = 1;
+        tp::log::info("dScnLogo dvdWait[PC]: queuing OPENING_SCENE directly");
+        fopScnM_CreateReq(fpcNm_OPENING_SCENE_e, 0x7FFF, 0, 0);
+        tp::log::info("dScnLogo dvdWait[PC]: deleting logo scene after queue");
+        mDoRst::setLogoScnFlag(0);
+        mDoRst::setProgChgFlag(0);
+        s_pcLogoInactive = true;
+        fopScnM_DeleteReq(this);
+        return;
+    }
+
+    if (field_0x20b == 1) {
+        return;
+    }
+
+    tp::log::info("dScnLogo dvdWait[PC]: logo scene already retired");
+    return;
+    #endif
+
+    const int objectSync = dComIfG_syncAllObjectRes();
+    const int preloaded = preLoad_dyl();
+    const int field0 = mpField0Command->sync();
+    const int alAnm = mpAlAnmCommand->sync();
+    const int fmap = mpFmapResCommand->sync();
+    const int dmap = mpDmapResCommand->sync();
+    const int collect = mpCollectResCommand->sync();
+    const int itemIcon = mpItemIconCommand->sync();
+    const int ring = mpRingResCommand->sync();
+    const int playerName = mpPlayerNameCommand->sync();
+    const int itemInf = mpItemInfResCommand->sync();
+    const int button = mpButtonCommand->sync();
+    const int cardIcon = mpCardIconCommand->sync();
+    const int bmg = mpBmgResCommand->sync();
+    const int msgCom = mpMsgComCommand->sync();
+    const int msg0 = mpMsgResCommand[0]->sync();
+    const int msg1 = mpMsgResCommand[1]->sync();
+    const int msg2 = mpMsgResCommand[2]->sync();
+    const int msg3 = mpMsgResCommand[3]->sync();
+    const int msg4 = mpMsgResCommand[4]->sync();
+    const int msg5 = mpMsgResCommand[5]->sync();
+    const int msg6 = mpMsgResCommand[6]->sync();
+    const int font = mpFontResCommand->sync();
+    const int main2d = mpMain2DCommand->sync();
+    const int ruby = mpRubyResCommand->sync();
+    const int particle = mParticleCommand->sync();
+    const int itemTable = mItemTableCommand->sync();
+    const int enemyItem = mEnemyItemCommand->sync();
+    #if PLATFORM_WII || VERSION == VERSION_SHIELD
+    const int homeBtn = mpHomeBtnCommand->sync();
+    #endif
+
+    static int s_waitLogCounter = 0;
+    if ((++s_waitLogCounter % 60) == 0) {
+        tp::log::info(
+            "dScnLogo dvdWait: obj=%d preload=%d field0=%d alAnm=%d fmap=%d dmap=%d collect=%d itemIcon=%d ring=%d player=%d itemInf=%d button=%d card=%d bmg=%d msg=%d%d%d%d%d%d%d font=%d main2d=%d ruby=%d particle=%d itemTable=%d enemyItem=%d",
+            objectSync, preloaded, field0, alAnm, fmap, dmap, collect, itemIcon, ring,
+            playerName, itemInf, button, cardIcon, bmg, msgCom, msg0, msg1, msg2, msg3, msg4,
+            msg5, msg6, font, main2d, ruby, particle, itemTable, enemyItem);
+    }
+
+    if (!objectSync) {
         if (
             #if PLATFORM_WII || VERSION == VERSION_SHIELD
-            mpHomeBtnCommand->sync() &&
+            homeBtn &&
             #endif
-            mpField0Command->sync()
-            && mpAlAnmCommand->sync()
-            && mpFmapResCommand->sync()
-            && mpDmapResCommand->sync()
-            && mpCollectResCommand->sync()
-            && mpItemIconCommand->sync()
-            && mpRingResCommand->sync()
-            && mpPlayerNameCommand->sync()
-            && mpItemInfResCommand->sync()
-            && mpButtonCommand->sync()
-            && mpCardIconCommand->sync()
-            && mpBmgResCommand->sync()
-            && mpMsgComCommand->sync()
-            && mpMsgResCommand[0]->sync()
-            && mpMsgResCommand[1]->sync()
-            && mpMsgResCommand[2]->sync()
-            && mpMsgResCommand[3]->sync()
-            && mpMsgResCommand[4]->sync()
-            && mpMsgResCommand[5]->sync()
-            && mpMsgResCommand[6]->sync()
-            && mpFontResCommand->sync()
-            && mpMain2DCommand->sync()
-            && mpRubyResCommand->sync()
-            && mParticleCommand->sync()
-            && mItemTableCommand->sync()
-            && mEnemyItemCommand->sync()
-            && preLoad_dyl())
+            field0
+            && alAnm
+            && fmap
+            && dmap
+            && collect
+            && itemIcon
+            && ring
+            && playerName
+            && itemInf
+            && button
+            && cardIcon
+            && bmg
+            && msgCom
+            && msg0
+            && msg1
+            && msg2
+            && msg3
+            && msg4
+            && msg5
+            && msg6
+            && font
+            && main2d
+            && ruby
+            && particle
+            && itemTable
+            && enemyItem
+            && preloaded)
         {
             mDoRst::setLogoScnFlag(0);
 
@@ -742,7 +816,27 @@ void dScnLogo_c::nextSceneChange() {
     if (!mDoRst::isReset()) {
         if (!isOpeningCut())
         {
+#if PLATFORM_PC
+            if (field_0x20b == 0) {
+                field_0x20b = 1;
+                tp::log::info("dScnLogo nextSceneChange[PC]: creating OPENING_SCENE directly");
+                fopScnM_CreateReq(fpcNm_OPENING_SCENE_e, 0x7FFF, 0, 0);
+                mExecCommand = EXEC_DVD_WAIT;
+                return;
+            }
+            if (field_0x20b == 1) {
+                field_0x20b = 2;
+                tp::log::info("dScnLogo nextSceneChange[PC]: deleting logo scene after queue");
+                fopScnM_DeleteReq(this);
+            }
+            return;
+#else
+            tp::log::info("dScnLogo nextSceneChange: reset=%d openingCut=%d",
+                          mDoRst::isReset(), isOpeningCut());
+            tp::log::info("dScnLogo nextSceneChange: requesting OPENING_SCENE");
             dComIfG_changeOpeningScene(this, fpcNm_OPENING_SCENE_e);
+            tp::log::info("dScnLogo nextSceneChange: OPENING_SCENE request returned");
+#endif
         } else {
             #if DEBUG
             fopScnM_ChangeReq(this, fpcNm_MENU_SCENE_e, 0, 30);
@@ -755,6 +849,7 @@ void dScnLogo_c::nextSceneChange() {
 }
 
 dScnLogo_c::~dScnLogo_c() {
+    tp::log::info("dScnLogo::~dScnLogo_c reset=%d", mDoRst::isReset());
     if (mDoRst::isReset()) {
         #if !(PLATFORM_WII || PLATFORM_SHIELD)
         if (mDoAud_zelAudio_c::isInitFlag())
@@ -924,6 +1019,7 @@ dScnLogo_c::~dScnLogo_c() {
 }
 
 static int phase_0(dScnLogo_c* i_this) {
+    tp::log::info("dScnLogo phase_0: begin");
     mDoGph_gInf_c::setFadeColor(*(JUtility::TColor*)&g_blackColor);
     dComIfGp_particle_create();
 
@@ -970,21 +1066,35 @@ static int phase_0(dScnLogo_c* i_this) {
 
 static int phase_1(dScnLogo_c* i_this) {
     if (!cDyl_InitAsyncIsDone()) {
+        tp::log::info("dScnLogo phase_1: waiting for cDyl init");
         return cPhs_INIT_e;
     }
 
     #if !(PLATFORM_WII || PLATFORM_SHIELD)
+    #if !PLATFORM_PC
     if (!mDoAud_zelAudio_c::isInitFlag() || Z2AudioMgr::getInterface()->checkFirstWaves()) {
+        tp::log::info("dScnLogo phase_1: waiting for audio init flags init=%d firstWaves=%d",
+                      mDoAud_zelAudio_c::isInitFlag(),
+                      Z2AudioMgr::getInterface()->checkFirstWaves());
         return cPhs_INIT_e;
     }
+    #else
+    if (!mDoAud_zelAudio_c::isInitFlag()) {
+        tp::log::info("dScnLogo phase_1: waiting for PC audio init flag init=%d",
+                      mDoAud_zelAudio_c::isInitFlag());
+        return cPhs_INIT_e;
+    }
+    #endif
     #endif
 
     #if VERSION == VERSION_GCN_PAL
     if (!mDoDvdThd::SyncWidthSound) {
+        tp::log::info("dScnLogo phase_1: waiting for SyncWidthSound");
         return cPhs_INIT_e;
     }
 
     if (!i_this->mpPalLogoResCommand->sync()) {
+        tp::log::info("dScnLogo phase_1: waiting for PAL logo archive sync");
         return cPhs_INIT_e;
     }
     #endif
@@ -1006,6 +1116,7 @@ static int phase_1(dScnLogo_c* i_this) {
     #else
     rt = dComIfG_setObjectRes(LOGO_ARC, (u8)0, i_this->mLogoHeap);
     #endif
+    tp::log::info("dScnLogo phase_1: setObjectRes(%s) -> %d", LOGO_ARC, rt);
 
     JUT_ASSERT(1652, rt == 1);
 
@@ -1017,7 +1128,9 @@ static int phase_1(dScnLogo_c* i_this) {
 }
 
 static int phase_2(dScnLogo_c* i_this) {
-    if (dComIfG_syncAllObjectRes()) {
+    int sync = dComIfG_syncAllObjectRes();
+    tp::log::info("dScnLogo phase_2: syncAllObjectRes -> %d", sync);
+    if (sync) {
         return cPhs_INIT_e;
     } else {
         return cPhs_COMPLEATE_e;
@@ -1032,7 +1145,9 @@ static int resLoad(request_of_phase_process_class* i_phase, dScnLogo_c* i_this) 
 }
 
 int dScnLogo_c::create() {
+    tp::log::info("dScnLogo_c::create: phase_id=%d", field_0x1c4.id);
     int phase_state = resLoad(&field_0x1c4, this);
+    tp::log::info("dScnLogo_c::create: resLoad phase_state=%d", phase_state);
     if (phase_state != cPhs_COMPLEATE_e) {
         return phase_state;
     }
@@ -1054,12 +1169,14 @@ int dScnLogo_c::create() {
     OS_REPORT("\x1b[31m%d gameHeap->getFreeSize %08x(%d)\n\x1b[m", 1732, mDoExt_getGameHeap()->getFreeSize(), mDoExt_getGameHeap()->getFreeSize());
 
     dvdDataLoad();
+    tp::log::info("dScnLogo_c::create: dvdDataLoad complete");
 
     OS_REPORT("\x1b[31m%d gameHeap->getFreeSize %08x(%d)\n\x1b[m", 1738, mDoExt_getGameHeap()->getFreeSize(), mDoExt_getGameHeap()->getFreeSize());
 
     #if !(PLATFORM_WII || PLATFORM_SHIELD)
     Z2AudioMgr::getInterface()->loadStaticWaves();
     #endif
+    tp::log::info("dScnLogo_c::create: post audio/static init");
 
     mDoGph_gInf_c::setTickRate(OS_TIMER_CLOCK / 60);
     mDoGph_gInf_c::waitBlanking(0);
@@ -1083,14 +1200,14 @@ int dScnLogo_c::create() {
     checkProgSelect();
     if (field_0x20a != 0) {
         mExecCommand = EXEC_PROG_IN;
-        mTimer = 30;
+        mTimer = tpLogoBootTimer(30);
         field_0x218 = getProgressiveMode();
     } else {
         if (mDoRst::getWarningDispFlag()) {
-            mTimer = 90;
+            mTimer = tpLogoBootTimer(90);
             mExecCommand = EXEC_NINTENDO_IN;
         } else {
-            mTimer = 120;
+            mTimer = tpLogoBootTimer(120);
             mExecCommand = EXEC_WARNING_IN;
         }
         mDoRst::setProgSeqFlag(1);
@@ -1434,11 +1551,43 @@ void dScnLogo_c::dvdDataLoad() {
 }
 
 static int dScnLogo_Create(scene_class* i_this) {
-    return (new (i_this) dScnLogo_c())->create();
+    static request_of_phase_process_class s_pcLogoCreatePhase;
+    if (fpcM_IsFirstCreating(i_this)) {
+        new (i_this) dScnLogo_c();
+        s_pcLogoCreatePhase.id = 0;
+        s_pcLogoCreatePhase.mpHandlerTable = NULL;
+#if PLATFORM_PC
+        s_pcLogoInactive = false;
+#endif
+    }
+
+    dScnLogo_c* logo = static_cast<dScnLogo_c*>(i_this);
+    logo->field_0x1c4 = s_pcLogoCreatePhase;
+    int ret = logo->create();
+    s_pcLogoCreatePhase = logo->field_0x1c4;
+    return ret;
 }
 
 static int dScnLogo_Execute(dScnLogo_c* i_this) {
+#if PLATFORM_PC
+    if (s_pcLogoInactive) {
+        return 1;
+    }
+#endif
+
     fpc_ProcID id = fpcM_GetID(i_this);
+    static int s_logoExecuteFrames = 0;
+    static u8 s_lastExecCommand = 0xFF;
+    if (s_logoExecuteFrames < 5) {
+        tp::log::info("dScnLogo_Execute: frame=%d id=%u exec=%d timer=%u",
+                      s_logoExecuteFrames + 1, id, i_this->mExecCommand, i_this->mTimer);
+        s_logoExecuteFrames++;
+    }
+    if (i_this->mExecCommand != s_lastExecCommand) {
+        tp::log::info("dScnLogo_Execute: exec transition %u -> %u timer=%u",
+                      s_lastExecCommand, i_this->mExecCommand, i_this->mTimer);
+        s_lastExecCommand = i_this->mExecCommand;
+    }
 
     if (mDoRst::isReset()) {
         fopScnM_ChangeReq(i_this, fpcNm_LOGO_SCENE_e, 0, 5);
@@ -1452,6 +1601,19 @@ static u8 lbl_8074CA49;
 #endif
 
 static int dScnLogo_Draw(dScnLogo_c* i_this) {
+#if PLATFORM_PC
+    if (s_pcLogoInactive) {
+        return 1;
+    }
+#endif
+
+    static int s_logoDrawFrames = 0;
+    if (s_logoDrawFrames < 20) {
+        tp::log::info("dScnLogo_Draw: frame=%d exec=%u timer=%u warning=%p nintendo=%p dolby=%p",
+                      s_logoDrawFrames + 1, i_this->mExecCommand, i_this->mTimer,
+                      i_this->mWarning, i_this->mNintendoLogo, i_this->mDolbyLogo);
+        s_logoDrawFrames++;
+    }
     #if DEBUG
     int x = 36;
     int y = 40;

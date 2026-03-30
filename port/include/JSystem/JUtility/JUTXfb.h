@@ -6,9 +6,14 @@
 
 class JUTXfb {
 public:
+    enum EXfbNumber {
+        UNK_2 = 2,
+    };
+
     static JUTXfb* getManager() { return sManager; }
     void* getDisplayingXfb() const { return nullptr; }
     void clearIndex() {}
+    void setDrawingXfbIndex(int /*index*/) {}
 
     inline static JUTXfb* sManager = nullptr;
 };

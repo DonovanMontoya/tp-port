@@ -80,6 +80,7 @@ static LONG WINAPI LogUnhandledException(EXCEPTION_POINTERS* ep) {
 
     return EXCEPTION_CONTINUE_SEARCH;
 }
+#endif
 
 static void InitResetStateIfNeeded() {
     if (mDoRst::getResetData()) {
@@ -105,6 +106,7 @@ static void InitResetStateIfNeeded() {
     }
 }
 
+#ifdef _WIN32
 int WINAPI WinMain(HINSTANCE /*hInst*/, HINSTANCE /*hPrev*/,
                    LPSTR /*cmdLine*/, int /*showCmd*/)
 #else
@@ -119,7 +121,7 @@ int main(int /*argc*/, char** /*argv*/)
     if (dataPath)
         tp::log::info("Using game data path: %s", dataPath);
     else
-        tp::log::info("TP_DATA_PATH not set — looking for ./gamedata/");
+        tp::log::info("TP_DATA_PATH not set — looking for ./gamedata/ or ./port/gamedata/");
 
     // ── Port layer init ────────────────────────────────────────────────
     OSInit();

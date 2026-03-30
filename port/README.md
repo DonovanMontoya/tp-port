@@ -115,13 +115,16 @@ Or place the `gamedata/` folder next to the executable and omit `TP_DATA_PATH`.
 
 ## Porting progress
 
-The port layer compiles and opens a window. The game logic itself needs to be
-enabled incrementally in `cmake/game_sources.cmake`:
+The port layer compiles and opens a window. This branch is experimenting with
+an Animal Crossing-style workflow in `cmake/game_sources.cmake`:
 
-1. Add source file(s) to `GAME_SOURCES`.
-2. Build — fix any compile errors (missing stubs, GC-specific extensions).
-3. Uncomment the corresponding call in `src/main.cpp`.
-4. Repeat until `mDoMain_boot()` and `fapGm_Execute()` are live.
+1. Compile the decomp broadly by default.
+2. Maintain a short exclusion list for TUs that still need platform work.
+3. Fix compiler and linker fallout by improving the port layer and shrinking the exclusion list.
+4. Re-enable gameplay entry points once `mDoMain_boot()` and `fapGm_Execute()` are stable.
+
+That is the opposite of the original Twilight Princess port workflow, which
+added game source files one by one only after they were known to compile.
 
 ### Known porting tasks (in rough priority order)
 

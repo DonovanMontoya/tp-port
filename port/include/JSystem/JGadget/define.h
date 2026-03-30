@@ -29,5 +29,9 @@ public:
 // JGadget assert/warn macros → no-ops in port
 #define JGADGET_ASSERTWARN(line, COND) ((void)0)
 #define JGADGET_WARN(line, COND, ...) ((void)0)
+#define JGADGET_WARNMSG(line, msg) ((void)0)
+#define JGADGET_WARNMSG1(line, msg, arg) ((void)0)
+#define JGADGET_WARNMSG3(line, msg, arg1, arg2, arg3) ((void)0)
+#define JGADGET_WARNMSG4(line, msg, arg1, arg2, arg3, arg4) ((void)0)
 
 #endif /* JGADGET_DEFINE_H */

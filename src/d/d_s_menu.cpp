@@ -1493,7 +1493,9 @@ int dScnMenu_Delete(dScnMenu_c* i_this) {
 }
 
 int phase_1(dScnMenu_c* i_this) {
+    tp::log::info("dScnMenu phase_1: begin");
     if (!dStage_roomControl_c::resetArchiveBank(0)) {
+        tp::log::info("dScnMenu phase_1: resetArchiveBank pending");
         return cPhs_INIT_e;
     }
 
@@ -1507,6 +1509,7 @@ int phase_1(dScnMenu_c* i_this) {
 
     i_this->fontCommand = mDoDvdThd_toMainRam_c::create("/res/Menu/kanfont_fix16.bfn", 0, NULL);
     JUT_ASSERT(3086, i_this->fontCommand != NULL);
+    tp::log::info("dScnMenu phase_1: queued menu data and font commands");
 
     dComIfG_playerStatusD();
     dComIfGs_offDarkClearLV(0);
@@ -1568,8 +1571,11 @@ u8 search(menu_info_class* i_info) {
 
 int phase_2(dScnMenu_c* i_this) {
     if (!i_this->command->sync() || !i_this->fontCommand->sync()) {
+        tp::log::info("dScnMenu phase_2: waiting for command sync menu=%d font=%d",
+                      i_this->command->sync(), i_this->fontCommand->sync());
         return cPhs_INIT_e;
     }
+    tp::log::info("dScnMenu phase_2: command sync complete");
 
     i_this->info = (menu_info_class*)i_this->command->getMemAddress();
     JUT_ASSERT(3237, i_this->info != NULL);
@@ -1649,7 +1655,10 @@ int dScnMenu_Create(scene_class* i_this) {
     dScnMenu_c* a_this = (dScnMenu_c*)i_this;
 
     l_languageType = dComIfGs_getPalLanguage();
-    return dComLbG_PhaseHandler(&a_this->phase, l_method, a_this);
+    tp::log::info("dScnMenu_Create: phase_id=%d", a_this->phase.id);
+    int ret = dComLbG_PhaseHandler(&a_this->phase, l_method, a_this);
+    tp::log::info("dScnMenu_Create: ret=%d phase_id=%d", ret, a_this->phase.id);
+    return ret;
 }
 
 void dScnMenu_setItem(int i_slotNo, u8 i_itemNo) {
@@ -2016,7 +2025,6 @@ scene_process_profile_definition g_profile_MENU_SCENE = {
     /* Leaf SubMtd  */ &g_fopScn_Method.base,
     /* Scene SubMtd */ &l_dScnMenu_Method,
 };
-#else
 scene_process_profile_definition g_profile_MENU_SCENE = {
     /* Layer ID     */ fpcLy_ROOT_e,
     /* List ID      */ 1,

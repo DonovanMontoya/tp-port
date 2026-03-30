@@ -6,6 +6,7 @@
 // Minimal subset of the Z2SE sound-ID enum needed by compiled files.
 // Original has ~300+ entries; add only what's referenced by enabled source.
 enum {
+    Z2SE_TITLE_ENTER           = 0x3,
     Z2SE_SY_CURSOR_OPTION       = 0x4C,
     Z2SE_SY_TALK_WIN_OPEN       = 0x61,
     Z2SE_SY_TALK_WIN_CLOSE      = 0x62,

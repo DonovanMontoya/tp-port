@@ -28,7 +28,19 @@
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
+#include <strings.h>
 #include <cassert>
+
+#ifndef ARRAY_SIZE
+#  define ARRAY_SIZE(o) (s32)(sizeof(o) / sizeof((o)[0]))
+#endif
+#ifndef ARRAY_SIZEU
+#  define ARRAY_SIZEU(o) (sizeof(o) / sizeof((o)[0]))
+#endif
+#ifndef stricmp
+#  define stricmp strcasecmp
+#endif
+
 
 // -----------------------------------------------------------------------
 // Port sub-headers

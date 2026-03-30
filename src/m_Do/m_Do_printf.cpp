@@ -227,6 +227,8 @@ void OSReport_Error(const char* fmt, ...) {
 
     va_list args;
     va_start(args, fmt);
+    fprintf(stderr, "\n[OSReport_Error fmt] %s\n", fmt ? fmt : "(null)");
+    fflush(stderr);
     OSReportForceEnableOn();
     my_PutString("\x1B[41;37m[ERROR]");
     OSVReport(fmt, args);

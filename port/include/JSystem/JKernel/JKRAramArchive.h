@@ -13,6 +13,8 @@ class JKRAramArchive {
 public:
     JKRAramArchive() {}
     bool mountFixed(s32 /*entryNum*/, JKRArchive::EMountDirection /*mountDirection*/) { return false; }
+    u32 readResource(void*, u32, const char*) { return 0; }
+    void removeResourceAll() {}
     void* mBlock = nullptr;
     void* mDvdFile = nullptr;
 };

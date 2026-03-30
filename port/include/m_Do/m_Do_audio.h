@@ -44,10 +44,18 @@ void mDoAud_resetProcess();
 bool mDoAud_resetRecover();
 void mDoAud_setSceneName(char const* spot, s32 room, s32 layer);
 s32  mDoAud_load1stDynamicWave();
+inline s32 mDoAud_load2ndDynamicWave() { return 1; }
+inline bool mDoAud_check1stDynamicWave() { return false; }
+inline void mDoAud_sceneBgmStart() {}
 void mDoAud_setFadeInStart(u8 param_0);
 void mDoAud_setFadeOutStart(u8 param_0);
+#if PLATFORM_PC
+inline void mDoAud_setOutputMode(u32) {}
+inline void mDoAud_loadStaticWaves() {}
+#else
 inline void mDoAud_setOutputMode(u32 mode) { Z2AudioMgr::getInterface()->setOutputMode(mode); }
 inline void mDoAud_loadStaticWaves() { Z2AudioMgr::getInterface()->loadStaticWaves(); }
+#endif
 
 // All sound/link calls are no-ops on PC ----------------------------------------
 inline void mDoAud_seDeleteObject(Vec*)        {}
@@ -55,6 +63,7 @@ inline void mDoAud_seStart(u32, const Vec*, u32, s8)        {}
 inline void mDoAud_seStartLevel(u32, const Vec*, u32, s8)   {}
 inline void mDoAud_seStartCommon(u32, const Vec*)           {}
 inline void mDoAud_bgmStart(u32)           {}
+inline void mDoAud_bgmStop(u32)            {}
 inline void mDoAud_bgmAllMute(u32)         {}
 inline void mDoAud_subBgmStart(u32)        {}
 inline void mDoAud_subBgmStop()            {}

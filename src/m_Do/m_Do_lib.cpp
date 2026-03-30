@@ -5,7 +5,10 @@
 
 #include "m_Do/m_Do_lib.h"
 #include "m_Do/m_Do_graphic.h"
+#include "JSystem/J3DGraphBase/J3DMaterial.h"
 #include "JSystem/J3DGraphBase/J3DMatBlock.h"
+#include "JSystem/J3DGraphBase/J3DSys.h"
+#include "SSystem/SComponent/c_angle.h"
 #include "SSystem/SComponent/c_math.h"
 #include "d/d_com_inf_game.h"
 #include <types.h>

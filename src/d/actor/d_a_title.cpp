@@ -50,6 +50,10 @@ static char const l_arcName[] = "TitlePal";
 static char const l_arcName[] = "Title";
 #endif
 
+#if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
+static JKRArchive* s_pcTitle2DArchive = NULL;
+#endif
+
 daTit_HIO_c::daTit_HIO_c() {
     mPSScaleX = 1.0f;
     mPSScaleY = 1.0f;
@@ -92,6 +96,11 @@ void daTit_HIO_c::genMessage(JORMContext* mctx) {
 #endif
 
 int daTitle_c::CreateHeap() {
+#if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
+    tp::log::info("daTitle CreateHeap[PC]: skipping 3D title model setup");
+    mpModel = NULL;
+    return 1;
+#else
     J3DModelData* modelData = (J3DModelData*)dComIfG_getObjectRes(l_arcName, 10);
     JUT_ASSERT(258, modelData);
     mpModel = mDoExt_J3DModel__create(modelData, 0x80000, 0x11000285);
@@ -113,6 +122,7 @@ int daTitle_c::CreateHeap() {
     JUT_ASSERT(297, res == 1);
 
     return 1;
+#endif
 }
 
 static procFunc daTitleProc[6] = {
@@ -122,17 +132,31 @@ static procFunc daTitleProc[6] = {
 
 int daTitle_c::create() {
     fopAcM_ct(this, daTitle_c);
-    
+
+    static int s_last_phase_state = -999;
     int phase_state = dComIfG_resLoad(&mPhaseReq, l_arcName);
+    if (phase_state != s_last_phase_state) {
+        s_last_phase_state = phase_state;
+        tp::log::info("daTitle create: resLoad(%s) -> %d", l_arcName, phase_state);
+    }
     if (phase_state != cPhs_COMPLEATE_e) {
         return phase_state;
     }
 
     if (!fopAcM_entrySolidHeap(this, createHeapCallBack, 0x4000)) {
+        tp::log::info("daTitle create: solid heap entry failed");
         return cPhs_ERROR_e;
     }
 
+    #if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
+    s_pcTitle2DArchive = JKRArchive::mount("/res/Layout/Title2D.arc", JKRArchive::MOUNT_MEM, NULL,
+                                           JKRArchive::MOUNT_DIRECTION_HEAD);
+    mpMount = NULL;
+    tp::log::info("daTitle create[PC]: direct mount Title2D.arc archive=%p", s_pcTitle2DArchive);
+    #else
     mpMount = mDoDvdThd_mountArchive_c::create("/res/Layout/Title2D.arc", 0, NULL);
+    tp::log::info("daTitle create: mount Title2D.arc command=%p", mpMount);
+    #endif
     mIsDispLogo = 0;
     field_0x5f9 = 0;
 
@@ -147,10 +171,12 @@ int daTitle_c::create() {
 
 int daTitle_c::createHeapCallBack(fopAc_ac_c* actor) {
     daTitle_c* i_this = (daTitle_c*)actor;
+    tp::log::info("daTitle createHeapCallBack");
     return i_this->CreateHeap();
 }
 
 int daTitle_c::Execute() {
+    static u8 s_last_proc_id = 0xFF;
     #if PLATFORM_WII || PLATFORM_SHIELD
     mDoGph_gInf_c::resetDimming();
     #endif
@@ -163,6 +189,11 @@ int daTitle_c::Execute() {
 
     if (mDoRst::isReset()) {
         return 1;
+    }
+
+    if (mProcID != s_last_proc_id) {
+        s_last_proc_id = mProcID;
+        tp::log::info("daTitle Execute: proc -> %u", mProcID);
     }
 
     (this->*daTitleProc[mProcID])();
@@ -208,10 +239,22 @@ void daTitle_c::KeyWaitPosMove() {
 
 void daTitle_c::loadWait_init() {
     mProcID = 0;
+    tp::log::info("daTitle loadWait_init");
 }
 
 void daTitle_c::loadWait_proc() {
-    if (mpMount->sync()) {
+    static int s_last_sync = -1;
+    int sync;
+    #if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
+    sync = s_pcTitle2DArchive != NULL ? 1 : -1;
+    #else
+    sync = mpMount->sync();
+    #endif
+    if (sync != s_last_sync) {
+        s_last_sync = sync;
+        tp::log::info("daTitle loadWait: Title2D sync -> %d", sync);
+    }
+    if (sync) {
         mpHeap = mDoExt_setCurrentHeap(m2DHeap);
 
         mpFont = mDoExt_getMesgFont();
@@ -219,7 +262,12 @@ void daTitle_c::loadWait_proc() {
         mTitle.Scr = new J2DScreen();
         JUT_ASSERT(529, mTitle.Scr != NULL);
 
+        #if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
+        mTitle.Scr->setPriority("zelda_press_start.blo", 0x100000, s_pcTitle2DArchive);
+        #else
         mTitle.Scr->setPriority("zelda_press_start.blo", 0x100000, mpMount->getArchive());
+        #endif
+        tp::log::info("daTitle loadWait: Title2D archive ready, screen created");
 
         J2DTextBox* text[7];
         text[0] = (J2DTextBox*)mTitle.Scr->search(MULTI_CHAR('t_s_00'));
@@ -250,6 +298,7 @@ void daTitle_c::loadWait_proc() {
 
 void daTitle_c::logoDispWaitInit() {
     mProcID = 1;
+    tp::log::info("daTitle logoDispWaitInit");
 }
 
 void daTitle_c::logoDispWait() {
@@ -267,6 +316,7 @@ void daTitle_c::logoDispAnmInit() {
     mBtk.setPlaySpeed(1.0f);
     mIsDispLogo = 1;
     mProcID = 2;
+    tp::log::info("daTitle logoDispAnmInit");
 }
 
 void daTitle_c::logoDispAnm() {
@@ -286,6 +336,7 @@ void daTitle_c::logoDispAnm() {
 
 void daTitle_c::keyWaitInit() {
     mProcID = 3;
+    tp::log::info("daTitle keyWaitInit");
 }
 
 void daTitle_c::keyWait() {
@@ -297,6 +348,7 @@ void daTitle_c::keyWait() {
 
 void daTitle_c::nextScene_init() {
     mProcID = 4;
+    tp::log::info("daTitle nextScene_init");
 }
 
 void daTitle_c::nextScene_proc() {
@@ -336,6 +388,7 @@ void daTitle_c::fastLogoDispInit() {
     field_0x604 = 0;
     mWaitTimer = 30;
     mProcID = 5;
+    tp::log::info("daTitle fastLogoDispInit");
 }
 
 void daTitle_c::fastLogoDisp() {
@@ -363,18 +416,20 @@ int daTitle_c::getDemoPrm() {
 }
 
 int daTitle_c::Draw() {
-    J3DModelData* modelData = mpModel->getModelData();
-    cMtx_trans(mpModel->getBaseTRMtx(), IREG_F(7), IREG_F(8), IREG_F(9) + -430.0f);
-    mpModel->getBaseScale()->x = -1.0f;
+    if (mpModel != NULL) {
+        J3DModelData* modelData = mpModel->getModelData();
+        cMtx_trans(mpModel->getBaseTRMtx(), IREG_F(7), IREG_F(8), IREG_F(9) + -430.0f);
+        mpModel->getBaseScale()->x = -1.0f;
 
-    mBck.entry(modelData);
-    mBpk.entry(modelData);
-    mBrk.entry(modelData);
-    mBtk.entry(modelData);
+        mBck.entry(modelData);
+        mBpk.entry(modelData);
+        mBrk.entry(modelData);
+        mBtk.entry(modelData);
 
-    dComIfGd_setListItem3D();
-    mDoExt_modelUpdateDL(mpModel);
-    dComIfGd_setList();
+        dComIfGd_setListItem3D();
+        mDoExt_modelUpdateDL(mpModel);
+        dComIfGd_setList();
+    }
 
     if (mIsDispLogo) {
         dComIfGd_set2DOpaTop(&mTitle);
@@ -390,9 +445,17 @@ int daTitle_c::Delete() {
     delete mTitle.Scr;
     delete field_0x600;
     
+    #if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
+    if (s_pcTitle2DArchive != NULL) {
+        s_pcTitle2DArchive->removeResourceAll();
+        JKRUnmountArchive(s_pcTitle2DArchive);
+        s_pcTitle2DArchive = NULL;
+    }
+    #else
     mpMount->getArchive()->removeResourceAll();
     JKRUnmountArchive(mpMount->getArchive());
     mpMount->destroy();
+    #endif
 
     if (m2DHeap != NULL) {
         m2DHeap->destroy();

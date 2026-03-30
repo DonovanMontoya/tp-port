@@ -73,6 +73,7 @@ static GLuint sTextures[8] = {};
 // Clear color / depth
 static float sClearR = 0, sClearG = 0, sClearB = 0, sClearA = 0;
 static u32   sClearZ = 0x00FFFFFF;
+static float sViewport[6] = {0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 1.0f};
 
 // Callbacks
 static GXDrawSyncCallback sDrawSyncCB = nullptr;
@@ -83,8 +84,13 @@ static GXDrawDoneCallback sDrawDoneCB = nullptr;
 // The real implementation needs a TEV→GLSL compiler. For now we use a
 // basic pass-through shader so the window at least renders something.
 // -----------------------------------------------------------------------
+#if defined(__APPLE__)
+static const char* kGLSLVersion = "#version 410 core\n";
+#else
+static const char* kGLSLVersion = "#version 450 core\n";
+#endif
+
 static const char* kDefaultVert = R"GLSL(
-#version 450 core
 layout(location = 0) in vec3  aPos;
 layout(location = 1) in vec4  aColor;
 layout(location = 2) in vec2  aTexCoord;
@@ -102,7 +108,6 @@ void main() {
 )GLSL";
 
 static const char* kDefaultFrag = R"GLSL(
-#version 450 core
 in  vec4 vColor;
 in  vec2 vTexCoord;
 out vec4 fragColor;
@@ -117,6 +122,12 @@ void main() {
         fragColor = vColor;
 }
 )GLSL";
+
+static std::string MakeShaderSource(const char* body) {
+    std::string src(kGLSLVersion);
+    src += body;
+    return src;
+}
 
 static GLuint CompileShader(GLenum type, const char* src) {
     GLuint s = glCreateShader(type);
@@ -133,8 +144,10 @@ static GLuint CompileShader(GLenum type, const char* src) {
 }
 
 static GLuint LinkProgram(const char* vert, const char* frag) {
-    GLuint vs = CompileShader(GL_VERTEX_SHADER,   vert);
-    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, frag);
+    const std::string vertSrc = MakeShaderSource(vert);
+    const std::string fragSrc = MakeShaderSource(frag);
+    GLuint vs = CompileShader(GL_VERTEX_SHADER,   vertSrc.c_str());
+    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fragSrc.c_str());
     GLuint p  = glCreateProgram();
     glAttachShader(p, vs);
     glAttachShader(p, fs);
@@ -208,11 +221,22 @@ GXDrawDoneCallback GXSetDrawDoneCallback(GXDrawDoneCallback cb) {
 // Viewport / scissor
 // -----------------------------------------------------------------------
 void GXSetViewport(f32 xOrig, f32 yOrig, f32 wd, f32 ht, f32 nearZ, f32 farZ) {
+    sViewport[0] = xOrig;
+    sViewport[1] = yOrig;
+    sViewport[2] = wd;
+    sViewport[3] = ht;
+    sViewport[4] = nearZ;
+    sViewport[5] = farZ;
     glViewport((GLint)xOrig, (GLint)yOrig, (GLsizei)wd, (GLsizei)ht);
     glDepthRangef(nearZ, farZ);
 }
 void GXSetViewportJitter(f32 x, f32 y, f32 w, f32 h, f32 n, f32 f, u32 /*field*/) {
     GXSetViewport(x, y, w, h, n, f);
+}
+void GXGetViewportv(f32* ptr) {
+    if (ptr != nullptr) {
+        memcpy(ptr, sViewport, sizeof(sViewport));
+    }
 }
 void GXSetScissor(u32 x, u32 y, u32 w, u32 h) {
     glScissor((GLint)x, (GLint)y, (GLsizei)w, (GLsizei)h);
@@ -240,6 +264,9 @@ void GXCopyDisp(void* /*dest*/, GXBool clear) {
 }
 
 void GXCopyTex(void* /*dest*/, GXBool /*clear*/) {}
+void GXSetCopyFilter(GXBool /*aa*/, const u8 /*sample_pattern*/[12][2], GXBool /*vf*/, const u8 /*vfilter*/[7]) {}
+void GXSetTexCopySrc(u16 /*left*/, u16 /*top*/, u16 /*wd*/, u16 /*ht*/) {}
+void GXSetTexCopyDst(u16 /*wd*/, u16 /*ht*/, GXTexFmt /*fmt*/, GXBool /*mipmap*/) {}
 void GXClearBoundingBox(void) {}
 void GXReadBoundingBox(u16* t, u16* b, u16* l, u16* r) {
     if (t) *t = 0; if (b) *b = 480;
@@ -568,6 +595,34 @@ void GXSetProjection(const f32 mtx[4][4], GXProjectionType type) {
 void GXSetProjectionv(const f32* ptr, GXProjectionType type) {
     GXSetProjection(reinterpret_cast<const f32(*)[4]>(ptr), type);
 }
+void GXGetProjectionv(f32* ptr) {
+    if (ptr == nullptr) {
+        return;
+    }
+
+    ptr[0] = static_cast<f32>(sProjType);
+    ptr[1] = sProjectionMtx[0][0];
+    ptr[2] = sProjectionMtx[0][2];
+    ptr[3] = sProjectionMtx[1][1];
+    ptr[4] = sProjectionMtx[1][2];
+    ptr[5] = sProjectionMtx[2][2];
+    ptr[6] = sProjectionMtx[2][3];
+}
+void GXProject(f32 /*x*/, f32 /*y*/, f32 /*z*/, const Mtx /*modelMtx*/, const f32* /*proj*/,
+               const f32* viewport, f32* winx, f32* winy, f32* winz) {
+    const f32* vp = viewport != nullptr ? viewport : sViewport;
+    if (winx != nullptr) {
+        *winx = vp[0] + (vp[2] * 0.5f);
+    }
+    if (winy != nullptr) {
+        *winy = vp[1] + (vp[3] * 0.5f);
+    }
+    if (winz != nullptr) {
+        *winz = 0.5f;
+    }
+}
+void GXSetClipMode(GXClipMode /*mode*/) {}
+void GXSetCoPlanar(GXBool /*enable*/) {}
 
 // -----------------------------------------------------------------------
 // Lighting (stub)
@@ -576,6 +631,12 @@ void GXSetNumChans(u8 /*n*/) {}
 void GXSetChanCtrl(GXChannelID /*ch*/, GXBool /*en*/, GXColorSrc /*amb*/, GXColorSrc /*mat*/, u32 /*lm*/, GXDiffuseFn /*df*/, GXAttnFn /*af*/) {}
 void GXSetChanAmbColor(GXChannelID /*ch*/, GXColor /*c*/) {}
 void GXSetChanMatColor(GXChannelID /*ch*/, GXColor /*c*/) {}
+void GXInitLightPos(GXLightObj* /*obj*/, f32 /*x*/, f32 /*y*/, f32 /*z*/) {}
+void GXInitLightDir(GXLightObj* /*obj*/, f32 /*nx*/, f32 /*ny*/, f32 /*nz*/) {}
+void GXInitLightColor(GXLightObj* /*obj*/, GXColor /*color*/) {}
+void GXInitLightDistAttn(GXLightObj* /*obj*/, f32 /*refDist*/, f32 /*refBrightness*/, GXDistAttnFn /*distFunc*/) {}
+void GXInitLightSpot(GXLightObj* /*obj*/, f32 /*cutoff*/, GXSpotFn /*spotFunc*/) {}
+void GXLoadLightObjImm(const GXLightObj* /*obj*/, GXLightID /*light*/) {}
 void GXSetNumTexGens(u32 /*n*/) {}
 void GXSetTexCoordGen(GXTexCoordID /*dst*/, GXTexGenType /*type*/, GXTexGenSrc /*src*/, u32 /*mtx*/) {}
 void GXSetTexCoordGen2(GXTexCoordID /*dst*/, GXTexGenType /*type*/, GXTexGenSrc /*src*/, u32 /*mtx*/, GXBool /*norm*/, u32 /*post*/) {}

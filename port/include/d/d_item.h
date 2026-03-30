@@ -21,5 +21,7 @@ public:
 // Item helpers used by fopAcM item creation functions
 inline u8   check_itemno(int itemNo) { return (u8)(itemNo & 0xFF); }
 inline BOOL isHeart(int itemNo)      { return itemNo == dItemNo_HEART_e ? TRUE : FALSE; }
+inline int checkItemGet(u8, int) { return FALSE; }
+inline void execItemGet(int) {}
 
 #endif /* D_D_ITEM_H */

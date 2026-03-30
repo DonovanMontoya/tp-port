@@ -1209,6 +1209,7 @@ GXColor g_clearColor = {0, 0, 0, 0};
 GXColor g_blackColor = {0, 0, 0, 255};
 
 int dComIfG_changeOpeningScene(scene_class* i_scene, s16 i_procName) {
+    tp::log::info("dComIfG_changeOpeningScene: scene=%p proc=%d", i_scene, i_procName);
     dComIfGp_offEnableNextStage();
     dComIfGp_setNextStage("F_SP102", 100, 0, 10);
     mDoAud_setSceneName(dComIfGp_getNextStageName(), dComIfGp_getNextStageRoomNo(),

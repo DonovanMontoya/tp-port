@@ -121,8 +121,13 @@ layer_class* fpcLy_Search(fpc_ProcID i_id) {
 layer_class* fpcLy_Layer(fpc_ProcID i_id) {
     if (i_id == 0 || fpcLy_RootLayer()->layer_id == i_id) {
         return fpcLy_RootLayer();
-    } else if (i_id == fpcLy_CURRENT_e || fpcLy_CurrentLayer()->layer_id == i_id) {
-        return fpcLy_CurrentLayer();
+    }
+
+    layer_class* current = fpcLy_CurrentLayer();
+    if (i_id == fpcLy_CURRENT_e) {
+        return current != NULL ? current : fpcLy_RootLayer();
+    } else if (current != NULL && current->layer_id == i_id) {
+        return current;
     } else {
         return fpcLy_Search(i_id);
     }

@@ -22,6 +22,7 @@ inline void vprint(Level lvl, const char* fmt, va_list args) {
     fputs(prefix, stderr);
     vfprintf(stderr, fmt, args);
     fputc('\n', stderr);
+    fflush(stderr);
 }
 
 inline void debug(const char* fmt, ...) { va_list a; va_start(a, fmt); vprint(Level::Debug, fmt, a); va_end(a); }

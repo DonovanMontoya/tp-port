@@ -19,11 +19,12 @@ class JUTVideo {
 public:
     typedef void (*Callback)(u32);
 
-    JUTVideo(GXRenderModeObj const* /*mode*/) : mRenderObj(nullptr) {}
+    JUTVideo(GXRenderModeObj const* mode) : mRenderObj(const_cast<GXRenderModeObj*>(mode)) {}
     virtual ~JUTVideo() {}
 
-    static JUTVideo* createManager(GXRenderModeObj const* /*mode*/) {
-        if (!sManager) sManager = new JUTVideo(nullptr);
+    static JUTVideo* createManager(GXRenderModeObj const* mode) {
+        if (!sManager) sManager = new JUTVideo(mode);
+        if (mode) sManager->setRenderMode(mode);
         return sManager;
     }
     static void destroyManager() { delete sManager; sManager = nullptr; }

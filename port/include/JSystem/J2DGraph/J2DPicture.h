@@ -3,8 +3,14 @@
  * port/include/JSystem/J2DGraph/J2DPicture.h
  * PC port stub — J2DPane / J2DPicture 2D UI widget stubs.
  */
-#ifndef J2DPICTURE_H
-#define J2DPICTURE_H
+#ifndef PORT_J2DPICTURE_H
+#define PORT_J2DPICTURE_H
+
+#if defined(TP_PORT_USE_REAL_TITLE) && TP_PORT_USE_REAL_TITLE
+
+#include "../../../../libs/JSystem/include/JSystem/J2DGraph/J2DPicture.h"
+
+#else
 
 #include "port/types.h"
 #include "JSystem/JUtility/TColor.h"
@@ -29,4 +35,6 @@ public:
     bool changeTexture(void*, u32)         { return false; }
 };
 
-#endif /* J2DPICTURE_H */
+#endif
+
+#endif /* PORT_J2DPICTURE_H */

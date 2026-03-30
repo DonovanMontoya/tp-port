@@ -68,6 +68,7 @@ static inline void GXSetCurrentGXThread(void) {}
 // -----------------------------------------------------------------------
 void GXSetViewport(f32 xOrig, f32 yOrig, f32 wd, f32 ht, f32 nearZ, f32 farZ);
 void GXSetViewportJitter(f32 xOrig, f32 yOrig, f32 wd, f32 ht, f32 nearZ, f32 farZ, u32 field);
+void GXGetViewportv(f32* ptr);
 void GXSetScissor(u32 xOrig, u32 yOrig, u32 wd, u32 ht);
 void GXSetScissorBoxOffset(s32 xOffset, s32 yOffset);
 
@@ -76,6 +77,9 @@ void GXSetScissorBoxOffset(s32 xOffset, s32 yOffset);
 // -----------------------------------------------------------------------
 void GXCopyDisp(void* dest, GXBool clear);
 void GXCopyTex(void* dest, GXBool clear);
+void GXSetCopyFilter(GXBool aa, const u8 sample_pattern[12][2], GXBool vf, const u8 vfilter[7]);
+void GXSetTexCopySrc(u16 left, u16 top, u16 wd, u16 ht);
+void GXSetTexCopyDst(u16 wd, u16 ht, GXTexFmt fmt, GXBool mipmap);
 void GXClearBoundingBox(void);
 void GXReadBoundingBox(u16* top, u16* bottom, u16* left, u16* right);
 void GXSetColorUpdate(GXBool enable);
@@ -172,6 +176,7 @@ void GXDestroyTexObj(GXTexObj* obj);
 void GXInvalidateTexAll(void);
 void GXInitTlutObj(GXTlutObj* tlutObj, void* lut, GXTlutFmt fmt, u16 entries);
 void GXLoadTlut(GXTlutObj* tlutObj, u32 tlutName);
+u32 GXGetTexBufferSize(u16 width, u16 height, u32 format, GXBool mipMap, u8 maxLod);
 static inline u16 GXGetTexObjWidth(const GXTexObj* /*obj*/) { return 0; }
 static inline u16 GXGetTexObjHeight(const GXTexObj* /*obj*/) { return 0; }
 static inline void GXSetTexCoordScaleManually(GXTexCoordID /*coord*/, u8 /*enable*/, u16 /*ss*/, u16 /*ts*/) {}
@@ -222,6 +227,11 @@ void GXSetCurrentMtx(u32 mtx);
 
 void GXSetProjection(const f32 mtx[4][4], GXProjectionType type);
 void GXSetProjectionv(const f32* ptr, GXProjectionType type);
+void GXGetProjectionv(f32* ptr);
+void GXProject(f32 x, f32 y, f32 z, const Mtx modelMtx, const f32* proj, const f32* viewport,
+               f32* winx, f32* winy, f32* winz);
+void GXSetClipMode(GXClipMode mode);
+void GXSetCoPlanar(GXBool enable);
 
 // -----------------------------------------------------------------------
 // Lighting
@@ -231,6 +241,12 @@ void GXSetChanCtrl(GXChannelID chan, GXBool enable, GXColorSrc ambSrc, GXColorSr
                    u32 lightMask, GXDiffuseFn diffFn, GXAttnFn attnFn);
 void GXSetChanAmbColor(GXChannelID chan, GXColor ambColor);
 void GXSetChanMatColor(GXChannelID chan, GXColor matColor);
+void GXInitLightPos(GXLightObj* obj, f32 x, f32 y, f32 z);
+void GXInitLightDir(GXLightObj* obj, f32 nx, f32 ny, f32 nz);
+void GXInitLightColor(GXLightObj* obj, GXColor color);
+void GXInitLightDistAttn(GXLightObj* obj, f32 refDist, f32 refBrightness, GXDistAttnFn distFunc);
+void GXInitLightSpot(GXLightObj* obj, f32 cutoff, GXSpotFn spotFunc);
+void GXLoadLightObjImm(const GXLightObj* obj, GXLightID light);
 void GXSetNumTexGens(u32 nTexGens);
 void GXSetTexCoordGen(GXTexCoordID dst, GXTexGenType type, GXTexGenSrc src, u32 mtx);
 void GXSetTexCoordGen2(GXTexCoordID dst, GXTexGenType type, GXTexGenSrc src,
