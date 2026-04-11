@@ -39,4 +39,26 @@ inline T fastSqrt(T v) { return JMAFastSqrt(v); }
 inline f32 fastReciprocal(f32 v) { return JMAFastReciprocal(v); }
 }
 
+namespace JMathInlineVEC {
+inline void C_VECAdd(const Vec* a, const Vec* b, Vec* ab) {
+    ab->x = a->x + b->x;
+    ab->y = a->y + b->y;
+    ab->z = a->z + b->z;
+}
+
+inline void C_VECSubtract(const Vec* a, const Vec* b, Vec* ab) {
+    ab->x = a->x - b->x;
+    ab->y = a->y - b->y;
+    ab->z = a->z - b->z;
+}
+
+inline f32 C_VECSquareMag(const Vec* v) {
+    return v->x * v->x + v->y * v->y + v->z * v->z;
+}
+
+inline f32 C_VECDotProduct(const Vec* a, const Vec* b) {
+    return a->x * b->x + a->y * b->y + a->z * b->z;
+}
+}
+
 #endif /* JMATH_H */

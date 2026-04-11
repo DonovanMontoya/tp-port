@@ -133,13 +133,18 @@ private:
 // Common draw list subclasses referenced in game headers
 class dDlst_blo_c         : public dDlst_base_c {};
 class dDlst_snapShot_c    : public dDlst_base_c {};
-class dDlst_effectLine_c  : public dDlst_base_c {};
+class dDlst_effectLine_c  : public dDlst_base_c {
+public:
+    void initRnd(int, int, int) {}
+    void update(cXyz&, _GXColor&, u16, u16, u16, u16, f32, f32, f32, f32) {}
+};
 class dDlst_2DQuad_c      : public dDlst_base_c {};
 class dDlst_2DT2_c        : public dDlst_base_c {};
 class dDlst_window_c {
 public:
     int getCameraID() const { return 0; }
     view_port_class* getViewPort() { return &mViewPort; }
+    scissor_class* getScissor() { return &mViewPort.scissor; }
     void setViewPort(f32 xOrig, f32 yOrig, f32 width, f32 height, f32 nearZ, f32 farZ) {
         mViewPort.x_orig = xOrig;
         mViewPort.y_orig = yOrig;
@@ -185,6 +190,7 @@ struct dDlst_shadowSimple_c {};
 class dDlst_shadowControl_c {
 public:
     static void setSimpleTex(ResTIMG*) {}
+    static _GXTexObj* getSimpleTex() { return nullptr; }
     static void setFullDrawFlag(bool)  {}
 };
 

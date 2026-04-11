@@ -134,11 +134,19 @@ int daTitle_c::create() {
     fopAcM_ct(this, daTitle_c);
 
     static int s_last_phase_state = -999;
+#if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
+    int phase_state = cPhs_COMPLEATE_e;
+    if (s_last_phase_state != phase_state) {
+        s_last_phase_state = phase_state;
+        tp::log::info("daTitle create[PC]: skipping resLoad(%s)", l_arcName);
+    }
+#else
     int phase_state = dComIfG_resLoad(&mPhaseReq, l_arcName);
     if (phase_state != s_last_phase_state) {
         s_last_phase_state = phase_state;
         tp::log::info("daTitle create: resLoad(%s) -> %d", l_arcName, phase_state);
     }
+#endif
     if (phase_state != cPhs_COMPLEATE_e) {
         return phase_state;
     }

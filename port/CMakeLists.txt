@@ -46,6 +46,8 @@ set(DECOMP_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
 include_directories(
   # Port-specific overrides must come FIRST
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  # Generated asset/resource headers used by gameplay code.
+  "${DECOMP_ROOT}/assets/RZDP01"
   # Decomp game source
   "${DECOMP_ROOT}/src"
   "${DECOMP_ROOT}/include"
@@ -66,9 +68,27 @@ include(cmake/deps.cmake)
 # -----------------------------------------------------------------------
 # Port implementation library
 # -----------------------------------------------------------------------
-file(GLOB_RECURSE PORT_SOURCES
+file(GLOB_RECURSE PORT_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
+)
+
+set(TP_PORT_JSYSTEM_SOURCES
+  "${DECOMP_ROOT}/libs/JSystem/src/J2DGraph/J2DAnimation.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/J2DGraph/J2DAnmLoader.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/J3DGraphAnimator/J3DAnimation.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/J3DGraphAnimator/J3DMaterialAttach.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/J3DGraphBase/J3DTexture.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/JParticle/JPABaseShape.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/JParticle/JPAChildShape.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/JParticle/JPADynamicsBlock.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/JParticle/JPAEmitter.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/JParticle/JPAExtraShape.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/JParticle/JPAKeyBlock.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/JParticle/JPAMath.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/JParticle/JPAParticle.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/JParticle/JPAResource.cpp"
+  "${DECOMP_ROOT}/libs/JSystem/src/JUtility/JUTNameTab.cpp"
 )
 
 # Helper to apply the port.h force-include only to our CXX targets, NOT
@@ -79,9 +99,11 @@ else()
   set(PORT_FORCE_INCLUDE "-include${CMAKE_CURRENT_SOURCE_DIR}/include/port/port.h")
 endif()
 
-add_library(tp_port_impl STATIC ${PORT_SOURCES})
+add_library(tp_port_impl STATIC ${PORT_SOURCES} ${TP_PORT_JSYSTEM_SOURCES})
+target_compile_definitions(tp_port_impl PRIVATE TP_PORT_USE_REAL_ALINK_PROFILE=1)
 target_include_directories(tp_port_impl PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${DECOMP_ROOT}/assets/RZDP01"
 )
 target_compile_definitions(tp_port_impl PUBLIC TP_PORT_USE_REAL_MDO_GRAPHIC=1 TP_PORT_USE_REAL_TITLE=1)
 target_compile_options(tp_port_impl PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${PORT_FORCE_INCLUDE}>)
@@ -110,6 +132,35 @@ add_executable(TwilightPrincess WIN32
   ${GAME_SOURCES}
 )
 target_compile_definitions(TwilightPrincess PRIVATE TP_PORT_USE_REAL_MDO_GRAPHIC=1 TP_PORT_USE_REAL_TITLE=1)
+set_source_files_properties(
+  "${DECOMP_ROOT}/src/d/actor/d_a_alink.cpp"
+  PROPERTIES COMPILE_DEFINITIONS "TP_PORT_USE_REAL_ALINK=1"
+)
+
+set_source_files_properties(
+  "${DECOMP_ROOT}/src/d/actor/d_a_player.cpp"
+  PROPERTIES COMPILE_DEFINITIONS "TP_PORT_USE_REAL_ALINK=1"
+)
+
+set_source_files_properties(
+  "${DECOMP_ROOT}/src/d/d_camera.cpp"
+  PROPERTIES COMPILE_DEFINITIONS "TP_PORT_USE_REAL_ALINK=1"
+)
+
+set_source_files_properties(
+  "${DECOMP_ROOT}/src/d/d_com_static.cpp"
+  PROPERTIES COMPILE_DEFINITIONS "TP_PORT_USE_REAL_ALINK=1"
+)
+
+set_source_files_properties(
+  "${DECOMP_ROOT}/src/d/d_meter2_info.cpp"
+  PROPERTIES COMPILE_DEFINITIONS "TP_PORT_USE_REAL_ALINK=1"
+)
+
+set_source_files_properties(
+  "${DECOMP_ROOT}/src/d/d_particle.cpp"
+  PROPERTIES COMPILE_DEFINITIONS "TP_PORT_USE_REAL_PARTICLE=1"
+)
 
 target_compile_options(TwilightPrincess PRIVATE
   $<$<COMPILE_LANGUAGE:CXX>:${PORT_FORCE_INCLUDE}>
@@ -120,6 +171,7 @@ target_compile_options(TwilightPrincess PRIVATE
 )
 target_include_directories(TwilightPrincess PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${DECOMP_ROOT}/assets/RZDP01"
   "${DECOMP_ROOT}/src"
   "${DECOMP_ROOT}/include"
   "${DECOMP_ROOT}/libs/JSystem/include"

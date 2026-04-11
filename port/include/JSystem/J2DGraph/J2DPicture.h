@@ -6,7 +6,8 @@
 #ifndef PORT_J2DPICTURE_H
 #define PORT_J2DPICTURE_H
 
-#if defined(TP_PORT_USE_REAL_TITLE) && TP_PORT_USE_REAL_TITLE
+#if (defined(TP_PORT_USE_REAL_TITLE) && TP_PORT_USE_REAL_TITLE) || \
+    (defined(TP_PORT_USE_REAL_ALINK) && TP_PORT_USE_REAL_ALINK)
 
 #include "../../../../libs/JSystem/include/JSystem/J2DGraph/J2DPicture.h"
 

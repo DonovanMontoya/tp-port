@@ -34,7 +34,10 @@ int fpcSCtRq_phase_Load(standard_create_request_class* i_request) {
     if (i_request->process_name == fpcNm_LOGO_SCENE_e ||
         i_request->process_name == fpcNm_TITLE_e ||
         i_request->process_name == fpcNm_MENU_SCENE_e ||
-        i_request->process_name == fpcNm_OPENING_SCENE_e) {
+        i_request->process_name == fpcNm_OPENING_SCENE_e ||
+        i_request->process_name == fpcNm_PLAY_SCENE_e ||
+        i_request->process_name == fpcNm_ROOM_SCENE_e ||
+        i_request->process_name == fpcNm_ALINK_e) {
         tp::log::info("fpcSCtRq_phase_Load: proc=%d ret=%d", i_request->process_name, ret);
     }
 
@@ -57,7 +60,10 @@ int fpcSCtRq_phase_CreateProcess(standard_create_request_class* i_request) {
     if (i_request->process_name == fpcNm_LOGO_SCENE_e ||
         i_request->process_name == fpcNm_TITLE_e ||
         i_request->process_name == fpcNm_MENU_SCENE_e ||
-        i_request->process_name == fpcNm_OPENING_SCENE_e) {
+        i_request->process_name == fpcNm_OPENING_SCENE_e ||
+        i_request->process_name == fpcNm_PLAY_SCENE_e ||
+        i_request->process_name == fpcNm_ROOM_SCENE_e ||
+        i_request->process_name == fpcNm_ALINK_e) {
         tp::log::info("fpcSCtRq_phase_CreateProcess: proc=%d process=%p id=%u",
                       i_request->process_name,
                       i_request->base.process, i_request->base.id);
@@ -79,7 +85,10 @@ int fpcSCtRq_phase_SubCreateProcess(standard_create_request_class* i_request) {
     if (i_request->process_name == fpcNm_LOGO_SCENE_e ||
         i_request->process_name == fpcNm_TITLE_e ||
         i_request->process_name == fpcNm_MENU_SCENE_e ||
-        i_request->process_name == fpcNm_OPENING_SCENE_e) {
+        i_request->process_name == fpcNm_OPENING_SCENE_e ||
+        i_request->process_name == fpcNm_PLAY_SCENE_e ||
+        i_request->process_name == fpcNm_ROOM_SCENE_e ||
+        i_request->process_name == fpcNm_ALINK_e) {
         tp::log::info("fpcSCtRq_phase_SubCreateProcess: proc=%d ret=%d init_state=%d create_phase=%d",
                       i_request->process_name, ret, i_request->base.process->state.init_state,
                       i_request->base.process->state.create_phase);
@@ -103,11 +112,27 @@ int fpcSCtRq_phase_IsComplete(standard_create_request_class* i_request) {
     if (i_request->process_name == fpcNm_LOGO_SCENE_e ||
         i_request->process_name == fpcNm_TITLE_e ||
         i_request->process_name == fpcNm_MENU_SCENE_e ||
-        i_request->process_name == fpcNm_OPENING_SCENE_e) {
+        i_request->process_name == fpcNm_OPENING_SCENE_e ||
+        i_request->process_name == fpcNm_PLAY_SCENE_e ||
+        i_request->process_name == fpcNm_ROOM_SCENE_e) {
         tp::log::info("fpcSCtRq_phase_IsComplete: proc=%d creating_mesg=%d",
                       i_request->process_name,
                       fpcLy_IsCreatingMesg(&procNode->layer));
     }
+#ifdef PLATFORM_PC
+    // The original scene framework expects nested create requests to drain the
+    // child layer's create-message count before scene creation can finish. On
+    // PC we already bypass some of that machinery during boot, so let
+    // PLAY_SCENE continue once its own create phases have completed.
+    if (i_request->process_name == fpcNm_PLAY_SCENE_e) {
+        if (procNode->layer.counts.create_count > 0) {
+            tp::log::info("fpcSCtRq_phase_IsComplete[PC]: forcing PLAY_SCENE complete create_count=%d",
+                          procNode->layer.counts.create_count);
+        }
+        procNode->layer.counts.create_count = 0;
+        return cPhs_NEXT_e;
+    }
+#endif
     if (fpcBs_Is_JustOfType(g_fpcNd_type, procNode->base.subtype) == TRUE) {
         if (fpcLy_IsCreatingMesg(&procNode->layer) == TRUE) {
             return cPhs_INIT_e;
@@ -121,7 +146,9 @@ int fpcSCtRq_phase_PostMethod(standard_create_request_class* i_request) {
     if (i_request->process_name == fpcNm_LOGO_SCENE_e ||
         i_request->process_name == fpcNm_TITLE_e ||
         i_request->process_name == fpcNm_MENU_SCENE_e ||
-        i_request->process_name == fpcNm_OPENING_SCENE_e) {
+        i_request->process_name == fpcNm_OPENING_SCENE_e ||
+        i_request->process_name == fpcNm_PLAY_SCENE_e ||
+        i_request->process_name == fpcNm_ROOM_SCENE_e) {
         tp::log::info("fpcSCtRq_phase_PostMethod: proc=%d create_func=%p",
                       i_request->process_name, create_func);
     }
@@ -131,7 +158,9 @@ int fpcSCtRq_phase_PostMethod(standard_create_request_class* i_request) {
         if (i_request->process_name == fpcNm_LOGO_SCENE_e ||
             i_request->process_name == fpcNm_TITLE_e ||
             i_request->process_name == fpcNm_MENU_SCENE_e ||
-            i_request->process_name == fpcNm_OPENING_SCENE_e) {
+            i_request->process_name == fpcNm_OPENING_SCENE_e ||
+            i_request->process_name == fpcNm_PLAY_SCENE_e ||
+            i_request->process_name == fpcNm_ROOM_SCENE_e) {
             tp::log::info("fpcSCtRq_phase_PostMethod: proc=%d ret=%d",
                           i_request->process_name, ret);
         }
@@ -147,7 +176,9 @@ int fpcSCtRq_phase_Done(standard_create_request_class* i_request) {
     if (i_request->process_name == fpcNm_LOGO_SCENE_e ||
         i_request->process_name == fpcNm_TITLE_e ||
         i_request->process_name == fpcNm_MENU_SCENE_e ||
-        i_request->process_name == fpcNm_OPENING_SCENE_e) {
+        i_request->process_name == fpcNm_OPENING_SCENE_e ||
+        i_request->process_name == fpcNm_PLAY_SCENE_e ||
+        i_request->process_name == fpcNm_ROOM_SCENE_e) {
         tp::log::info("fpcSCtRq_phase_Done: proc=%d", i_request->process_name);
     }
     return cPhs_NEXT_e;
@@ -210,6 +241,10 @@ fpc_ProcID fpcSCtRq_Request(layer_class* i_layer, s16 i_procName, stdCreateFunc 
     request->create_post_method = i_createFunc;
     request->unk_0x5C = param_4;
     request->process_append = i_append;
+    if (i_procName == fpcNm_ALINK_e) {
+        tp::log::info("fpcSCtRq_Request[PC]: ALINK layer=%p id=%u append=%p create_func=%p",
+                      i_layer, request->base.id, i_append, i_createFunc);
+    }
 #if DEBUG
     request->unk_0x60 = 60;
 #endif

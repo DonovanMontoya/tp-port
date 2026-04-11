@@ -4,4 +4,7 @@
 // PC-only helpers on top as needed.
 #include "JSystem/J2DGraph/J2DGrafContext.h"
 #include "d/d_bg_s.h"
+#if TP_PORT_USE_REAL_ALINK || TP_PORT_USE_REAL_PARTICLE
+#include "d/d_particle.h"
+#endif
 #include_next "d/d_com_inf_game.h"

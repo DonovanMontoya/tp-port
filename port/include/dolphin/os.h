@@ -12,6 +12,7 @@
 #include "port/types.h"
 #include "port/logging.h"
 #include <cstdarg>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 
@@ -148,4 +149,34 @@ static inline int  OSGetProgressiveMode(void)          { return OS_PROGRESSIVE_M
 
 static inline long long OSTicksToMilliseconds(OSTime ticks) {
     return static_cast<long long>((ticks * 1000) / OS_TIMER_CLOCK);
+}
+
+static inline u8 __OSf32tou8(f32 inF) {
+    long rounded = std::lround(static_cast<double>(inF));
+    if (rounded < 0) {
+        return 0;
+    }
+    if (rounded > 0xFF) {
+        return 0xFF;
+    }
+    return static_cast<u8>(rounded);
+}
+
+static inline void OSf32tou8(f32 const* f, u8* out) {
+    *out = __OSf32tou8(*f);
+}
+
+static inline s16 __OSf32tos16(f32 inF) {
+    long rounded = std::lround(static_cast<double>(inF));
+    if (rounded < -0x8000) {
+        return static_cast<s16>(-0x8000);
+    }
+    if (rounded > 0x7FFF) {
+        return static_cast<s16>(0x7FFF);
+    }
+    return static_cast<s16>(rounded);
+}
+
+static inline void OSf32tos16(f32 const* f, s16* out) {
+    *out = __OSf32tos16(*f);
 }

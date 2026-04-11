@@ -13,7 +13,8 @@
 
 static bool shouldLogSceneReq(s16 proc_name) {
     return proc_name == fpcNm_LOGO_SCENE_e || proc_name == fpcNm_MENU_SCENE_e ||
-           proc_name == fpcNm_OPENING_SCENE_e || proc_name == fpcNm_PLAY_SCENE_e;
+           proc_name == fpcNm_OPENING_SCENE_e || proc_name == fpcNm_PLAY_SCENE_e ||
+           proc_name == fpcNm_ROOM_SCENE_e;
 }
 
 static const char* sceneReqName(s16 proc_name) {
@@ -26,6 +27,8 @@ static const char* sceneReqName(s16 proc_name) {
         return "OPENING_SCENE";
     case fpcNm_PLAY_SCENE_e:
         return "PLAY_SCENE";
+    case fpcNm_ROOM_SCENE_e:
+        return "ROOM_SCENE";
     default:
         return "UNKNOWN_SCENE";
     }

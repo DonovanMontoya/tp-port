@@ -13,6 +13,10 @@
 struct dStage_MapEvent_dt_c;
 class fopAc_ac_c;
 
+#if TP_PORT_USE_REAL_ALINK
+#include "../../../include/d/actor/d_a_itembase.h"
+#endif
+
 enum dEvt_mode_e {
     dEvt_mode_WAIT_e       = 0,
     dEvt_mode_TALK_e       = 1,
@@ -79,6 +83,7 @@ public:
     BOOL chkTalkXY()          { return FALSE; }
     u8  checkCompulsory()     { return 0; }
     bool checkSkipEdge()      { return false; }
+    void startCheckSkipEdge(void*) {}
     void remove()             {}
     void reset()              {}
     void reset(void*)         {}

@@ -303,13 +303,20 @@ int dRes_info_c::loadResource() {
     JUT_ASSERT(709, mRes == NULL);
 
     const bool traceTitle = stricmp(mArchiveName, "Title") == 0;
-    if (traceTitle) {
-        tp::log::info("Title loadResource: begin archive=%p", mArchive);
+    const bool traceRoomArc =
+        mArchiveName[0] == 'R' && mArchiveName[1] >= '0' && mArchiveName[1] <= '9' &&
+        mArchiveName[2] >= '0' && mArchiveName[2] <= '9' && mArchiveName[3] == '_' &&
+        mArchiveName[4] >= '0' && mArchiveName[4] <= '9' && mArchiveName[5] >= '0' &&
+        mArchiveName[5] <= '9';
+    if (traceTitle || traceRoomArc) {
+        tp::log::info("%s loadResource: begin archive=%p",
+                      mArchiveName, mArchive);
     }
 
     s32 countFile = mArchive->countFile();
-    if (traceTitle) {
-        tp::log::info("Title loadResource: files=%d dirs=%d", countFile, mArchive->countDirectory());
+    if (traceTitle || traceRoomArc) {
+        tp::log::info("%s loadResource: files=%d dirs=%d",
+                      mArchiveName, countFile, mArchive->countDirectory());
     }
     mRes = new void*[countFile];
     if (mRes == NULL) {
@@ -325,9 +332,9 @@ int dRes_info_c::loadResource() {
     for (int i = 0; i < mArchive->countDirectory(); i++) {
         u32 nodeType = node->type;
         u32 fileIndex = node->first_file_index;
-        if (traceTitle) {
-            tp::log::info("Title loadResource: dir=%d type=%08x entries=%d first=%u",
-                          i, nodeType, node->num_entries, fileIndex);
+        if (traceTitle || traceRoomArc) {
+            tp::log::info("%s loadResource: dir=%d type=%08x entries=%d first=%u",
+                          mArchiveName, i, nodeType, node->num_entries, fileIndex);
         }
 
         for (int j = 0; j < node->num_entries; j++) {
@@ -337,9 +344,9 @@ int dRes_info_c::loadResource() {
 #endif
                 const char* traceName = mArchive->mStringTable +
                     (mArchive->findIdxResource(fileIndex)->type_flags_and_name_offset & 0xFFFFFF);
-                if (traceTitle) {
-                    tp::log::info("Title loadResource: fileIndex=%u nodeType=%08x name=%s",
-                                  fileIndex, nodeType, traceName);
+                if (traceTitle || traceRoomArc) {
+                    tp::log::info("%s loadResource: fileIndex=%u nodeType=%08x name=%s",
+                                  mArchiveName, fileIndex, nodeType, traceName);
                 }
                 void* res = mArchive->getIdxResource(fileIndex);
 
@@ -407,21 +414,21 @@ int dRes_info_c::loadResource() {
                            nodeType == 'BMWR' || nodeType == 'BMWE')
                 {
 #if defined(__APPLE__) || defined(_WIN32) || defined(__linux__)
-                    if (traceTitle) {
-                        tp::log::info("Title loadResource: model load begin index=%u type=%08x name=%s data=%p",
-                                      fileIndex, nodeType, traceName, res);
-                        tp::log::info("Title loadResource: skipping model postprocess for %s on host",
-                                      traceName);
+                    if (traceTitle || traceRoomArc) {
+                        tp::log::info("%s loadResource: model load begin index=%u type=%08x name=%s data=%p",
+                                      mArchiveName, fileIndex, nodeType, traceName, res);
+                        tp::log::info("%s loadResource: skipping model postprocess for %s on host",
+                                      mArchiveName, traceName);
                     }
 #else
-                    if (traceTitle) {
-                        tp::log::info("Title loadResource: model load begin index=%u type=%08x name=%s data=%p",
-                                      fileIndex, nodeType, traceName, res);
+                    if (traceTitle || traceRoomArc) {
+                        tp::log::info("%s loadResource: model load begin index=%u type=%08x name=%s data=%p",
+                                      mArchiveName, fileIndex, nodeType, traceName, res);
                     }
                     res = loaderBasicBmd(nodeType, res);
-                    if (traceTitle) {
-                        tp::log::info("Title loadResource: model load end index=%u type=%08x result=%p",
-                                      fileIndex, nodeType, res);
+                    if (traceTitle || traceRoomArc) {
+                        tp::log::info("%s loadResource: model load end index=%u type=%08x result=%p",
+                                      mArchiveName, fileIndex, nodeType, res);
                     }
                     if (res == NULL) {
                         return -1;
@@ -545,8 +552,8 @@ int dRes_info_c::loadResource() {
         node++;
     }
 
-    if (traceTitle) {
-        tp::log::info("Title loadResource: complete");
+    if (traceTitle || traceRoomArc) {
+        tp::log::info("%s loadResource: complete", mArchiveName);
     }
     return 0;
 }
@@ -611,12 +618,26 @@ int dRes_info_c::setRes() {
         if (mDMCommand == NULL) {
             return -1;
         }
+        const bool traceStage00 = stricmp(mArchiveName, "Stg_00") == 0;
+        const bool traceRoomArc =
+            mArchiveName[0] == 'R' && mArchiveName[1] >= '0' && mArchiveName[1] <= '9' &&
+            mArchiveName[2] >= '0' && mArchiveName[2] <= '9' && mArchiveName[3] == '_' &&
+            mArchiveName[4] >= '0' && mArchiveName[4] <= '9' && mArchiveName[5] >= '0' &&
+            mArchiveName[5] <= '9';
+        if (traceStage00 || traceRoomArc) {
+            tp::log::info("%s setRes: sync=%d archive=%p heap=%p cmd=%p",
+                          mArchiveName, mDMCommand->sync(), mArchive, heap, mDMCommand);
+        }
         if (mDMCommand->sync() == 0) {
             return 1;
         }
 
         mArchive = mDMCommand->getArchive();
         heap = mDMCommand->getHeap();
+        if (traceStage00 || traceRoomArc) {
+            tp::log::info("%s setRes: command complete archive=%p heap=%p",
+                          mArchiveName, mArchive, heap);
+        }
 
         mDMCommand->destroy();
         mDMCommand = NULL;
@@ -630,6 +651,9 @@ int dRes_info_c::setRes() {
         if (traceTitle) {
             tp::log::info("Title setRes: mounted archive=%p heap=%p", mArchive, heap);
         }
+        if (traceRoomArc) {
+            tp::log::info("%s setRes: mounted archive=%p heap=%p", mArchiveName, mArchive, heap);
+        }
 
         u32 r28;
 
@@ -639,6 +663,10 @@ int dRes_info_c::setRes() {
             JUT_ASSERT(1260, mDataHeap != NULL);
 
             int rt = loadResource();
+            if (traceStage00 || traceRoomArc) {
+                tp::log::info("%s setRes: loadResource(heap) -> %d dataHeap=%p",
+                              mArchiveName, rt, mDataHeap);
+            }
             if (traceTitle) {
                 tp::log::info("Title setRes: loadResource(heap) -> %d", rt);
             }
@@ -659,6 +687,10 @@ int dRes_info_c::setRes() {
                 return -1;
             }
             int rt = loadResource();
+            if (traceStage00 || traceRoomArc) {
+                tp::log::info("%s setRes: loadResource(game) -> %d dataHeap=%p",
+                              mArchiveName, rt, mDataHeap);
+            }
             if (traceTitle) {
                 tp::log::info("Title setRes: loadResource(game) -> %d", rt);
             }
@@ -685,6 +717,10 @@ int dRes_info_c::setRes() {
 
         u32 heapSize = mDataHeap->getHeapSize();
         DCStoreRangeNoSync(mDataHeap->getStartAddr(), heapSize);
+        if (traceStage00 || traceRoomArc) {
+            tp::log::info("%s setRes: ready heapSize=%u archive=%p",
+                          mArchiveName, heapSize, mArchive);
+        }
     }
 
     return 0;
@@ -843,6 +879,11 @@ int dRes_control_c::setRes(char const* i_arcName, dRes_info_c* i_resInfo, int i_
 
 int dRes_control_c::syncRes(char const* i_arcName, dRes_info_c* i_resInfo, int i_infoNum) {
     dRes_info_c* resInfo = getResInfo(i_arcName, i_resInfo, i_infoNum);
+    const bool traceRoomArc =
+        i_arcName[0] == 'R' && i_arcName[1] >= '0' && i_arcName[1] <= '9' &&
+        i_arcName[2] >= '0' && i_arcName[2] <= '9' && i_arcName[3] == '_' &&
+        i_arcName[4] >= '0' && i_arcName[4] <= '9' && i_arcName[5] >= '0' &&
+        i_arcName[5] <= '9';
 
     if (resInfo == NULL) {
 #if DEBUG
@@ -859,6 +900,11 @@ int dRes_control_c::syncRes(char const* i_arcName, dRes_info_c* i_resInfo, int i
 #endif
         return -1;
     } else {
+        if (traceRoomArc) {
+            tp::log::info("%s syncRes: resInfo=%p count=%d archive=%p cmd=%p",
+                          i_arcName, resInfo, resInfo->getCount(), resInfo->getArchive(),
+                          resInfo->getDMCommand());
+        }
         return resInfo->setRes();
     }
 }

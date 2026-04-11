@@ -28,6 +28,10 @@ void fpcNdRq_ToRequestQ(node_create_request* i_request) {
 }
 
 int fpcNdRq_phase_IsCreated(node_create_request* i_request) {
+    if (i_request->name == fpcNm_ROOM_SCENE_e) {
+        tp::log::info("fpcNdRq_phase_IsCreated: req=%p creating_id=%u", i_request,
+                      i_request->creating_id);
+    }
     if (fpcCtRq_IsCreatingByID(i_request->creating_id) == TRUE) {
 #if DEBUG
         if (i_request->unk_0x64-- <= 0) {
@@ -47,10 +51,19 @@ int fpcNdRq_phase_IsCreated(node_create_request* i_request) {
 }
 
 int fpcNdRq_phase_Create(node_create_request* i_request) {
+    if (i_request->name == fpcNm_ROOM_SCENE_e) {
+        tp::log::info("fpcNdRq_phase_Create: req=%p layer=%p layer_id=%d data=%p",
+                      i_request, i_request->layer,
+                      i_request->layer != NULL ? i_request->layer->layer_id : -999,
+                      i_request->data);
+    }
     i_request->creating_id =
         fpcSCtRq_Request(i_request->layer, i_request->name,
                          (stdCreateFunc)i_request->create_req_methods->post_method, i_request,
                          i_request->data);
+    if (i_request->name == fpcNm_ROOM_SCENE_e) {
+        tp::log::info("fpcNdRq_phase_Create: ROOM_SCENE creating_id=%u", i_request->creating_id);
+    }
     if (i_request->creating_id == fpcM_ERROR_PROCESS_ID_e) {
         return cPhs_UNK3_e;
     }
@@ -280,8 +293,15 @@ node_create_request* fpcNdRq_CreateNode(u32 i_requestSize, s16 i_procName, void*
     };
 
     layer_class* layer = fpcLy_CurrentLayer();
+    if (i_procName == fpcNm_ROOM_SCENE_e) {
+        tp::log::info("fpcNdRq_CreateNode: ROOM_SCENE currentLayer=%p layer_id=%d process_node=%p",
+                      layer, layer != NULL ? layer->layer_id : -999,
+                      layer != NULL ? layer->process_node : NULL);
+    }
     if (layer->layer_id != fpcLy_ROOT_e && fpcNdRq_IsPossibleTarget(layer->process_node) == 0) {
-        int sp28;
+        if (i_procName == fpcNm_ROOM_SCENE_e) {
+            tp::log::info("fpcNdRq_CreateNode: ROOM_SCENE rejected by IsPossibleTarget");
+        }
         return NULL;
     }
 
@@ -295,6 +315,9 @@ node_create_request* fpcNdRq_CreateNode(u32 i_requestSize, s16 i_procName, void*
         req->layer = layer;
         req->name = i_procName;
         req->data = i_data;
+        if (i_procName == fpcNm_ROOM_SCENE_e) {
+            tp::log::info("fpcNdRq_CreateNode: ROOM_SCENE req=%p parent_id=%u", req, req->node_proc.id);
+        }
     }
 
     return req;

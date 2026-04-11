@@ -46,6 +46,17 @@ enum Z2WolfHowlCurveID {
 class Z2WolfHowlMgr : public JASGlobalInstance<Z2WolfHowlMgr> {
 public:
     Z2WolfHowlMgr() : JASGlobalInstance<Z2WolfHowlMgr>(true) {}
+
+    Z2WolfHowlLine getCorrectLine(u8) { return Z2WolfHowlLine{0, 0}; }
+    u8 getCorrectLineNum() { return 0; }
+    s8 getOnLineNum() { return -1; }
+    void setCorrectCurve(int) {}
+    void startWindStoneSound(s8, Vec*) {}
+    s16 startWolfHowlSound(f32, f32, bool, f32) { return 0; }
+    void skipCorrectDemo() {}
+    s32 getReleaseTimer() { return 0; }
+    u32 getTimer() { return 0; }
+    u8 getCorrectCurveID() { return 0; }
 };
 
 #endif /* Z2WOLFHOWLMGR_H */

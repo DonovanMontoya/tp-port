@@ -22,6 +22,8 @@ file(GLOB TP_PORT_ACTOR_SOURCES CONFIGURE_DEPENDS
 )
 
 set(TP_PORT_ACTOR_KEEP_SOURCES
+  "${DECOMP_SRC}/d/actor/d_a_alink.cpp"
+  "${DECOMP_SRC}/d/actor/d_a_player.cpp"
   "${DECOMP_SRC}/d/actor/d_a_title.cpp"
 )
 
@@ -31,20 +33,44 @@ file(GLOB TP_PORT_TOPLEVEL_ACTOR_SUPPORT_SOURCES CONFIGURE_DEPENDS
   "${DECOMP_SRC}/d/d_a*.cpp"
 )
 
+list(REMOVE_ITEM TP_PORT_TOPLEVEL_ACTOR_SUPPORT_SOURCES
+  "${DECOMP_SRC}/d/d_a_itembase_static.cpp"
+  "${DECOMP_SRC}/d/d_a_horse_static.cpp"
+)
+
 file(GLOB TP_PORT_TOPLEVEL_D_SOURCES CONFIGURE_DEPENDS
   "${DECOMP_SRC}/d/*.cpp"
 )
 
 set(TP_PORT_TOPLEVEL_D_KEEP_SOURCES
   "${DECOMP_SRC}/d/d_attention.cpp"
+  "${DECOMP_SRC}/d/d_bg_s.cpp"
+  "${DECOMP_SRC}/d/d_bg_s_acch.cpp"
+  "${DECOMP_SRC}/d/d_bg_s_sph_chk.cpp"
+  "${DECOMP_SRC}/d/d_bg_w_base.cpp"
+  "${DECOMP_SRC}/d/d_camera.cpp"
+  "${DECOMP_SRC}/d/d_cam_param.cpp"
+  "${DECOMP_SRC}/d/d_cc_d.cpp"
   "${DECOMP_SRC}/d/d_com_inf_game.cpp"
+  "${DECOMP_SRC}/d/d_com_static.cpp"
+  "${DECOMP_SRC}/d/d_ev_camera.cpp"
+  "${DECOMP_SRC}/d/d_eye_hl.cpp"
+  "${DECOMP_SRC}/d/d_jnt_col.cpp"
+  "${DECOMP_SRC}/d/d_meter2_info.cpp"
+  "${DECOMP_SRC}/d/d_particle.cpp"
+  "${DECOMP_SRC}/d/d_particle_copoly.cpp"
+  "${DECOMP_SRC}/d/d_particle_name.cpp"
   "${DECOMP_SRC}/d/d_resorce.cpp"
   "${DECOMP_SRC}/d/d_save.cpp"
   "${DECOMP_SRC}/d/d_s_logo.cpp"
   "${DECOMP_SRC}/d/d_s_menu.cpp"
   "${DECOMP_SRC}/d/d_s_play.cpp"
+  "${DECOMP_SRC}/d/d_s_room.cpp"
+  "${DECOMP_SRC}/d/d_spline_path.cpp"
+  "${DECOMP_SRC}/d/d_stage.cpp"
   "${DECOMP_SRC}/d/d_s_title.cpp"
   "${DECOMP_SRC}/d/d_simple_model.cpp"
+  "${DECOMP_SRC}/d/d_vibration.cpp"
 )
 
 list(REMOVE_ITEM TP_PORT_TOPLEVEL_D_SOURCES ${TP_PORT_TOPLEVEL_D_KEEP_SOURCES})

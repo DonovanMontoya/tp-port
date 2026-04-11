@@ -12,14 +12,21 @@
 #include "d/d_attention.h"
 #include "d/d_com_inf_actor.h"
 #include "d/d_eye_hl.h"
+#include "d/d_gameover.h"
 #include "d/d_kankyo.h"
 #include "d/d_meter2.h"
 #include "d/d_meter2_info.h"
+#include "d/d_meter_map.h"
 #include "d/d_msg_object.h"
+#include "d/d_msg_flow.h"
+#include "d/d_particle.h"
+#include "d/d_pane_class.h"
 #include "d/d_save_HIO.h"
 #include "d/d_s_play.h"
 #include "d/d_stage.h"
 #include "d/d_vibration.h"
+#include "d/actor/d_a_itembase.h"
+#include "d/actor/d_a_tag_hstop.h"
 #include "JSystem/J3DGraphAnimator/J3DCluster.h"
 #include "JSystem/J3DGraphAnimator/J3DMaterialAnm.h"
 #include "JSystem/J3DGraphAnimator/J3DMaterialAttach.h"
@@ -35,8 +42,10 @@
 #include "JSystem/J2DGraph/J2DPicture.h"
 #include "JSystem/J2DGraph/J2DScreen.h"
 #include "JSystem/J2DGraph/J2DTextBox.h"
+#include "d/d_item_data.h"
 #include "m_Do/m_Do_mtx.h"
 #include "Z2AudioLib/Z2Creature.h"
+#include "Z2AudioLib/Z2LinkMgr.h"
 #include "dolphin/gd/GDBase.h"
 #include "dolphin/gf/GFPixel.h"
 #include "../../include/m_Do/m_Do_ext.h"
@@ -46,6 +55,17 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
+class e_wb_class {
+public:
+    BOOL checkWait();
+    void setPlayerRideNow();
+    void setPlayerRide();
+    void getOff();
+    BOOL checkDownDamage();
+    BOOL checkNormalRideMode() const;
+    void setRunRideMode();
+};
 
 // ---------------------------------------------------------------------------
 // Environment / Kankyo globals
@@ -88,31 +108,15 @@ dSvBit_childItOneZoneHIO_c::dSvBit_childItOneZoneHIO_c() {}
 void dSvBit_childItOneZoneHIO_c::init() {}
 dSvBit_childItDungeonHIO_c::dSvBit_childItDungeonHIO_c() {}
 void dSvBit_childItDungeonHIO_c::init() {}
+void dSvBit_HIO_c::init() {}
 
 // ---------------------------------------------------------------------------
 // Meter2 globals and stubs (d_meter2_info.h / d_meter2.h)
 // ---------------------------------------------------------------------------
 
-// Constructor/destructor stubs — no-op on PC
-dMeter2Info_c::dMeter2Info_c()  {}
-dMeter2Info_c::~dMeter2Info_c() {}
-
-dMeter2Info_c g_meter2_info;
-
 // dMeter2_c::emphasisButtonDelete — called from f_op_msg_mng.cpp when
 // heap lock flag is 8; safe to no-op on PC.
 int dMeter2_c::emphasisButtonDelete() { return 1; }
-
-// dMeter2Info_c::getString — message string getter; no-op on PC.
-void dMeter2Info_c::getString(u32 /*msgId*/, char* /*buf*/,
-                               JMSMesgEntry_c* /*entry*/) {}
-void dMeter2Info_c::getStringKana(u32 /*msgId*/, char* /*buf*/,
-                                   JMSMesgEntry_c* /*entry*/) {}
-void dMeter2Info_c::getStringKanji(u32 /*msgId*/, char* /*buf*/,
-                                    JMSMesgEntry_c* /*entry*/) {}
-void dMeter2Info_setCloth(u8 /*i_clothId*/, bool /*i_offItemBit*/) {}
-void dMeter2Info_setSword(u8 /*i_itemId*/, bool /*i_offItemBit*/) {}
-void dMeter2Info_setShield(u8 /*i_itemId*/, bool /*i_offItemBit*/) {}
 
 // ---------------------------------------------------------------------------
 // Event system stubs (f_op_actor.h: dEvt_info_c)
@@ -127,10 +131,6 @@ void dEvt_info_c::beforeProc() {}
 // Suspension system stub (d/actor/d_a_suspend.h: daSus_c)
 // ---------------------------------------------------------------------------
 #include "d/actor/d_a_suspend.h"
-void daSus_c::reset() {}
-void daSus_c::execute() {}
-void daSus_c::check(fopAc_ac_c* /*actor*/) {}
-
 // ---------------------------------------------------------------------------
 // JUTGamePad rumble stubs (JSystem/JUtility/JUTGamePad.h)
 // These are in libs/JSystem/src/JUtility/JUTGamePad.cpp which is not yet
@@ -138,8 +138,8 @@ void daSus_c::check(fopAc_ac_c* /*actor*/) {}
 // ---------------------------------------------------------------------------
 #include "JSystem/JUtility/JUTGamePad.h"
 
-void JUTGamePad::CRumble::stopPatternedRumble(s16 /*port*/)          {}
-void JUTGamePad::CRumble::stopPatternedRumbleAtThePeriod()            {}
+void JUTGamePad::CRumble::stopPatternedRumble(s16 /*port*/) {}
+void JUTGamePad::CRumble::stopPatternedRumbleAtThePeriod() {}
 
 // ---------------------------------------------------------------------------
 // J3DSys global and statics (J3DGraphBase/J3DSys.h)
@@ -162,27 +162,13 @@ u32 j3dDefaultViewNo = 0;
 
 // Path helper
 u8 dPath_GetPolyRoomPathVec(cBgS_PolyInfo const&, cXyz*, int*) { return 0; }
-
-// Stage helpers used by the real opening/gameplay scene bootstrap
-bool dStage_roomControl_c::resetArchiveBank(int) { return true; }
-u32 dStage_stagInfo_GetParticleNo(stage_stag_info_class*, int) { return 255; }
-void dStage_infoCreate() {}
-void dStage_Create() {}
-void dStage_Delete() {}
+dPath* dPath_GetRoomPath(int, int) { return nullptr; }
+u8 dKy_pol_sound_get(const cBgS_PolyInfo*) { return 0; }
 
 // daTagStream_c static member
 #include "d/actor/d_a_tag_stream.h"
-daTagStream_c* daTagStream_c::m_top = nullptr;
-int daTagStream_c::checkArea(cXyz const*) { return 0; }
-
-// daYkgr_c process-wide state
-#include "d/actor/d_a_ykgr.h"
-JPABaseEmitter* daYkgr_c::m_emitter = nullptr;
-bool daYkgr_c::m_flag = false;
-bool daYkgr_c::m_alpha_flag = true;
-u8 daYkgr_c::m_alpha = 255;
-f32 daYkgr_c::m_aim_rate = 0.0f;
-dPath* daYkgr_c::m_path = nullptr;
+daTagHstop_c* daTagHstop_c::m_top = nullptr;
+dMsgFlow_c daTagHstop_c::m_msgFlow;
 
 // dEnemyItem_c static member
 #include "d/d_item.h"
@@ -206,27 +192,96 @@ JFWDisplay* JFWDisplay::sManager = nullptr;
 int dTres_c::createWork() { return 0; }
 void dTres_c::create() {}
 void dTres_c::remove() {}
+void dTres_c::addData(dTres_c::list_class* /*p_list*/, s8 /*roomNo*/) {}
 
 #include "d/d_map_path_dmap.h"
 void dMpath_c::createWork() {}
 void dMpath_c::create() {}
 void dMpath_c::remove() {}
+void dMpath_c::setPointer(s8 /*i_roomNo*/, void* /*i_data*/, int /*i_mapLayerNo*/) {}
+int dMpath_c::setPointer(dDrawPath_c::room_class* /*i_room*/, s8* /*param_1*/, s8* /*param_2*/) {
+    return 0;
+}
+Vec dMapInfo_n::getMapPlayerPos() {
+    if (dComIfGp_getPlayer(0) != NULL) {
+        return dComIfGp_getPlayer(0)->current.pos;
+    }
+    return cXyz::Zero;
+}
 
 // Opening/gameplay scene service stubs
 dAttention_c::dAttention_c(fopAc_ac_c* actor, u32 padNo) { Init(actor, padNo); }
 int dAttention_c::Run() { return 1; }
 void dAttention_c::Draw() {}
+bool dAttention_c::LockonTruth() { return false; }
+fopAc_ac_c* dAttention_c::ActionTarget(s32) { return nullptr; }
+fopAc_ac_c* dAttention_c::LockonTarget(s32) { return nullptr; }
+dAttList_c* dAttention_c::GetLockonList(s32) { return nullptr; }
+dAttList_c* dAttention_c::getActionBtnB() { return nullptr; }
+dAttList_c* dAttention_c::getActionBtnXY() { return nullptr; }
+fopAc_ac_c* dAttention_c::CheckObjectTarget(s32) { return nullptr; }
+f32 dAttention_c::LockonReleaseDistanse() { return 0.0f; }
+fopAc_ac_c* dAttHint_c::convPId(fpc_ProcID) { return nullptr; }
+fopAc_ac_c* dAttCatch_c::convPId(fpc_ProcID) { return nullptr; }
+fopAc_ac_c* dAttLook_c::convPId(fpc_ProcID) { return nullptr; }
+fopAc_ac_c* dAttList_c::getActor() { return nullptr; }
+void dAttList_c::setActor(fopAc_ac_c* actor) {
+    mActorID = actor != nullptr ? 1 : 0;
+}
 
 void dScnPly_env_otherHIO_c::listenPropertyEvent(const JORPropertyEvent*) {}
 void dScnPly_env_debugHIO_c::listenPropertyEvent(const JORPropertyEvent*) {}
 
-dEyeHL_c* dEyeHL_mng_c::m_obj = nullptr;
-void dEyeHL_mng_c::update() {}
+const vib_pattern dVibration_c::MS_patt[VIBMODE_S_MAX] = {};
+const vib_pattern dVibration_c::CS_patt[VIBMODE_S_MAX] = {};
+const vib_pattern dVibration_c::MQ_patt[VIBMODE_Q_MAX] = {};
+const vib_pattern dVibration_c::CQ_patt[VIBMODE_Q_MAX] = {};
 
-int dVibration_c::Run() { return 1; }
-void dVibration_c::Init() {}
-void dVibration_c::Pause() {}
-void dVibration_c::Remove() {}
+s32 d_GameOver_Create(u8) { return 0; }
+bool dMeterMap_c::isMapOpenCheck() { return false; }
+
+void dPaneClass_showNullPane(J2DScreen*) {}
+void dPaneClass_showNullPane(J2DPane*) {}
+
+dMsgFlow_c::dMsgFlow_c()
+    : mFlow_p(nullptr), mLabelInfo_p(nullptr), mFlowNodeTBL(nullptr), mNodeIdx(0), field_0x12(0),
+      mFlowIdxTBL(nullptr), field_0x18(nullptr), mFlow(0), mMsg(0), mSelectMessage(0),
+      field_0x25(0), field_0x26(0), field_0x27(0), mMsgNo(0), mNowMsgNo(0), field_0x30(0),
+      mEventId(0), field_0x34(0), field_0x38(0), mChoiceNo(0), mTimer(0), field_0x40(0),
+      field_0x41(0), field_0x42(0), field_0x43(0), field_0x44(0) {}
+
+dMsgFlow_c::~dMsgFlow_c() {}
+
+void dMsgFlow_c::init(fopAc_ac_c*, int flowId, int, fopAc_ac_c**) {
+    mFlow = flowId;
+    mMsgNo = 0;
+    mNowMsgNo = 0;
+}
+
+int dMsgFlow_c::doFlow(fopAc_ac_c*, fopAc_ac_c**, int) { return 0; }
+u32 dMsgFlow_c::getMsgNo() { return mMsgNo; }
+
+int daNpcF_getPlayerInfoFromPlayerList(int, int, cXyz& pos, csXyz& angle) {
+    pos = cXyz::Zero;
+    angle.x = 0;
+    angle.y = 0;
+    angle.z = 0;
+    return 0;
+}
+
+void daItemBase_c::dead() {}
+void daItemBase_c::hide() {}
+void daItemBase_c::show() {}
+u8 daItemBase_c::getItemNo() { return m_itemNo; }
+
+dItem_itemResource dItem_data::item_resource[255] = {};
+dItem_fieldItemResource dItem_data::field_item_res[255] = {};
+dItem_itemInfo dItem_data::item_info[255] = {};
+
+void JUTGamePad::CRumble::startPatternedRumble(void*, JUTGamePad::CRumble::ERumble, u32) {}
+void JUTGamePad::CRumble::stopMotor(int, bool) {}
+
+dPa_particleTracePcallBack_c JPTracePCB4;
 
 f32 dMenu_Collect3D_c::mViewOffsetY = -100.0f;
 
@@ -532,24 +587,6 @@ s32 J3DDisplayListObj::sInterruptFlag = 0;
 void* J3DShape::sOldVcdVatCmd = nullptr;
 bool J3DShape::sEnvelopeFlag = false;
 
-void J3DFrameCtrl::init(s16 endFrame) {
-    mAttribute = EMode_NONE;
-    mState = 0;
-    mStart = 0;
-    mEnd = endFrame;
-    mLoop = 0;
-    mRate = 1.0f;
-    mFrame = 0.0f;
-}
-
-BOOL J3DFrameCtrl::checkPass(f32 frame) {
-    return mRate >= 0.0f ? (mFrame >= frame) : (mFrame <= frame);
-}
-
-void J3DFrameCtrl::update() {
-    mFrame += mRate;
-}
-
 void J3DDeformData::setAnm(J3DAnmCluster*) {}
 
 int J3DDrawBuffer::entryImm(J3DPacket* pPacket, u16) {
@@ -592,30 +629,6 @@ void J3DMaterialAnm::setTevKColorAnm(int idx, J3DTevKColorAnm* anm) {
 
 void J3DShapePacket::drawFast() {
     draw();
-}
-
-void J3DAnmColor::searchUpdateMaterialID(J3DMaterialTable*) {}
-
-void J3DAnmTevRegKey::searchUpdateMaterialID(J3DMaterialTable*) {}
-
-void J3DAnmTexPattern::searchUpdateMaterialID(J3DMaterialTable*) {}
-
-void J3DAnmTextureSRTKey::searchUpdateMaterialID(J3DMaterialTable*) {}
-
-int J3DMaterialTable::entryTexNoAnimator(J3DAnmTexPattern*) {
-    return 0;
-}
-
-int J3DMaterialTable::entryTevRegAnimator(J3DAnmTevRegKey*) {
-    return 0;
-}
-
-int J3DMaterialTable::entryTexMtxAnimator(J3DAnmTextureSRTKey*) {
-    return 0;
-}
-
-int J3DMaterialTable::entryMatColorAnimator(J3DAnmColor*) {
-    return 0;
 }
 
 void J3DVertexBuffer::init() {
@@ -681,13 +694,6 @@ int J3DPacket::entry(J3DDrawBuffer*) {
 
 void J3DPacket::draw() {}
 
-const char* JUTNameTab::getName(u16 index) const {
-    if (mNameTable == nullptr || index >= mNameNum) {
-        return "";
-    }
-    return mNameTable->getName(index);
-}
-
 void J3DDisplayListObj::callDL() const {}
 void J3DShape::loadPreDrawSetting() const {}
 
@@ -706,6 +712,7 @@ Z2SoundObjBase::Z2SoundObjBase()
     : soundStarter_(nullptr), pos_(nullptr), field_0x1c(0), reverb_(0), alive_(false) {}
 
 Z2SoundObjBase::~Z2SoundObjBase() {}
+void Z2SoundObjBase::deleteObject() { alive_ = false; }
 
 void Z2SoundObjBase::framework(u32, s8) {}
 void Z2SoundObjBase::dispose() {}
@@ -716,6 +723,20 @@ void Z2SoundObjBase::init(Vec* posPtr, u8) {
 }
 Z2SoundHandlePool* Z2SoundObjBase::startSound(JAISoundID, u32, s8) { return nullptr; }
 Z2SoundHandlePool* Z2SoundObjBase::startLevelSound(JAISoundID, u32, s8) { return nullptr; }
+
+Z2SoundObjSimple::Z2SoundObjSimple() : Z2SoundObjBase() {}
+
+void Z2SoundObjSimple::init(Vec* posPtr, u8 handleNum) {
+    Z2SoundObjBase::init(posPtr, handleNum);
+}
+
+Z2SoundHandlePool* Z2SoundObjSimple::startSound(JAISoundID soundID, u32 mapinfo, s8 reverb) {
+    return Z2SoundObjBase::startSound(soundID, mapinfo, reverb);
+}
+
+Z2SoundHandlePool* Z2SoundObjSimple::startLevelSound(JAISoundID soundID, u32 mapinfo, s8 reverb) {
+    return Z2SoundObjBase::startLevelSound(soundID, mapinfo, reverb);
+}
 
 Z2SoundObjAnime::Z2SoundObjAnime()
     : animation_(nullptr), field_0x24(0), curSoundFrame_(0.0f), startSoundFrame_(0.0f),
@@ -742,6 +763,100 @@ void Z2Creature::initAnime(void* animation, bool loop, f32 startFrame, f32 endFr
 void Z2Creature::updateAnime(f32 frame, f32 rate) {
     mSoundObjAnime.updateAnime(frame, rate);
 }
+
+Z2Creature::Z2Creature() : mpPos(nullptr) {}
+Z2Creature::~Z2Creature() {}
+
+void Z2Creature::deleteObject() {}
+
+void Z2Creature::setSoundStarter(Z2SoundStarter* soundStarter) {
+    mSoundObjAnime.setSoundStarter(soundStarter);
+    mSoundObjSimple1.setSoundStarter(soundStarter);
+    mSoundObjSimple2.setSoundStarter(soundStarter);
+}
+
+void Z2Creature::framework(u32 mapinfo, s8 reverb) {
+    mSoundObjAnime.framework(mapinfo, reverb);
+    mSoundObjSimple1.framework(mapinfo, reverb);
+    mSoundObjSimple2.framework(mapinfo, reverb);
+}
+
+void Z2Creature::init(Vec* animePosPtr, Vec* simplePosPtr, u8 animeHandleNum, u8 simpleHandleNum) {
+    mpPos = animePosPtr;
+    mSoundObjAnime.init(animePosPtr, animeHandleNum);
+    mSoundObjSimple1.init(simplePosPtr, simpleHandleNum);
+}
+
+void Z2Creature::init(Vec* animePosPtr, Vec* simplePosPtr, Vec* simple2PosPtr, u8 animeHandleNum,
+                      u8 simpleHandleNum, u8 simple2HandleNum) {
+    mpPos = animePosPtr;
+    mSoundObjAnime.init(animePosPtr, animeHandleNum);
+    mSoundObjSimple1.init(simplePosPtr, simpleHandleNum);
+    mSoundObjSimple2.init(simple2PosPtr, simple2HandleNum);
+}
+
+void Z2Creature::stopAnime() {}
+Z2SoundHandlePool* Z2Creature::startCreatureSound(JAISoundID, u32, s8) { return nullptr; }
+Z2SoundHandlePool* Z2Creature::startCreatureSoundLevel(JAISoundID, u32, s8) { return nullptr; }
+Z2SoundHandlePool* Z2Creature::startCreatureVoice(JAISoundID, s8) { return nullptr; }
+Z2SoundHandlePool* Z2Creature::startCreatureVoiceLevel(JAISoundID, s8) { return nullptr; }
+Z2SoundHandlePool* Z2Creature::startCreatureExtraSound(JAISoundID, u32, s8) { return nullptr; }
+Z2SoundHandlePool* Z2Creature::startCreatureExtraSoundLevel(JAISoundID, u32, s8) {
+    return nullptr;
+}
+Z2SoundHandlePool* Z2Creature::startCollisionSE(u32, u32) { return nullptr; }
+
+Z2LinkSoundStarter::Z2LinkSoundStarter() : Z2SoundStarter() {}
+Z2LinkSoundStarter::~Z2LinkSoundStarter() {}
+Z2CreatureLink* Z2CreatureLink::mLinkPtr = nullptr;
+
+bool Z2LinkSoundStarter::startSound(JAISoundID, JAISoundHandle*, const JGeometry::TVec3<f32>*,
+                                    u32, f32, f32, f32, f32, f32, u32) {
+    return false;
+}
+
+Z2CreatureLink::Z2CreatureLink() {
+    mLinkPtr = this;
+}
+
+Z2CreatureLink::~Z2CreatureLink() {
+    if (mLinkPtr == this) {
+        mLinkPtr = nullptr;
+    }
+}
+
+void Z2CreatureLink::deleteObject() {}
+void Z2CreatureLink::init(Vec* animePosPtr, Vec* simplePosPtr, Vec* simple2PosPtr) {
+    Z2Creature::init(animePosPtr, simplePosPtr, simple2PosPtr, 0, 0, 0);
+}
+void Z2CreatureLink::initKantera(Vec* posPtr) { mKantera.init(posPtr, 0); }
+void Z2CreatureLink::deleteKantera() {}
+void Z2CreatureLink::setKanteraState(u8 state) { mKanteraState = state; }
+void Z2CreatureLink::framework(u32 mapinfo, s8 reverb) { Z2Creature::framework(mapinfo, reverb); }
+void Z2CreatureLink::setLinkSwordType(s32 swordType, s32) { mLinkSwordType = swordType; }
+void Z2CreatureLink::setLinkBootsType(s32 bootsType) { mLinkBootsType = bootsType; }
+void Z2CreatureLink::setSinkDepth(s8 sinkDepth) { mSinkDepth = sinkDepth; }
+void Z2CreatureLink::setRiding(bool isRiding) { mRiding = isRiding; }
+void Z2CreatureLink::setMagnetized(bool isMagnetized) { mMagnetized = isMagnetized; }
+void Z2CreatureLink::setWolfEyeOpen(bool wolfEyeOpen) { mWolfEyeOpen = wolfEyeOpen; }
+Z2SoundHandlePool* Z2CreatureLink::startLinkSound(JAISoundID, u32, s8) { return nullptr; }
+JAISoundHandle* Z2CreatureLink::startLinkSoundLevel(JAISoundID, u32, s8) { return nullptr; }
+Z2SoundHandlePool* Z2CreatureLink::startLinkVoice(JAISoundID, s8) { return nullptr; }
+Z2SoundHandlePool* Z2CreatureLink::startLinkVoiceLevel(JAISoundID, s8) { return nullptr; }
+void Z2CreatureLink::startLinkSwordSound(JAISoundID, u32, s8) {}
+Z2SoundHandlePool* Z2CreatureLink::startCollisionSE(u32, u32) { return nullptr; }
+Z2SoundHandlePool* Z2CreatureLink::startHitItemSE(u32, u32, Z2SoundObjBase*, f32) {
+    return nullptr;
+}
+void Z2CreatureLink::setResumeAttack(bool resumeAttack) { mResumeAttack = resumeAttack; }
+
+BOOL e_wb_class::checkNormalRideMode() const { return FALSE; }
+BOOL e_wb_class::checkWait() { return FALSE; }
+void e_wb_class::setPlayerRideNow() {}
+void e_wb_class::setPlayerRide() {}
+void e_wb_class::getOff() {}
+BOOL e_wb_class::checkDownDamage() { return FALSE; }
+void e_wb_class::setRunRideMode() {}
 
 // ---------------------------------------------------------------------------
 // Missing globals

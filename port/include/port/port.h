@@ -21,6 +21,9 @@
 #ifndef DEBUG
 #  define DEBUG 0
 #endif
+#ifndef ASSERT
+#  define ASSERT(x) assert(x)
+#endif
 
 // -----------------------------------------------------------------------
 // Standard C++ headers always available on the host
@@ -39,6 +42,9 @@
 #endif
 #ifndef stricmp
 #  define stricmp strcasecmp
+#endif
+#ifndef strnicmp
+#  define strnicmp strncasecmp
 #endif
 
 

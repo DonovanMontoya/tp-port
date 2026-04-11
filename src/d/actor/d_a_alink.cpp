@@ -4171,7 +4171,12 @@ int daAlink_c::createHeap() {
     #endif
 
     ResTIMG* warpTex = (ResTIMG*)dComIfG_getObjectRes("Always", dRes_ID_ALWAYS_BTI_WARP_TEX_e);
-    mpWarpTexData = (void*)((uintptr_t)warpTex + warpTex->imageOffset);
+    if (warpTex != NULL) {
+        mpWarpTexData = (void*)((uintptr_t)warpTex + warpTex->imageOffset);
+    } else {
+        tp::log::warn("daAlink_c::createHeap[PC]: missing Always warp texture");
+        mpWarpTexData = NULL;
+    }
 
     if (*dStage_roomControl_c::getDemoArcName() != 0) {
         if (!initDemoModel(&mpDemoHLTmpModel, "demo00_Link_cut00_HL_tmp.bmd", 0x1000000)) {
@@ -4850,6 +4855,8 @@ int daAlink_c::create() {
     fopAcM_ct(this, daAlink_c);
 
     static BOOL bgWaitFlg = FALSE;
+    static u32 s_port_alink_create_logs = 0;
+    static u32 s_port_alink_wait_logs = 0;
 
     u32 sceneMode = getLastSceneMode();
     s32 startMode = getStartMode();
@@ -4861,6 +4868,14 @@ int daAlink_c::create() {
                           && dComIfGp_roomControl_getStayNo() == 0
                           && dComIfG_play_c::getLayerNo(0) == 0
                           && current.pos.y > 7500.0f;
+
+    if (s_port_alink_create_logs < 24) {
+        tp::log::info(
+            "daAlink_c::create[PC]: begin bgWait=%d sceneMode=%u startMode=%d startPoint=%d room=%d pos=(%.1f, %.1f, %.1f)",
+            bgWaitFlg, sceneMode, startMode, startPoint, fopAcM_GetRoomNo(this), current.pos.x,
+            current.pos.y, current.pos.z);
+        ++s_port_alink_create_logs;
+    }
 
     if (!bgWaitFlg) {
         #if DEBUG
@@ -4885,7 +4900,12 @@ int daAlink_c::create() {
 
         dComIfGp_setPlayer(0, this);
         dComIfGp_setLinkPlayer(this);
+        tpPort_SetPlayerActorStub(this);
+#if PLATFORM_PC
+        tp::log::info("daAlink_c::create[PC]: keeping current layer during early create");
+#else
         fopAcM_setStageLayer(this);
+#endif
 
         if (sceneMode == 7) {
             current.pos = dComIfGs_getTurnRestartPos();
@@ -4924,18 +4944,34 @@ int daAlink_c::create() {
         attention_info.flags = -1;
 
         if (!dComIfGp_getEventManager().dataLoaded()) {
+            if (s_port_alink_wait_logs < 48) {
+                tp::log::info("daAlink_c::create[PC]: waiting for event manager data");
+                ++s_port_alink_wait_logs;
+            }
             return cPhs_INIT_e;
         }
 
         setArcName(checkWolf());
         setOriginalHeap(&mpArcHeap, 0xA2800);
-        if (dComIfG_resLoad(&mPhaseReq, mArcName, mpArcHeap) != cPhs_COMPLEATE_e) {
+        int arcLoad = dComIfG_resLoad(&mPhaseReq, mArcName, mpArcHeap);
+        if (arcLoad != cPhs_COMPLEATE_e) {
+            if (s_port_alink_wait_logs < 48) {
+                tp::log::info("daAlink_c::create[PC]: waiting for player arc '%s' phase=%d",
+                              mArcName, arcLoad);
+                ++s_port_alink_wait_logs;
+            }
             return cPhs_INIT_e;
         }
 
         setShieldArcName();
         setOriginalHeap(&mpShieldArcHeap, 0x7000);
-        if (dComIfG_resLoad(&mShieldPhaseReq, mShieldArcName, mpShieldArcHeap) != cPhs_COMPLEATE_e) {
+        int shieldLoad = dComIfG_resLoad(&mShieldPhaseReq, mShieldArcName, mpShieldArcHeap);
+        if (shieldLoad != cPhs_COMPLEATE_e) {
+            if (s_port_alink_wait_logs < 48) {
+                tp::log::info("daAlink_c::create[PC]: waiting for shield arc '%s' phase=%d",
+                              mShieldArcName, shieldLoad);
+                ++s_port_alink_wait_logs;
+            }
             return cPhs_INIT_e;
         }
         
@@ -4944,6 +4980,8 @@ int daAlink_c::create() {
         heapSize |= 0x40000000;
 
         if (!fopAcM_entrySolidHeap(this, daAlink_createHeap, heapSize)) {
+            tp::log::error("daAlink_c::create[PC]: solid heap allocation failed size=0x%x",
+                           heapSize);
             return cPhs_ERROR_e;
         }
 
@@ -4978,6 +5016,20 @@ int daAlink_c::create() {
         || (isHorseStart && dComIfGp_getHorseActor() == NULL)
         )
     {
+        if (s_port_alink_wait_logs < 96) {
+            tp::log::info(
+                "daAlink_c::create[PC]: waiting for world state ground=%.1f moveBg=%d portal=%p rideActorId=%u canoe=%p boar=%p waterHit=%d waterY=%.1f horse=%p",
+                mLinkAcch.GetGroundH(), dComIfG_Bgsp().ChkMoveBG(mLinkAcch.m_gnd), portalActor,
+                mRideActorID,
+                checkCanoeStart() ? fopAcIt_Judge((fopAcIt_JudgeFunc)daAlink_searchCanoe, NULL)
+                                  : nullptr,
+                checkBoarStart() ? fopAcIt_Judge((fopAcIt_JudgeFunc)daAlink_searchBoar, NULL)
+                                 : nullptr,
+                mLinkAcch.ChkWaterHit(),
+                mLinkAcch.ChkWaterHit() ? mLinkAcch.m_wtr.GetHeight() : -G_CM3D_F_INF,
+                isHorseStart ? dComIfGp_getHorseActor() : nullptr);
+            ++s_port_alink_wait_logs;
+        }
         return cPhs_INIT_e;
     }
 
@@ -5077,6 +5129,8 @@ int daAlink_c::create() {
         }
     }
 
+    tp::log::info("daAlink_c::create[PC]: complete id=%u room=%d proc=%d", fopAcM_GetID(this),
+                  fopAcM_GetRoomNo(this), mProcID);
     return cPhs_COMPLEATE_e;
 }
 
@@ -19657,6 +19711,7 @@ daAlink_c::~daAlink_c() {
 
     dKy_plight_cut(&mMagneBootsPlight);
 
+    tpPort_SetPlayerActorStub(NULL);
     dComIfGp_setPlayer(0, NULL);
     dComIfGp_setLinkPlayer(NULL);
 }

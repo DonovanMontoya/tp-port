@@ -7,8 +7,15 @@
 #ifndef D_D_MODEL_H
 #define D_D_MODEL_H
 
-class dMdl_obj_c;
-class dMdl_c;
+class dMdl_obj_c {
+public:
+    char _pad[0x34];
+};
+
+class dMdl_c {
+public:
+    char _pad[0x20];
+};
 
 class dMdl_mng_c {
 public:

@@ -6,6 +6,7 @@
 #include "d/d_kankyo_data.h"
 #include "f_op/f_op_actor_mng.h"
 #include "global.h"
+#include "port/endian.h"
 
 enum StageType {
     /* 0x0 */ ST_FIELD,
@@ -1404,6 +1405,9 @@ int dStage_changeScene4Event(int i_exitId, s8 room_no, int i_wipe, bool param_3,
                              u32 mode, s16 angle, int param_7);
 void dStage_Create();
 void dStage_Delete();
+#if PLATFORM_PC
+void dStage_bootstrapPendingRoomScenePC();
+#endif
 void dStage_restartRoom(u32 roomParam, u32 mode, int param_2);
 int dStage_RoomCheck(cBgS_GndChk* gndChk);
 void dStage_dt_c_roomReLoader(void* i_data, dStage_dt_c* stageDt, int param_2);
@@ -1444,27 +1448,27 @@ inline u32 dStage_roomRead_dt_c_GetReverb(roomRead_data_class& room) {
 }
 
 inline u32 dStage_stagInfo_GetSTType(stage_stag_info_class* pstag) {
-    return (pstag->field_0x0c >> 16) & 7;
+    return (tp::endian::read_be32(&pstag->field_0x0c) >> 16) & 7;
 }
 
 inline int dStage_stagInfo_GetEscapeWarp(stage_stag_info_class* pstag) {
-    return (pstag->field_0x10 >> 24);
+    return (tp::endian::read_be32(&pstag->field_0x10) >> 24);
 }
 
 inline u32 dStage_stagInfo_GetMiniMap(stage_stag_info_class* pstag) {
-    return (pstag->field_0x0a >> 0xD) & 7;
+    return (tp::endian::read_be16(&pstag->field_0x0a) >> 0xD) & 7;
 }
 
 inline u32 dStage_stagInfo_GetParticleNo(stage_stag_info_class* p_info) {
-    return (p_info->field_0x0a >> 0x3) & 0xFF;
+    return (tp::endian::read_be16(&p_info->field_0x0a) >> 0x3) & 0xFF;
 }
 
 inline s32 dStage_stagInfo_GetUpButton(stage_stag_info_class* p_info) {
-    return p_info->field_0x0a & 7;
+    return tp::endian::read_be16(&p_info->field_0x0a) & 7;
 }
 
 inline u32 dStage_stagInfo_GetArg0(stage_stag_info_class* p_info) {
-    return (p_info->field_0x0c >> 0x14) & 0xFF;
+    return (tp::endian::read_be32(&p_info->field_0x0c) >> 0x14) & 0xFF;
 }
 
 inline int dStage_stagInfo_GetMsgGroup(stage_stag_info_class* p_info) {
@@ -1476,24 +1480,24 @@ inline s32 dStage_stagInfo_GetSaveTbl(stage_stag_info_class* param_0) {
 }
 
 inline int dStage_stagInfo_GetTimeH(stage_stag_info_class* p_info) {
-    s8 time = (p_info->field_0x0c >> 8) & 0xFF;
+    s8 time = (tp::endian::read_be32(&p_info->field_0x0c) >> 8) & 0xFF;
     return time;
 }
 
 inline BOOL dStage_staginfo_GetArchiveHeap(stage_stag_info_class* p_info) {
-    return p_info->field_0x0a & 0x1000;
+    return tp::endian::read_be16(&p_info->field_0x0a) & 0x1000;
 }
 
 inline int dStage_stagInfo_GetGapLevel(stage_stag_info_class* pstag) {
-    return pstag->mGapLevel;
+    return static_cast<s16>(tp::endian::read_be16(&pstag->mGapLevel));
 }
 
 inline int dStage_stagInfo_GetRangeUp(stage_stag_info_class* pstag) {
-    return pstag->mRangeUp;
+    return static_cast<s16>(tp::endian::read_be16(&pstag->mRangeUp));
 }
 
 inline int dStage_stagInfo_GetRangeDown(stage_stag_info_class* pstag) {
-    return pstag->mRangeDown;
+    return static_cast<s16>(tp::endian::read_be16(&pstag->mRangeDown));
 }
 
 inline u32 dStage_stagInfo_ChkKeyDisp(stage_stag_info_class* pstag) {
@@ -1505,7 +1509,7 @@ inline int dStage_stagInfo_GetWolfDashType(stage_stag_info_class* pstag) {
 }
 
 inline u16 dStage_stagInfo_GetStageTitleNo(stage_stag_info_class* pstag) {
-    return pstag->mStageTitleNo;
+    return tp::endian::read_be16(&pstag->mStageTitleNo);
 }
 
 inline int dStage_stagInfo_DefaultCameraType(stage_stag_info_class* pstag) {
@@ -1513,7 +1517,7 @@ inline int dStage_stagInfo_DefaultCameraType(stage_stag_info_class* pstag) {
 }
 
 inline u16 dStage_stagInfo_GetCullPoint(stage_stag_info_class* pstag) {
-    return pstag->field_0x10 & 0xFFFF;
+    return tp::endian::read_be32(&pstag->field_0x10) & 0xFFFF;
 }
 
 inline u8 dStage_sclsInfo_getSceneLayer(stage_scls_info_class* p_info) {

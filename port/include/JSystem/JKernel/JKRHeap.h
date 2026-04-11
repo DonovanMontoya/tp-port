@@ -252,10 +252,18 @@ inline void* operator new[](std::size_t size, JKRHeap* heap, int align) {
     return heap ? heap->alloc(static_cast<u32>(size), align) : ::operator new[](size);
 }
 
+inline void* operator new[](std::size_t size, int align) {
+    JKRHeap* heap = JKRGetCurrentHeap();
+    return heap ? heap->alloc(static_cast<u32>(size), align) : ::operator new[](size);
+}
+
 inline void operator delete(void* ptr, JKRHeap* /*heap*/, int /*align*/) noexcept {
     ::operator delete(ptr);
 }
 inline void operator delete[](void* ptr, JKRHeap* /*heap*/, int /*align*/) noexcept {
+    ::operator delete[](ptr);
+}
+inline void operator delete[](void* ptr, int /*align*/) noexcept {
     ::operator delete[](ptr);
 }
 inline void JKRFillMemory(u8* /*dst*/, u32 /*size*/, u8 /*val*/) {}

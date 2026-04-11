@@ -33,6 +33,10 @@ public:
     void setFadeInStart(u8 /*param*/) {}
     void resetProcess(u32 /*param*/, bool /*hard*/) {}
     void resetRecover() {}
+    void setCameraInWaterDepth(f32 /*depth*/) {}
+    void setCameraPolygonPos(const Vec* /*pos*/) {}
+    void getCameraMapInfo(u32 /*mapInfo*/) {}
+    void setCameraGroupInfo(u8 /*groupInfo*/) {}
     bool hasReset() const { return true; }
     bool checkFirstWaves() { return true; }
 };

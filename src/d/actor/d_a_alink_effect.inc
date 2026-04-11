@@ -2086,11 +2086,26 @@ void daAlink_blur_c::draw() {
 }
 
 BOOL daAlink_lockCursor_c::create() {
-    JKRArchive* arc = dComIfG_getObjectResInfo(l_arcName)->getArchive();
+    dRes_info_c* resInfo = dComIfG_getObjectResInfo(l_arcName);
+    JKRArchive* arc = resInfo != NULL ? resInfo->getArchive() : NULL;
 
     mLockCursorAngle = 0.0f;
     field_0x4 = false;
     field_0x30 = 0.0f;
+    mScrn = NULL;
+    field_0xc = NULL;
+    mCursor0 = NULL;
+    mCursor1 = NULL;
+    mCursor2 = NULL;
+    field_0x1c = NULL;
+    field_0x20 = NULL;
+    field_0x24 = NULL;
+    field_0x28 = NULL;
+
+    if (arc == NULL) {
+        tp::log::warn("daAlink_lockCursor_c::create[PC]: missing archive '%s'", l_arcName);
+        return true;
+    }
 
     mScrn = new J2DScreen();
     if (mScrn == NULL) {
@@ -2176,6 +2191,10 @@ extern "C" void setAnimation__7J2DPaneFP11J2DAnmColor() {
 }
 
 void daAlink_lockCursor_c::update() {
+    if (field_0x1c == NULL) {
+        return;
+    }
+
     if (mLockCursorAngle < 21.0f) {
         mLockCursorAngle = 21.0f;
     }
@@ -2196,7 +2215,9 @@ void daAlink_lockCursor_c::update() {
 }
 
 void daAlink_lockCursor_c::draw() {
-    if (field_0x4 == 0) {
+    if (field_0x4 == 0 || mScrn == NULL || field_0xc == NULL || mCursor0 == NULL ||
+        mCursor1 == NULL || mCursor2 == NULL || field_0x1c == NULL || field_0x24 == NULL ||
+        field_0x28 == NULL) {
         return;
     }
 
@@ -2237,7 +2258,12 @@ BOOL daAlink_sight_c::create() {
         return false;
     }
 
-    setSightImage((ResTIMG*)dComIfG_getObjectRes(l_arcName, daAlink_c::getSightBti()));
+    ResTIMG* sightImage = (ResTIMG*)dComIfG_getObjectRes(l_arcName, daAlink_c::getSightBti());
+    if (sightImage != NULL) {
+        setSightImage(sightImage);
+    } else {
+        tp::log::warn("daAlink_sight_c::create[PC]: missing sight image in '%s'", l_arcName);
+    }
     return true;
 }
 

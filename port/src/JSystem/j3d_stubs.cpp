@@ -45,6 +45,14 @@ const J3DIndTexMtxInfo j3dDefaultIndTexMtxInfo = {
     1
 };
 
+const J3DLightInfo j3dDefaultLightInfo = {
+    0.0f, 0.0f, 0.0f,
+    0.0f, -1.0f, 0.0f,
+    0xff, 0xff, 0xff, 0xff,
+    1.0f, 0.0f, 0.0f,
+    1.0f, 0.0f, 0.0f,
+};
+
 const J3DTevStageInfo j3dDefaultTevStageInfo = {
     0x04, 0x0A, 0x0F, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
     0x05, 0x07, 0x07, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
@@ -98,6 +106,11 @@ J3DIndTexMtxInfo& J3DIndTexMtxInfo::operator=(J3DIndTexMtxInfo const& o) {
     return *this;
 }
 
+J3DLightInfo& J3DLightInfo::operator=(J3DLightInfo const& o) {
+    memcpy(this, &o, sizeof(J3DLightInfo));
+    return *this;
+}
+
 J3DFogInfo& J3DFogInfo::operator=(J3DFogInfo const& o) {
     memcpy(this, &o, sizeof(J3DFogInfo));
     return *this;
@@ -110,14 +123,6 @@ J3DFogInfo& J3DFogInfo::operator=(J3DFogInfo const& o) {
 
 void J3DDisplayListObj::beginPatch() {}
 u32  J3DDisplayListObj::endPatch()   { return 0; }
-
-// ---------------------------------------------------------------------------
-// J3DAnm* searchUpdateMaterialID — no animation data on PC
-// ---------------------------------------------------------------------------
-#include "JSystem/J3DGraphAnimator/J3DAnimation.h"
-
-void J3DAnmTevRegKey::searchUpdateMaterialID(J3DModelData*) {}
-void J3DAnmTextureSRTKey::searchUpdateMaterialID(J3DModelData*) {}
 
 // ---------------------------------------------------------------------------
 // JUTConsoleManager static

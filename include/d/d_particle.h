@@ -120,9 +120,7 @@ public:
 
     static dPa_modelPcallBack mPcallback;
     static model_c* mModel;
-    #if DEBUG
     static u8 mNum;
-    #endif
 };
 
 class dPa_selectTexEcallBack : public dPa_levelEcallBack {
@@ -527,9 +525,7 @@ private:
     /* 0x01C */ dPa_simpleEcallBack field_0x1c[25];
 #endif
     /* 0x210 */ level_c field_0x210;
-    #if DEBUG
     u8 mSceneCount;
-    #endif
 };
 
 #endif /* D_PARTICLE_D_PARTICLE_H */

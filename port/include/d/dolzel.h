@@ -16,6 +16,10 @@
 #include <cstring>
 #include <limits>
 
+// Compiler/Metrowerks compatibility macros must be visible before heavy
+// decomp headers such as J3DTransform.h.
+#include "port/compat.h"
+
 // Port types baseline
 #include "port/types.h"
 
@@ -59,6 +63,13 @@
 #include "d/d_com_inf_game.h"
 #include "d/d_stage.h"
 #include "d/d_kankyo.h"
+#if TP_PORT_USE_REAL_ALINK
+#include "d/d_cc_d.h"
+#include "d/d_bg_s_acch.h"
+#include "d/d_bg_w_base.h"
+#include "Z2AudioLib/Z2LinkMgr.h"
+#include "d/actor/d_a_spinner.h"
+#endif
 #include "d/actor/d_a_player.h"
 #include "d/actor/d_a_alink.h"
 #include "m_Do/m_Do_mtx.h"
@@ -79,6 +90,7 @@ class J2DScreen;
 class J2DAnmTextureSRTKey;
 
 // JPABaseEmitter — particle emitter stub; setRate() used by fopAcM_effHamonSet
+#if !TP_PORT_USE_REAL_ALINK
 class JPABaseEmitter {
 public:
     void setRate(f32) {}
@@ -86,6 +98,7 @@ public:
     void setGlobalScale2D(f32, f32) {}
 };
 class JPAParticle;
+#endif
 
 class Z2SoundStarter;
 namespace Z2Calc {

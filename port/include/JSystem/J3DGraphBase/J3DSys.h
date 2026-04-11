@@ -47,6 +47,9 @@ public:
     }
     void drawInit() {}
     void reinitGX() {}
+    void setVtxPos(void*) {}
+    void setVtxNrm(void*) {}
+    void setVtxCol(void*) {}
 
     Mtx mViewMtx;
     void* mCurrentMtxCalc;

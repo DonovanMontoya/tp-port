@@ -1,25 +1,20 @@
 #pragma once
 /**
  * port/include/d/d_kankyo_tev_str.h
- * PC port stub — defines dKy_tevstr_c without J3DTevs/GX dependencies.
- *
- * The original struct is 0x388 bytes with J3DLightObj members (0x74 each).
- * We preserve the layout so that fopAc_ac_c offsets remain consistent.
- * field_0x32c (cXyz at offset 0x32C) is the only member accessed in
- * non-debug f_op_actor_mng.cpp code.
+ * PC port stub — defines dKy_tevstr_c with enough light-object layout to
+ * satisfy actor/gameplay headers that take addresses of embedded GX lights.
  */
 #ifndef D_D_KANKYO_TEV_STR
 #define D_D_KANKYO_TEV_STR
 
+#include "JSystem/J3DGraphBase/J3DTevs.h"
 #include "SSystem/SComponent/c_xyz.h"
 #include "port/types.h"
 
 class dKy_tevstr_c {
 public:
-    // J3DLightObj mLightObj at 0x000 (size 0x74)
-    char _pad_lightobj[0x74];
-    // J3DLightObj mLights[6] at 0x074 (size 6 * 0x74 = 0x2B8)
-    char _pad_lights[0x2B8];
+    /* 0x000 */ J3DLightObj mLightObj;
+    /* 0x074 */ J3DLightObj mLights[6];
     // 0x32C
     cXyz field_0x32c;
     // 0x338
@@ -27,15 +22,15 @@ public:
     // 0x344
     f32  field_0x344;
     // 0x348 — GXColorS10 AmbCol (8 bytes)
-    char _pad_amb[8];
+    GXColorS10 AmbCol;
     // 0x350 — GXColorS10 FogCol (8 bytes)
-    char _pad_fog[8];
+    GXColorS10 FogCol;
     // 0x358 — GXColorS10 TevColor (8 bytes)
-    char _pad_tev[8];
+    GXColorS10 TevColor;
     // 0x360 — GXColor TevKColor (4 bytes)
-    char _pad_tevk[4];
+    GXColor TevKColor;
     // 0x364 — GXColor mLightInf (4 bytes)
-    char _pad_linf[4];
+    GXColor mLightInf;
     // 0x368
     f32  mFogStartZ;
     f32  mFogEndZ;

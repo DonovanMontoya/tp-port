@@ -35,14 +35,22 @@ public:
     int getMyActIdx(int, char**, int, BOOL, BOOL) { return -1; }
     void* getMySubstanceP(int, char*, int) { return nullptr; }
     int getMySubstanceNum(int, char*) { return 0; }
+    char* getMyNowCutName(int) { return nullptr; }
+    const char* getRunEventName() { return ""; }
     void cutEnd(int) {}
     void setGoal(cXyz*) {}
     cXyz* getGoal() { return nullptr; }
     BOOL ChkPresentEnd() { return TRUE; }
     int checkStartDemo() { return 0; }
+    void orderStartDemo() {}
+    bool dataLoaded() { return true; }
+    void demoInit() {}
+    void roomInit(int) {}
+    void roomFinish(int) {}
 
     void setObjectArchive(const char*) {}
     int  cameraPlay()                  { return 0; }
+    void setCameraPlay(int)            {}
     int  setStartDemo(int)             { return 0; }
 };
 

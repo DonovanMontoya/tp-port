@@ -17,7 +17,7 @@
 #include "port/boot_scene.h"
 
 namespace {
-constexpr int kProfileTableSize = fpcNm_OVERLAP2_e + 1;
+constexpr int kProfileTableSize = fpcNm_MAX_NUM;
 process_profile_definition* s_ProfileList[kProfileTableSize] = {};
 }
 
@@ -37,10 +37,16 @@ struct ProfileListInit {
         s_ProfileList[fpcNm_LOGO_SCENE_e] = &g_profile_LOGO_SCENE;
         s_ProfileList[fpcNm_MENU_SCENE_e] =
             reinterpret_cast<process_profile_definition*>(&g_profile_PORT_MENU_SCENE);
+        s_ProfileList[fpcNm_PLAY_SCENE_e] = &g_profile_PLAY_SCENE;
+        s_ProfileList[fpcNm_ROOM_SCENE_e] = &g_profile_ROOM_SCENE;
         s_ProfileList[fpcNm_OPENING_SCENE_e] = &g_profile_OPENING_SCENE;
         s_ProfileList[fpcNm_TITLE_e] = &g_profile_TITLE;
         s_ProfileList[fpcNm_WARNING_SCENE_e] = &g_profile_WARNING_SCENE;
         s_ProfileList[fpcNm_WARNING2_SCENE_e] = &g_profile_WARNING2_SCENE;
+        s_ProfileList[fpcNm_ALINK_e] = &g_profile_ALINK;
+        s_ProfileList[fpcNm_CAMERA_e] = &g_profile_CAMERA;
+        s_ProfileList[fpcNm_CAMERA2_e] = &g_profile_CAMERA2;
+        s_ProfileList[fpcNm_METER2_e] = &g_profile_METER2;
         g_fpcPf_ProfileList_p = s_ProfileList;
     }
 } s_profileListInit;

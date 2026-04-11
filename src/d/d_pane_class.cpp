@@ -457,7 +457,7 @@ bool dPaneClass_setPriority(void** i_data, JKRHeap* p_heap, J2DScreen* p_screen,
 
     if (len != 0) {
         JSUMemoryInputStream stream(*i_data, len);
-        return p_screen->setPriority(&stream, param_4, p_archive);
+        return p_screen->setPriority(static_cast<JSURandomInputStream*>(&stream), param_4, p_archive);
     }
 
     return false;

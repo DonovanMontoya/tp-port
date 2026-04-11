@@ -5,17 +5,32 @@
 
 #include "f_pc/f_pc_layer_tag.h"
 #include "f_pc/f_pc_layer.h"
+#include "f_pc/f_pc_name.h"
+#include "port/port.h"
 
 int fpcLyTg_ToQueue(layer_management_tag_class* i_layer_tag, fpc_ProcID i_layerID, u16 i_listID,
                     u16 i_listPriority) {
+    base_process_class* process = static_cast<base_process_class*>(i_layer_tag->create_tag.mpTagData);
+    const bool trace = process != NULL &&
+                       (process->profname == fpcNm_TITLE_e || process->profname == fpcNm_OPENING_SCENE_e);
+
     if (i_layer_tag->layer == NULL) {
         if (i_layerID == fpcLy_NONE_e) {
+            if (trace) {
+                tp::log::info("fpcLyTg_ToQueue: %s failed none layer id",
+                              process->profname == fpcNm_TITLE_e ? "TITLE" : "OPENING_SCENE");
+            }
             return 0;
         }
         i_layer_tag->layer = fpcLy_Layer(i_layerID);
     }
 
     if (i_layer_tag->layer == NULL) {
+        if (trace) {
+            tp::log::info("fpcLyTg_ToQueue: %s failed resolve layer=%u",
+                          process->profname == fpcNm_TITLE_e ? "TITLE" : "OPENING_SCENE",
+                          i_layerID);
+        }
         return 0;
     }
 
@@ -28,6 +43,12 @@ int fpcLyTg_ToQueue(layer_management_tag_class* i_layer_tag, fpc_ProcID i_layerI
         if (result != 0) {
             i_layer_tag->node_list_id = i_listID;
             i_layer_tag->node_list_priority = result - 1;
+            if (trace) {
+                tp::log::info("fpcLyTg_ToQueue: %s queued append layer=%u list=%u prio=%u",
+                              process->profname == fpcNm_TITLE_e ? "TITLE" : "OPENING_SCENE",
+                              i_layer_tag->layer ? i_layer_tag->layer->layer_id : 0xFFFFFFFF,
+                              i_listID, i_layer_tag->node_list_priority);
+            }
             return 1;
         }
     } else if (fpcLy_IntoQueue(i_layer_tag->layer, i_listID, &i_layer_tag->create_tag,
@@ -35,7 +56,23 @@ int fpcLyTg_ToQueue(layer_management_tag_class* i_layer_tag, fpc_ProcID i_layerI
     {
         i_layer_tag->node_list_id = i_listID;
         i_layer_tag->node_list_priority = i_listPriority;
+        if (trace) {
+            tp::log::info("fpcLyTg_ToQueue: %s queued insert layer=%u list=%u prio=%u",
+                          process->profname == fpcNm_TITLE_e ? "TITLE" : "OPENING_SCENE",
+                          i_layer_tag->layer ? i_layer_tag->layer->layer_id : 0xFFFFFFFF,
+                          i_listID, i_listPriority);
+        }
         return 1;
+    }
+
+    if (trace) {
+        tp::log::info("fpcLyTg_ToQueue: %s insert failed layer=%u list=%u prio=%u node_list_size=%d",
+                      process->profname == fpcNm_TITLE_e ? "TITLE" : "OPENING_SCENE",
+                      i_layer_tag->layer ? i_layer_tag->layer->layer_id : 0xFFFFFFFF,
+                      i_listID, i_listPriority,
+                      i_layer_tag->layer && i_layer_tag->layer->node_tree.mpLists
+                          ? i_layer_tag->layer->node_tree.mpLists[i_listID].mSize
+                          : -1);
     }
 
     return 0;

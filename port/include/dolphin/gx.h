@@ -22,6 +22,19 @@
 // Pull in GX enum types from the decomp (they're just integers, no hardware deps)
 #include <dolphin/gx/GXEnum.h>
 #include <dolphin/gx/GXStruct.h>
+#include "dolphin/os/OSThread.h"
+
+#ifndef CP_REG_MTXIDXA_ID
+#define CP_REG_MTXIDXA_ID 0x30
+#endif
+
+#ifndef CP_REG_MTXIDXB_ID
+#define CP_REG_MTXIDXB_ID 0x40
+#endif
+
+#ifndef GX_XF_REG_MATRIXINDEX0
+#define GX_XF_REG_MATRIXINDEX0 0x1018
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,8 +52,6 @@ extern PPCWGPipe GXWGFifo;
 static inline void GXCmd1u8(u8 value)   { GXWGFifo.u8 = value; }
 static inline void GXCmd1u16(u16 value) { GXWGFifo.u16 = value; }
 static inline void GXCmd1u32(u32 value) { GXWGFifo.u32 = value; }
-
-#include "dolphin/os/OSThread.h"
 
 // -----------------------------------------------------------------------
 // Init / management
@@ -71,6 +82,8 @@ void GXSetViewportJitter(f32 xOrig, f32 yOrig, f32 wd, f32 ht, f32 nearZ, f32 fa
 void GXGetViewportv(f32* ptr);
 void GXSetScissor(u32 xOrig, u32 yOrig, u32 wd, u32 ht);
 void GXSetScissorBoxOffset(s32 xOffset, s32 yOffset);
+void GXEnableTexOffsets(GXTexCoordID coord, GXBool line_enable, GXBool point_enable);
+void GXInvalidateVtxCache(void);
 
 // -----------------------------------------------------------------------
 // Framebuffer / copy
@@ -198,6 +211,7 @@ void GXSetTevAlphaOp(GXTevStageID stage, GXTevOp op, GXTevBias bias,
                      GXTevScale scale, GXBool clamp, GXTevRegID outReg);
 void GXSetTevColor(GXTevRegID id, GXColor color);
 void GXSetTevColorS10(GXTevRegID id, GXColorS10 color);
+void GXSetTevDirect(GXTevStageID tev_stage);
 void GXSetTevKColor(GXTevKColorID id, GXColor color);
 void GXSetTevKColorSel(GXTevStageID stage, GXTevKColorSel sel);
 void GXSetTevKAlphaSel(GXTevStageID stage, GXTevKAlphaSel sel);
@@ -212,6 +226,7 @@ void GXSetTevIndirect(GXTevStageID tevstage, GXIndTexStageID indstage,
 void GXSetNumIndStages(u8 nstages);
 void GXSetIndTexCoordScale(GXIndTexStageID indstage, GXIndTexScale scaleS, GXIndTexScale scaleT);
 void GXSetIndTexOrder(GXIndTexStageID indstage, GXTexCoordID texcoord, GXTexMapID texmap);
+void GXSetIndTexMtx(GXIndTexMtxID mtxSelID, const f32 offset[2][3], s8 scaleExp);
 void GXSetIndTexMatrix(GXIndTexMtxID mtxSelID, const f32 offset[2][3], s8 scaleExp);
 
 // -----------------------------------------------------------------------

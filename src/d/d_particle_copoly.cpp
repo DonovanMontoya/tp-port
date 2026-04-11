@@ -6,6 +6,7 @@
 #include "d/dolzel.h" // IWYU pragma: keep
 
 #include "d/d_particle_copoly.h"
+#include "d/d_bg_s_acch.h"
 #include "f_op/f_op_kankyo_mng.h"
 
 void dPaPo_c::init(dBgS_Acch* param_0, f32 i_waterOffset, f32 i_rippleOffset) {

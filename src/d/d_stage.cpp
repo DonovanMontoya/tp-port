@@ -14,11 +14,13 @@
 #include "d/d_stage.h"
 #include "d/d_bg_parts.h"
 #include "f_ap/f_ap_game.h"
+#include "f_op/f_op_camera_mng.h"
 #include "f_op/f_op_kankyo_mng.h"
 #include "f_op/f_op_msg_mng.h"
 #include "f_op/f_op_scene_mng.h"
 #include "global.h"
 #include "m_Do/m_Do_Reset.h"
+#include "port/port.h"
 #include <cstdio>
 #include <cstring>
 
@@ -260,7 +262,69 @@ static int stayRoomCheck(int param_0, u8* param_1, int param_2) {
     return 0;
 }
 
+#if PLATFORM_PC
+static int s_pendingRoomBootstrap = -1;
+
+static bool bootstrapRoomScenePC(int roomNo) {
+    const char* arcName = dComIfG_getRoomArcName(roomNo);
+    tp::log::info("bootstrapRoomScenePC: room=%d arc=%s", roomNo, arcName);
+
+    if (dComIfG_syncStageRes(arcName) < 0) {
+        JKRExpHeap* heap = dStage_roomControl_c::getMemoryBlock(roomNo);
+        if (heap == NULL && dStage_staginfo_GetArchiveHeap(dComIfGp_getStage()->getStagInfo()) != FALSE) {
+            heap = mDoExt_getArchiveHeap();
+        }
+        if (!dComIfG_setStageRes(arcName, heap)) {
+            tp::log::info("bootstrapRoomScenePC: setStageRes failed room=%d arc=%s", roomNo, arcName);
+            return false;
+        }
+        s_pendingRoomBootstrap = roomNo;
+        tp::log::info("bootstrapRoomScenePC: requested async room load room=%d", roomNo);
+        return true;
+    }
+
+    int sync = dComIfG_syncStageRes(arcName);
+    if (sync > 0) {
+        s_pendingRoomBootstrap = roomNo;
+        tp::log::info("bootstrapRoomScenePC: room=%d waiting for archive sync=%d", roomNo, sync);
+        return true;
+    }
+    if (sync != 0) {
+        return false;
+    }
+
+    if (dComIfGp_roomControl_getZoneNo(roomNo) < 0) {
+        dComIfGp_roomControl_setZoneNo(roomNo, dComIfGs_createZone(roomNo));
+    }
+
+    dStage_roomDt_c* roomDt = dComIfGp_roomControl_getStatusRoomDt(roomNo);
+    roomDt->setRoomNo(roomNo);
+    void* roomInfo = dComIfG_getStageRes(arcName, "room.dzr");
+    tp::log::info("bootstrapRoomScenePC: room=%d roomInfo=%p", roomNo, roomInfo);
+    if (roomInfo == NULL) {
+        return false;
+    }
+
+    dStage_dt_c_roomLoader(roomInfo, roomDt, roomNo);
+    dStage_dt_c_roomReLoader(roomInfo, roomDt, roomNo);
+    s_pendingRoomBootstrap = -1;
+    tp::log::info("bootstrapRoomScenePC: room=%d bootstrap complete player=%p",
+                  roomNo, dComIfGp_getPlayer(0));
+    return true;
+}
+
+void dStage_bootstrapPendingRoomScenePC() {
+    if (s_pendingRoomBootstrap >= 0) {
+        bootstrapRoomScenePC(s_pendingRoomBootstrap);
+    }
+}
+#endif
+
 static int createRoomScene(int param_0) {
+#if PLATFORM_PC
+    tp::log::info("createRoomScene[PC]: direct bootstrap room=%d", param_0);
+    return bootstrapRoomScenePC(param_0) ? 1 : 0;
+#endif
     int* ptr = (int*)JKRAlloc(4, -4);
 
     if (ptr == NULL) {
@@ -268,8 +332,11 @@ static int createRoomScene(int param_0) {
     }
     *ptr = param_0;
 
+    tp::log::info("createRoomScene[PC]: room=%d", param_0);
+
     if (!fopScnM_CreateReq(fpcNm_ROOM_SCENE_e, 0x7FFF, 0, (uintptr_t)ptr)) {
         JKRFree(ptr);
+        tp::log::info("createRoomScene[PC]: request failed room=%d", param_0);
         return 0;
     }
 
@@ -289,6 +356,8 @@ BOOL dStage_roomControl_c::checkRoomDisp(int i_roomNo) const {
 }
 
 int dStage_roomControl_c::loadRoom(int roomCount, u8* rooms, bool param_2) {
+    tp::log::info("loadRoom[PC]: count=%d rooms=%p stay=%d nextStay=%d noChange=%d roomReadId=%d",
+                  roomCount, rooms, mStayNo, mNextStayNo, mNoChangeRoom, mRoomReadId);
     if (mRoomReadId < 0 && mNoChangeRoom != 0) {
         return 0;
     }
@@ -315,6 +384,8 @@ int dStage_roomControl_c::loadRoom(int roomCount, u8* rooms, bool param_2) {
     
     for (int i = 0; i < roomCount; i++) {
         int roomNo = dStage_roomRead_dt_c_GetLoadRoomIndex(rooms[i]);
+        tp::log::info("loadRoom[PC]: entry[%d]=0x%02x roomNo=%d bg=%d", i, rooms[i], roomNo,
+                      dStage_roomRead_dt_c_ChkBg(rooms[i]) ? 1 : 0);
         dStage_roomControl_c::setZoneCount(roomNo, 2);
         if (!checkStatusFlag(roomNo, 0x01)) {
             if (param_2) {
@@ -1489,6 +1560,11 @@ static int dStage_roomInit(int i_roomNo) {
 
     roomRead_class* room = dComIfGp_getStageRoom();
     if (room != NULL && room->num > i_roomNo) {
+        roomRead_data_class* entry = room->m_entries[i_roomNo];
+        tp::log::info(
+            "dStage_roomInit[PC]: room=%d tableNum=%d entry=%p loadCount=%u rooms=%p",
+            i_roomNo, room->num, entry, entry != NULL ? entry->num : 0,
+            entry != NULL ? entry->m_rooms : NULL);
         dComIfGp_roomControl_setTimePass(dStage_roomRead_dt_c_GetTimePass(*room->m_entries[i_roomNo]));
 
         return dComIfGp_roomControl_loadRoom(room->m_entries[i_roomNo]->num,
@@ -1501,6 +1577,174 @@ static int dStage_roomInit(int i_roomNo) {
 static void dummy0() {
     dComIfGp_roomControl_setTimePass(0);
     ((dStage_stageDt_c*)dComIfGp_getStage())->getRoom();
+}
+
+struct dStage_roomReadDataRaw {
+    u8 num;
+    u8 field_0x1;
+    u8 field_0x2;
+    u8 pad;
+    u32 m_rooms;
+};
+
+struct dStage_dPathRaw {
+    u32 m_num;
+    u32 m_path;
+};
+
+struct dPathRaw {
+    u16 m_num;
+    u16 m_nextID;
+    u8 field_0x4;
+    u8 m_closed;
+    u8 field_0x6;
+    u8 field_0x7;
+    u32 m_points;
+};
+
+static void* dStage_nodeDataPtr(void* i_data, void* fileBase) {
+    dStage_nodeHeader* node = (dStage_nodeHeader*)i_data;
+    return (char*)fileBase + tp::endian::read_be32(&node->m_offset);
+}
+
+static fopAcM_prmBase_class dStage_decodeActorBase(const fopAcM_prmBase_class& raw) {
+    fopAcM_prmBase_class decoded{};
+    decoded.parameters = tp::endian::read_be32(&raw.parameters);
+    decoded.position.x = tp::endian::read_bef32(&raw.position.x);
+    decoded.position.y = tp::endian::read_bef32(&raw.position.y);
+    decoded.position.z = tp::endian::read_bef32(&raw.position.z);
+    decoded.angle.x = (s16)tp::endian::read_be16(&raw.angle.x);
+    decoded.angle.y = (s16)tp::endian::read_be16(&raw.angle.y);
+    decoded.angle.z = (s16)tp::endian::read_be16(&raw.angle.z);
+    decoded.setID = tp::endian::read_be16(&raw.setID);
+    return decoded;
+}
+
+static stage_actor_class* dStage_decodeActorList(void* i_data, void* fileBase) {
+    dStage_nodeHeader* node = (dStage_nodeHeader*)i_data;
+    const int num = (int)tp::endian::read_be32(&node->m_entryNum);
+    stage_actor_class* decoded = new stage_actor_class{};
+    decoded->num = num;
+
+    if (num <= 0) {
+        decoded->m_entries = NULL;
+        return decoded;
+    }
+
+    char* rawEntries = (char*)dStage_nodeDataPtr(i_data, fileBase);
+    stage_actor_data_class* entries = new stage_actor_data_class[num];
+    for (int i = 0; i < num; ++i) {
+        stage_actor_data_class rawEntry{};
+        memcpy(&rawEntry, rawEntries + i * sizeof(stage_actor_data_class), sizeof(rawEntry));
+        memcpy(entries[i].name, rawEntry.name, sizeof(entries[i].name));
+        entries[i].base = dStage_decodeActorBase(rawEntry.base);
+    }
+    decoded->m_entries = entries;
+    return decoded;
+}
+
+static stage_tgsc_class* dStage_decodeTgscList(void* i_data, void* fileBase) {
+    dStage_nodeHeader* node = (dStage_nodeHeader*)i_data;
+    const int num = (int)tp::endian::read_be32(&node->m_entryNum);
+    stage_tgsc_class* decoded = new stage_tgsc_class{};
+    decoded->num = num;
+
+    if (num <= 0) {
+        decoded->m_entries = NULL;
+        return decoded;
+    }
+
+    char* rawEntries = (char*)dStage_nodeDataPtr(i_data, fileBase);
+    stage_tgsc_data_class* entries = new stage_tgsc_data_class[num];
+    for (int i = 0; i < num; ++i) {
+        stage_tgsc_data_class rawEntry{};
+        memcpy(&rawEntry, rawEntries + i * sizeof(stage_tgsc_data_class), sizeof(rawEntry));
+        memcpy(entries[i].name, rawEntry.name, sizeof(entries[i].name));
+        entries[i].base = dStage_decodeActorBase(rawEntry.base);
+        entries[i].scale = rawEntry.scale;
+    }
+    decoded->m_entries = entries;
+    return decoded;
+}
+
+static roomRead_class* dStage_decodeRoomReadList(void* i_data, void* fileBase) {
+    dStage_nodeHeader* node = (dStage_nodeHeader*)i_data;
+    const int num = (int)tp::endian::read_be32(&node->m_entryNum);
+    roomRead_class* decoded = new roomRead_class{};
+    decoded->num = num;
+
+    if (num <= 0) {
+        decoded->m_entries = NULL;
+        return decoded;
+    }
+
+    roomRead_data_class** entries = new roomRead_data_class*[num];
+    u32* rawEntryOffsets = (u32*)dStage_nodeDataPtr(i_data, fileBase);
+    for (int i = 0; i < num; ++i) {
+        dStage_roomReadDataRaw* rawEntry =
+            (dStage_roomReadDataRaw*)((char*)fileBase + tp::endian::read_be32(&rawEntryOffsets[i]));
+        roomRead_data_class* entry = new roomRead_data_class{};
+        entry->num = rawEntry->num;
+        entry->field_0x1 = rawEntry->field_0x1;
+        entry->field_0x2 = rawEntry->field_0x2;
+        entry->m_rooms = (u8*)((char*)fileBase + tp::endian::read_be32(&rawEntry->m_rooms));
+        entries[i] = entry;
+    }
+
+    decoded->m_entries = entries;
+    return decoded;
+}
+
+static roomRead_class* dStage_makeSyntheticRoomReadList(int num) {
+    roomRead_class* room = new roomRead_class{};
+    room->num = num;
+    room->m_entries = new roomRead_data_class*[room->num];
+    for (int i = 0; i < room->num; ++i) {
+        roomRead_data_class* entry = new roomRead_data_class{};
+        entry->num = 1;
+        entry->field_0x1 = 0;
+        entry->field_0x2 = 0;
+        entry->m_rooms = new u8[1];
+        entry->m_rooms[0] = (u8)(0x80 | (i & 0x3f));
+        room->m_entries[i] = entry;
+    }
+    return room;
+}
+
+static dStage_dPnt_c* dStage_decodePointInfo(void* i_data, void* fileBase) {
+    dStage_dPnt_c* raw = (dStage_dPnt_c*)dStage_nodeDataPtr(i_data, fileBase);
+    dStage_dPnt_c* decoded = new dStage_dPnt_c{};
+    decoded->num = (int)tp::endian::read_be32(&raw->num);
+    decoded->m_pnt_offset = tp::endian::read_be32(&raw->m_pnt_offset);
+    return decoded;
+}
+
+static dStage_dPath_c* dStage_decodePathInfo(void* i_data, void* fileBase, dStage_dPnt_c* pntInfo) {
+    dStage_dPathRaw* raw = (dStage_dPathRaw*)dStage_nodeDataPtr(i_data, fileBase);
+    dStage_dPath_c* decoded = new dStage_dPath_c{};
+    decoded->m_num = (int)tp::endian::read_be32(&raw->m_num);
+
+    if (decoded->m_num <= 0) {
+        decoded->m_path = NULL;
+        return decoded;
+    }
+
+    dPathRaw* rawPaths = (dPathRaw*)((char*)fileBase + tp::endian::read_be32(&raw->m_path));
+    dPath* paths = new dPath[decoded->m_num];
+    for (int i = 0; i < decoded->m_num; ++i) {
+        paths[i].m_num = tp::endian::read_be16(&rawPaths[i].m_num);
+        paths[i].m_nextID = tp::endian::read_be16(&rawPaths[i].m_nextID);
+        paths[i].field_0x4 = rawPaths[i].field_0x4;
+        paths[i].m_closed = rawPaths[i].m_closed;
+        paths[i].field_0x6 = rawPaths[i].field_0x6;
+        paths[i].field_0x7 = rawPaths[i].field_0x7;
+        u32 pointOffset = tp::endian::read_be32(&rawPaths[i].m_points);
+        paths[i].m_points = pntInfo != NULL ? (dPnt*)((char*)fileBase + pntInfo->m_pnt_offset + pointOffset)
+                                            : NULL;
+    }
+
+    decoded->m_path = paths;
+    return decoded;
 }
 
 dStage_objectNameInf* dStage_searchName(char const* objName) {
@@ -1575,11 +1819,21 @@ u8 dStage_roomControl_c::mNoArcBank;
 
 static void dStage_actorCreate(stage_actor_data_class* i_actorData, fopAcM_prm_class* i_actorPrm) {
     dStage_objectNameInf* actorInf = dStage_searchName(i_actorData->name);
+    static u32 s_port_actor_create_logs = 0;
 
     if (actorInf == NULL) {
         OS_REPORT("\x1B""[43;30mStage Actor Name Nothing !! <%s>\n\x1B[m", i_actorData->name);
         JKRFree(i_actorPrm);
     } else {
+        if (s_port_actor_create_logs < 64) {
+            tp::log::info(
+                "dStage_actorCreate[PC]: stage=%s room=%d actor=%s proc=%d setId=%u params=%08x pos=(%.1f, %.1f, %.1f)",
+                dComIfGp_getStartStageName(), i_actorPrm->room_no, i_actorData->name,
+                actorInf->procname, i_actorData->base.setID, i_actorPrm->base.parameters,
+                i_actorPrm->base.position.x, i_actorPrm->base.position.y,
+                i_actorPrm->base.position.z);
+            ++s_port_actor_create_logs;
+        }
         i_actorPrm->argument = actorInf->argument;
         if (actorInf->procname == fpcNm_SUSPEND_e) {
             fopAc_ac_c* actor = (fopAc_ac_c*)fopAcM_FastCreate(actorInf->procname, NULL, NULL, i_actorPrm);
@@ -1589,8 +1843,12 @@ static void dStage_actorCreate(stage_actor_data_class* i_actorData, fopAcM_prm_c
             }
             return;
         }
-
-        fopAcM_Create(actorInf->procname, NULL, i_actorPrm);
+        fpc_ProcID proc_id = fopAcM_Create(actorInf->procname, NULL, i_actorPrm);
+        if (s_port_actor_create_logs < 96) {
+            tp::log::info("dStage_actorCreate[PC]: request returned procId=%u for actor=%s proc=%d",
+                          proc_id, i_actorData->name, actorInf->procname);
+            ++s_port_actor_create_logs;
+        }
     }
 }
 
@@ -1622,13 +1880,29 @@ static void dummy2() {
 }
 
 static int dStage_playerInit(dStage_dt_c* i_stage, void* i_data, int num, void* param_3) {
-    UNUSED(param_3);
-    stage_actor_class* player = (stage_actor_class*)((int*)i_data + 1);
+    tp::log::info("dStage_playerInit[PC]: enter i_data=%p entries=%d fileBase=%p stageRoom=%d",
+                  i_data, num, param_3, i_stage != NULL ? i_stage->getRoomNo() : -999);
+    stage_actor_class* player = dStage_decodeActorList(i_data, param_3);
     stage_actor_data_class* player_data = player->m_entries;
+    static bool s_logged = false;
+    tp::log::info("dStage_playerInit[PC]: decoded player list=%p num=%d entries=%p", player,
+                  player != NULL ? player->num : -1, player != NULL ? player->m_entries : NULL);
     i_stage->setPlayer(player);
-    i_stage->setPlayerNum(num);
+    i_stage->setPlayerNum(player->num);
+
+    if (!s_logged) {
+        s_logged = true;
+        tp::log::info(
+            "dStage_playerInit[PC]: stage=%s stageRoom=%d startRoom=%d point=%d layer=%d num=%d existingPlayer=%p",
+            dComIfGp_getStartStageName(), i_stage->getRoomNo(), dComIfGp_getStartStageRoomNo(),
+            dComIfGp_getStartStagePoint(), dComIfGp_getStartStageLayer(), num,
+            dComIfGp_getPlayer(0));
+    }
 
     if (dComIfGp_getPlayer(0) != NULL || dComIfGp_getStartStageRoomNo() != i_stage->getRoomNo()) {
+        tp::log::info(
+            "dStage_playerInit[PC]: skipping player spawn existingPlayer=%p startRoom=%d stageRoom=%d",
+            dComIfGp_getPlayer(0), dComIfGp_getStartStageRoomNo(), i_stage->getRoomNo());
         return 1;
     }
 
@@ -1654,18 +1928,22 @@ static int dStage_playerInit(dStage_dt_c* i_stage, void* i_data, int num, void* 
         }
 
         int i;
-        for (i = 0; i < num; i++) {
+        for (i = 0; i < player->num; i++) {
             if ((u8)player_data->base.angle.z == unk) {
                 break;
             }
             player_data++;
         }
-        if (i == num) {
+        if (i == player->num) {
             OS_REPORT_ERROR("プレイヤーが発見できません。[No.%d]\n切り替えの情報や処理の確認をお願いします。\n", point);
         }
-        JUT_ASSERT(1636, i != num);
+        JUT_ASSERT(1636, i != player->num);
 
         appen->base = player_data->base;
+        tp::log::info(
+            "dStage_playerInit[PC]: matched player spawn idx=%d point=%d params=%08x pos=(%.1f, %.1f, %.1f)",
+            i, point, appen->base.parameters, appen->base.position.x,
+            appen->base.position.y, appen->base.position.z);
 
         if (point == -4) {
             appen->base.parameters = dComIfGs_getTurnRestartParam();
@@ -1680,6 +1958,11 @@ static int dStage_playerInit(dStage_dt_c* i_stage, void* i_data, int num, void* 
     dComIfGs_setRestartRoomParam(0);
     appen->base.setID = 0xFFFF;
     appen->room_no = -1;
+
+    tp::log::info(
+        "dStage_playerInit[PC]: spawning player finalRoom=%d point=%d layer=%d params=%08x",
+        appen->base.parameters & 0x3F, dComIfGp_getStartStagePoint(),
+        dComIfGp_getStartStageLayer(), appen->base.parameters);
 
     dComIfGp_getStartStage()->set(dComIfGp_getStartStageName(), appen->base.parameters & 0x3F,
                                   dComIfGp_getStartStagePoint(), dComIfGp_getStartStageLayer());
@@ -1775,9 +2058,7 @@ static void dummy4() {
 }
 
 static int dStage_paletteInfoInit(dStage_dt_c* i_stage, void* i_data, int param_2, void* param_3) {
-    UNUSED(param_3);
-    dStage_nodeHeader* pal_info = (dStage_nodeHeader*)(i_data);
-    i_stage->setPaletteInfo((stage_palette_info_class*)pal_info->m_offset);
+    i_stage->setPaletteInfo((stage_palette_info_class*)dStage_nodeDataPtr(i_data, param_3));
 #if DEBUG
     i_stage->setPaletteNumInfo(param_2);
 #endif
@@ -1785,9 +2066,7 @@ static int dStage_paletteInfoInit(dStage_dt_c* i_stage, void* i_data, int param_
 }
 
 static int dStage_pselectInfoInit(dStage_dt_c* i_stage, void* i_data, int param_2, void* param_3) {
-    UNUSED(param_3);
-    dStage_nodeHeader* psel_info = (dStage_nodeHeader*)(i_data);
-    i_stage->setPselectInfo((stage_pselect_info_class*)psel_info->m_offset);
+    i_stage->setPselectInfo((stage_pselect_info_class*)dStage_nodeDataPtr(i_data, param_3));
 #if DEBUG
     i_stage->setPselectNumInfo(param_2);
 #endif
@@ -1795,9 +2074,7 @@ static int dStage_pselectInfoInit(dStage_dt_c* i_stage, void* i_data, int param_
 }
 
 static int dStage_envrInfoInit(dStage_dt_c* i_stage, void* i_data, int param_2, void* param_3) {
-    UNUSED(param_3);
-    dStage_nodeHeader* envr_info = (dStage_nodeHeader*)(i_data);
-    i_stage->setEnvrInfo((stage_envr_info_class*)envr_info->m_offset);
+    i_stage->setEnvrInfo((stage_envr_info_class*)dStage_nodeDataPtr(i_data, param_3));
 #if DEBUG
     i_stage->setEnvrNumInfo(param_2);
 #endif
@@ -1827,20 +2104,17 @@ static int dStage_fieldMapFiliInfo2Init(dStage_dt_c* i_stage, void* i_data, int 
 }
 
 static int dStage_filiInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum, void* param_3) {
-    dStage_nodeHeader* fili_info = (dStage_nodeHeader*)(i_data);
     if (entryNum == 0) {
         i_stage->setFileListInfo(NULL);
     } else {
-        i_stage->setFileListInfo((dStage_FileList_dt_c*)fili_info->m_offset);
+        i_stage->setFileListInfo((dStage_FileList_dt_c*)dStage_nodeDataPtr(i_data, param_3));
     }
 
     return 1;
 }
 
 static int dStage_vrboxInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum, void* param_3) {
-    UNUSED(param_3);
-    dStage_nodeHeader* vrbox_info = (dStage_nodeHeader*)(i_data);
-    i_stage->setVrboxInfo((stage_vrbox_info_class*)vrbox_info->m_offset);
+    i_stage->setVrboxInfo((stage_vrbox_info_class*)dStage_nodeDataPtr(i_data, param_3));
 #if DEBUG
     i_stage->setVrboxNumInfo(entryNum);
 #endif
@@ -1849,9 +2123,7 @@ static int dStage_vrboxInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum
 
 static int dStage_vrboxcolInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum,
                                    void* param_3) {
-    UNUSED(param_3);
-    dStage_nodeHeader* vrcol_info = (dStage_nodeHeader*)(i_data);
-    i_stage->setVrboxcolInfo((stage_vrboxcol_info_class*)vrcol_info->m_offset);
+    i_stage->setVrboxcolInfo((stage_vrboxcol_info_class*)dStage_nodeDataPtr(i_data, param_3));
 #if DEBUG
     i_stage->setVrboxcolNumInfo(entryNum);
 #endif
@@ -1859,8 +2131,7 @@ static int dStage_vrboxcolInfoInit(dStage_dt_c* i_stage, void* i_data, int entry
 }
 
 static int dStage_plightInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum, void* param_3) {
-    dStage_nodeHeader* plight_info = (dStage_nodeHeader*)(i_data);
-    i_stage->setPlightInfo((stage_plight_info_class*)plight_info->m_offset);
+    i_stage->setPlightInfo((stage_plight_info_class*)dStage_nodeDataPtr(i_data, param_3));
     i_stage->setPlightNumInfo(entryNum);
     return 1;
 }
@@ -1871,8 +2142,8 @@ static int dStage_lgtvInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum,
     if (entryNum == 0) {
         i_stage->setLightVecInfo(NULL);
     } else {
-        dStage_nodeHeader* lgtv_info = (dStage_nodeHeader*)(i_data);
-        i_stage->setLightVecInfo((stage_pure_lightvec_info_class*)lgtv_info->m_offset);
+        i_stage->setLightVecInfo(
+            (stage_pure_lightvec_info_class*)dStage_nodeDataPtr(i_data, param_3));
     }
 
     return 1;
@@ -1885,9 +2156,9 @@ u32 dStage_stagInfo_GetParticleNo(stage_stag_info_class* p_info, int layer) {
 
 static int dStage_stagInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum, void* param_3) {
     UNUSED(entryNum);
-    UNUSED(param_3);
     dStage_nodeHeader* stag_info = (dStage_nodeHeader*)(i_data);
-    i_stage->setStagInfo((stage_stag_info_class*)stag_info->m_offset);
+    i_stage->setStagInfo(
+        (stage_stag_info_class*)((char*)param_3 + tp::endian::read_be32(&stag_info->m_offset)));
 
     if (!dStage_isBossStage(i_stage)) {
         dComIfG_deleteStageRes("Xtg_00");
@@ -1922,8 +2193,7 @@ static int dStage_sclsInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum,
 static int dStage_actorCommonLayerInit(dStage_dt_c* i_stage, void* i_data, int entryNum,
                                        void* param_3) {
     UNUSED(entryNum);
-    UNUSED(param_3);
-    stage_actor_class* actor = (stage_actor_class*)((int*)i_data + 1);
+    stage_actor_class* actor = dStage_decodeActorList(i_data, param_3);
     stage_actor_data_class* actor_data = actor->m_entries;
 
     for (int i = 0; i < actor->num; i++) {
@@ -1947,8 +2217,7 @@ static int dStage_actorCommonLayerInit(dStage_dt_c* i_stage, void* i_data, int e
 static int dStage_tgscCommonLayerInit(dStage_dt_c* i_stage, void* i_data, int entryNum,
                                       void* param_3) {
     UNUSED(entryNum);
-    UNUSED(param_3);
-    stage_tgsc_class* actor = (stage_tgsc_class*)((int*)i_data + 1);
+    stage_tgsc_class* actor = dStage_decodeTgscList(i_data, param_3);
     stage_tgsc_data_class* tgsc_data = actor->m_entries;
 
     for (int i = 0; i < actor->num; i++) {
@@ -1971,8 +2240,7 @@ static int dStage_tgscCommonLayerInit(dStage_dt_c* i_stage, void* i_data, int en
 
 static int dStage_actorInit(dStage_dt_c* i_stage, void* i_data, int entryNum, void* param_3) {
     UNUSED(entryNum);
-    UNUSED(param_3);
-    stage_actor_class* actor = (stage_actor_class*)((int*)i_data + 1);
+    stage_actor_class* actor = dStage_decodeActorList(i_data, param_3);
     stage_actor_data_class* actor_data = actor->m_entries;
 
     for (int i = 0; i < actor->num; i++) {
@@ -1996,8 +2264,13 @@ static int dStage_actorInit(dStage_dt_c* i_stage, void* i_data, int entryNum, vo
 static int dStage_actorInit_always(dStage_dt_c* i_stage, void* i_data, int entryNum,
                                    void* param_3) {
     UNUSED(entryNum);
-    UNUSED(param_3);
-    stage_actor_class* actor = (stage_actor_class*)((int*)i_data + 1);
+#if PLATFORM_PC
+    if (i_stage->getRoomNo() < 0) {
+        tp::log::info("dStage_actorInit_always[PC]: skipping stage actor preload");
+        return 1;
+    }
+#endif
+    stage_actor_class* actor = dStage_decodeActorList(i_data, param_3);
     stage_actor_data_class* actor_data = actor->m_entries;
 
     for (int i = 0; i < actor->num; i++) {
@@ -2018,8 +2291,13 @@ static int dStage_actorInit_always(dStage_dt_c* i_stage, void* i_data, int entry
 
 static int dStage_tgscInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum, void* param_3) {
     UNUSED(entryNum);
-    UNUSED(param_3);
-    stage_tgsc_class* actor = (stage_tgsc_class*)((int*)i_data + 1);
+#if PLATFORM_PC
+    if (i_stage->getRoomNo() < 0) {
+        tp::log::info("dStage_tgscInfoInit[PC]: skipping stage tgsc preload");
+        return 1;
+    }
+#endif
+    stage_tgsc_class* actor = dStage_decodeTgscList(i_data, param_3);
     stage_tgsc_data_class* tgsc_data = actor->m_entries;
 
     for (int i = 0; i < actor->num; i++) {
@@ -2042,8 +2320,7 @@ static int dStage_tgscInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum,
 
 static int dStage_doorInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum, void* param_3) {
     UNUSED(entryNum);
-    UNUSED(param_3);
-    stage_tgsc_class* actor = (stage_tgsc_class*)((int*)i_data + 1);
+    stage_tgsc_class* actor = dStage_decodeTgscList(i_data, param_3);
     stage_tgsc_data_class* tgsc_data = actor->m_entries;
 
     for (int i = 0; i < actor->num; i++) {
@@ -2063,20 +2340,39 @@ static int dStage_doorInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum,
 }
 
 static int dStage_roomReadInit(dStage_dt_c* i_stage, void* i_data, int param_2, void* param_3) {
+#if PLATFORM_PC
+    roomRead_class* room = new roomRead_class{};
+    room->num = param_2;
+    room->m_entries = new roomRead_data_class*[room->num];
+    for (int i = 0; i < room->num; ++i) {
+        roomRead_data_class* entry = new roomRead_data_class{};
+        entry->num = 1;
+        entry->field_0x1 = 0;
+        entry->field_0x2 = 0;
+        entry->m_rooms = new u8[1];
+        entry->m_rooms[0] = (u8)(0x80 | (i & 0x3f));
+        room->m_entries[i] = entry;
+    }
+    i_stage->setRoom(room);
+    tp::log::info("dStage_roomReadInit[PC]: synthesized room table entries=%d", room->num);
+    return 1;
+#else
     UNUSED(param_2);
-    roomRead_class* p_node = (roomRead_class*)((int*)i_data + 1);
-    roomRead_data_class** rtbl = p_node->m_entries;
-
-    i_stage->setRoom(p_node);
-
-    for (int i = 0; i < p_node->num; i++) {
-        if ((intptr_t)rtbl[i] < 0x80000000) {
-            rtbl[i] = (roomRead_data_class*)((intptr_t)rtbl[i] + (intptr_t)param_3);
-            rtbl[i]->m_rooms = (u8*)((intptr_t)rtbl[i]->m_rooms + (intptr_t)param_3);
+    roomRead_class* room = dStage_decodeRoomReadList(i_data, param_3);
+    i_stage->setRoom(room);
+    tp::log::info("dStage_roomReadInit[PC]: stageRoom=%d entries=%d", i_stage->getRoomNo(),
+                  room != NULL ? room->num : -1);
+    if (room != NULL) {
+        for (int i = 0; i < room->num && i < 8; ++i) {
+            roomRead_data_class* entry = room->m_entries[i];
+            tp::log::info(
+                "dStage_roomReadInit[PC]: slot=%d entry=%p loadCount=%u rooms=%p first=0x%02x",
+                i, entry, entry != NULL ? entry->num : 0, entry != NULL ? entry->m_rooms : NULL,
+                (entry != NULL && entry->num > 0 && entry->m_rooms != NULL) ? entry->m_rooms[0] : 0);
         }
     }
-
     return 1;
+#endif
 }
 
 s8 dStage_roomRead_dt_c_GetReverbStage(roomRead_class& room, int index) {
@@ -2090,51 +2386,35 @@ s8 dStage_roomRead_dt_c_GetReverbStage(roomRead_class& room, int index) {
 
 static int dStage_ppntInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum, void* param_3) {
     UNUSED(entryNum);
-    UNUSED(param_3);
-    dStage_dPnt_c* pnt = (dStage_dPnt_c*)((char*)i_data + 4);
+    dStage_dPnt_c* pnt = dStage_decodePointInfo(i_data, param_3);
     i_stage->setPntInfo(pnt);
     return 1;
 }
 
 static int dStage_pathInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum, void* param_3) {
     UNUSED(entryNum);
-    UNUSED(param_3);
-    dStage_dPath_c* path_c = (dStage_dPath_c*)((char*)i_data + 4);
-    dPath* path = path_c->m_path;
-
+    dStage_dPath_c* path_c = dStage_decodePathInfo(i_data, param_3, i_stage->getPntInf());
     i_stage->setPathInfo(path_c);
-
-    for (int i = 0; i < path_c->m_num; i++) {
-        if ((uintptr_t)path->m_points < 0x80000000) {
-            path->m_points = (dPnt*)((uintptr_t)path->m_points + i_stage->getPntInf()->m_pnt_offset);
-        }
-        path++;
-    }
 
     return 1;
 }
 
 static int dStage_rppnInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum, void* param_3) {
     UNUSED(entryNum);
-    UNUSED(param_3);
-    dStage_dPnt_c* pnt = (dStage_dPnt_c*)((char*)i_data + 4);
+    dStage_dPnt_c* pnt = dStage_decodePointInfo(i_data, param_3);
     i_stage->setPnt2Info(pnt);
     return 1;
 }
 
 static int dStage_rpatInfoInit(dStage_dt_c* i_stage, void* i_data, int i_num, void* param_3) {
     UNUSED(i_num);
-    UNUSED(param_3);
-    dStage_dPath_c* pStagePath = (dStage_dPath_c*)((char*)i_data + 4);
-    dPath* pPath = pStagePath->m_path;
-
+#if PLATFORM_PC
+    tp::log::info("dStage_rpatInfoInit[PC]: skipping room path decode");
+    i_stage->setPath2Info(NULL);
+    return 1;
+#endif
+    dStage_dPath_c* pStagePath = dStage_decodePathInfo(i_data, param_3, i_stage->getPnt2Inf());
     i_stage->setPath2Info(pStagePath);
-    for (s32 i = 0; i < pStagePath->m_num; pPath++, i++, (void)0) {
-        if ((uintptr_t)pPath->m_points >= 0x80000000) {
-            continue;
-        }
-        pPath->m_points = (dPnt*)((uintptr_t)pPath->m_points + i_stage->getPnt2Inf()->m_pnt_offset);
-    }
     return 1;
 }
 
@@ -2169,16 +2449,48 @@ static void dStage_dt_c_decode(void* i_data, dStage_dt_c* i_stage, FuncTable* fu
     if (i_data != NULL) {
         dStage_fileHeader* file = (dStage_fileHeader*)i_data;
         dStage_nodeHeader* node1 = file->m_nodes;
+        const int chunkCount = static_cast<int>(tp::endian::read_be32(&file->m_chunkCount));
+        static int s_decode_dump_count = 0;
+        if (s_decode_dump_count < 4) {
+            tp::log::info("dStage_dt_c_decode[PC]: data=%p chunks=%d", i_data, chunkCount);
+            for (int dump = 0; dump < chunkCount && dump < 24; ++dump) {
+                char tag[5];
+                memcpy(tag, &file->m_nodes[dump].m_tag, 4);
+                tag[4] = '\0';
+                tp::log::info("dStage_dt_c_decode[PC]: chunk[%d]=%s entries=%d", dump, tag,
+                              (int)tp::endian::read_be32(&file->m_nodes[dump].m_entryNum));
+            }
+            ++s_decode_dump_count;
+        }
         for (int i = 0; i < tblSize; i++) {
             node1 = file->m_nodes;
 
             FuncTable* nodeFunc = funcTbl + i;
 
-            for (int j = 0; j < file->m_chunkCount; j++) {
+            for (int j = 0; j < chunkCount; j++) {
                 dStage_nodeHeader* node2 = node1;
-                if ((int)node2->m_tag == *(int*)nodeFunc->identifier) {
+                if (memcmp(&node2->m_tag, nodeFunc->identifier, 4) == 0) {
                     if (funcTbl[i].function != NULL) {
-                        funcTbl[i].function(i_stage, node1, node1->m_entryNum, i_data);
+                        tp::log::info(
+                            "dStage_dt_c_decode[PC]: dispatch %4.4s entries=%d data=%p stageRoom=%d",
+                            nodeFunc->identifier,
+                            static_cast<int>(tp::endian::read_be32(&node1->m_entryNum)),
+                            node1, i_stage != NULL ? i_stage->getRoomNo() : -999);
+#if PLATFORM_PC
+                        if (memcmp(nodeFunc->identifier, "RTBL", 4) == 0) {
+                            i_stage->setRoom(dStage_makeSyntheticRoomReadList(
+                                static_cast<int>(tp::endian::read_be32(&node1->m_entryNum))));
+                            tp::log::info("dStage_dt_c_decode[PC]: synthetic RTBL installed");
+                            tp::log::info("dStage_dt_c_decode[PC]: dispatch complete %4.4s",
+                                          nodeFunc->identifier);
+                            break;
+                        }
+#endif
+                        funcTbl[i].function(i_stage, node1,
+                                            static_cast<int>(tp::endian::read_be32(&node1->m_entryNum)),
+                                            i_data);
+                        tp::log::info("dStage_dt_c_decode[PC]: dispatch complete %4.4s",
+                                      nodeFunc->identifier);
                     }
                     break;
                 }
@@ -2216,8 +2528,11 @@ static int dStage_floorInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum
 
 static int dStage_memaInfoInit(dStage_dt_c* i_stage, void* i_data, int param_2, void* param_3) {
     UNUSED(param_2);
-    UNUSED(param_3);
-    dStage_MemoryMap_c* pd = (dStage_MemoryMap_c*)((char*)i_data + 4);
+    dStage_nodeHeader* node = (dStage_nodeHeader*)i_data;
+    dStage_MemoryMap_c* pd = new dStage_MemoryMap_c{
+        static_cast<int>(tp::endian::read_be32(&node->m_entryNum)),
+        (u32*)((char*)param_3 + tp::endian::read_be32(&node->m_offset)),
+    };
 #if DEBUG
     if (fapGmHIO_getMemoryBlockOff()) {
         pd = NULL;
@@ -2231,9 +2546,10 @@ static int dStage_memaInfoInit(dStage_dt_c* i_stage, void* i_data, int param_2, 
 
         JUT_ASSERT(3208, pd->m_num <= dStage_roomControl_c::MEMORY_BLOCK_MAX);
         for (int i = 0; i < pd->m_num; i++) {
-            JKRExpHeap* heap = dStage_roomControl_c::createMemoryBlock(i, *entry_p + 0x380);
+            u32 blockSize = tp::endian::read_be32(entry_p);
+            JKRExpHeap* heap = dStage_roomControl_c::createMemoryBlock(i, blockSize + 0x380);
             JUT_ASSERT(3216, heap != NULL);
-            OS_REPORT("\t%02d : size=%d\n", i, *entry_p);
+            OS_REPORT("\t%02d : size=%d\n", i, blockSize);
             entry_p++;
         }
     }
@@ -2243,8 +2559,11 @@ static int dStage_memaInfoInit(dStage_dt_c* i_stage, void* i_data, int param_2, 
 
 static int dStage_mecoInfoInit(dStage_dt_c* i_stage, void* i_data, int param_2, void* param_3) {
     UNUSED(param_2);
-    UNUSED(param_3);
-    dStage_MemoryConfig_c* pd = (dStage_MemoryConfig_c*)((char*)i_data + 4);
+    dStage_nodeHeader* node = (dStage_nodeHeader*)i_data;
+    dStage_MemoryConfig_c* pd = new dStage_MemoryConfig_c{
+        static_cast<int>(tp::endian::read_be32(&node->m_entryNum)),
+        (dStage_MemoryConfig_data*)((char*)param_3 + tp::endian::read_be32(&node->m_offset)),
+    };
 #if DEBUG
     if (fapGmHIO_getMemoryBlockOff()) {
         pd = NULL;
@@ -2279,16 +2598,23 @@ static int dStage_fieldMapTresureInit(dStage_dt_c* i_stage, void* i_data, int i_
 }
 
 static void dStage_dt_c_offsetToPtr(void* i_data) {
+#if PLATFORM_PC
+    UNUSED(i_data);
+    return;
+#else
     dStage_fileHeader* file = (dStage_fileHeader*)i_data;
     dStage_nodeHeader* p_tno = file->m_nodes;
+    const int chunkCount = static_cast<int>(tp::endian::read_be32(&file->m_chunkCount));
 
-    for (int i = 0; i < file->m_chunkCount; i++) {
-        JUT_ASSERT(3381, p_tno->m_offset != 0);
-        if (p_tno->m_offset != 0 && p_tno->m_offset < 0x80000000) {
-            p_tno->m_offset += (uintptr_t)i_data;
+    for (int i = 0; i < chunkCount; i++) {
+        const u32 offset = tp::endian::read_be32(&p_tno->m_offset);
+        JUT_ASSERT(3381, offset != 0);
+        if (offset != 0 && offset < 0x80000000) {
+            p_tno->m_offset = offset + (uintptr_t)i_data;
         }
         p_tno++;
     }
+#endif
 }
 
 static int dStage_mapPathInit(dStage_dt_c* i_stage, void* i_data, int param_2, void* param_3) {
@@ -2375,6 +2701,15 @@ static void readMult(dStage_dt_c* i_stage, dStage_Multi_c* multi, bool useOldRes
 
 static int dStage_multInfoInit(dStage_dt_c* i_stage, void* i_data, int entryNum, void* param_3) {
     UNUSED(entryNum);
+#if PLATFORM_PC
+    UNUSED(i_data);
+    UNUSED(param_3);
+    tp::log::info("dStage_multInfoInit[PC]: skipping multi-room preload");
+    i_stage->setMulti(NULL);
+    dStage_initRoomKeepDoorInfo();
+    i_stage->setRoomNo(-1);
+    return 1;
+#endif
     UNUSED(param_3);
     dStage_Multi_c* multi = (dStage_Multi_c*)((char*)i_data + 4);
     i_stage->setMulti(multi);
@@ -2456,6 +2791,10 @@ static int dStage_elstInfoInit(dStage_dt_c* i_stage, void* i_data, int param_2, 
 }
 
 static void dKankyo_create() {
+#if PLATFORM_PC
+    tp::log::info("dKankyo_create[PC]: skipping environment actor bootstrap");
+    return;
+#endif
     fopKyM_fastCreate(fpcNm_KANKYO_e, 0, NULL, NULL, NULL);
     fopKyM_fastCreate(fpcNm_KYEFF_e, 0, NULL, NULL, NULL);
     fopKyM_fastCreate(fpcNm_KYEFF2_e, 0, NULL, NULL, NULL);
@@ -2478,7 +2817,9 @@ static void dStage_dt_c_stageInitLoader(void* i_data, dStage_dt_c* i_stage) {
     JUT_ASSERT(3959, i_data != NULL);
     JUT_ASSERT(3960, i_stage != NULL);
 
+#if !TP_LITTLE_ENDIAN
     dStage_dt_c_offsetToPtr(i_data);
+#endif
     i_stage->init();
     dStage_dt_c_decode(i_data, i_stage, l_funcTable, ARRAY_SIZEU(l_funcTable));
     layerMemoryInfoLoader(i_data, i_stage, -1);
@@ -2619,6 +2960,10 @@ void dStage_dt_c_stageLoader(void* i_data, dStage_dt_c* i_stage) {
     };
 
     dStage_dt_c_decode(i_data, i_stage, l_funcTable, ARRAY_SIZEU(l_funcTable));
+#if PLATFORM_PC
+    tp::log::info("dStage_dt_c_stageLoader[PC]: skipping stage layer table/actor loaders");
+    return;
+#endif
     layerTableLoader(i_data, i_stage, -1);
     layerActorLoader(i_data, i_stage, -1);
 }
@@ -2637,6 +2982,11 @@ void dStage_dt_c_roomLoader(void* i_data, dStage_dt_c* i_stage, int param_2) {
     dStage_dt_c_offsetToPtr(i_data);
     i_stage->init();
     dStage_dt_c_decode(i_data, i_stage, l_funcTable, ARRAY_SIZEU(l_funcTable));
+#if PLATFORM_PC
+    tp::log::info("dStage_dt_c_roomLoader[PC]: skipping layerTableLoader room=%d player=%p", param_2,
+                  dComIfGp_getPlayer(0));
+    return;
+#endif
     layerTableLoader(i_data, i_stage, param_2);
 }
 
@@ -2695,6 +3045,9 @@ char dStage_roomControl_c::mDemoArcName[10];
 void dStage_Create() {
     void* stageRsrc = dComIfG_getStageRes("stage.dzs");
     JUT_ASSERT(4451, stageRsrc != NULL);
+    tp::log::info("dStage_Create[PC]: begin stage=%s room=%d point=%d layer=%d stageRsrc=%p",
+                  dComIfGp_getStartStageName(), dComIfGp_getStartStageRoomNo(),
+                  dComIfGp_getStartStagePoint(), dComIfGp_getStartStageLayer(), stageRsrc);
 #if DEBUG
     data_8074C568_debug = false;
     data_8074C569_debug = false;
@@ -2703,22 +3056,41 @@ void dStage_Create() {
     data_8074C56C_debug = false;
 #endif
     dStage_dt_c_stageLoader(stageRsrc, dComIfGp_getStage());
+    tp::log::info("dStage_Create[PC]: stageLoader done");
+#if PLATFORM_PC
+    if (dComIfGp_getStage()->getRoom() == NULL) {
+        dComIfGp_getStage()->setRoom(dStage_makeSyntheticRoomReadList(64));
+        tp::log::info("dStage_Create[PC]: installed fallback room table after stageLoader");
+    }
+#endif
     daSus_c::execute();
+    tp::log::info("dStage_Create[PC]: suspend execute done");
 
     if (dComIfGp_getStartStageRoomNo() >= 0) {
+        tp::log::info("dStage_Create[PC]: roomInit begin room=%d", dComIfGp_getStartStageRoomNo());
         int status = dStage_roomInit(dComIfGp_getStartStageRoomNo());
+        tp::log::info("dStage_Create[PC]: roomInit done status=%d stay=%d nextStay=%d",
+                      status, dStage_roomControl_c::getStayNo(), dStage_roomControl_c::getNextStayNo());
         JUT_ASSERT(4517, status);
     }
 
     *dStage_roomControl_c::getDemoArcName() = 0;
     dKankyo_create();
+    tp::log::info("dStage_Create[PC]: kankyo create done");
 
     if (dComIfG_getStageRes("vrbox_sora.bmd")) {
+#if PLATFORM_PC
+        tp::log::info("dStage_Create[PC]: skipping VRBOX actor spawns");
+#else
+        tp::log::info("dStage_Create[PC]: vrbox resources present, spawning");
         fopAcM_Create(fpcNm_VRBOX_e, NULL, NULL);
         fopAcM_Create(fpcNm_VRBOX2_e, NULL, NULL);
+#endif
     }
 
+    tp::log::info("dStage_Create[PC]: event manager create begin");
     dComIfGp_evmng_create();
+    tp::log::info("dStage_Create[PC]: event manager create done");
 }
 
 void dStage_Delete() {

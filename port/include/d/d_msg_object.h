@@ -27,6 +27,11 @@ class mDoDvdThd_mountXArchive_c;
 // -----------------------------------------------------------------------
 class dMsgObject_c : public msg_class {
 public:
+    static void setLetterNameID(u16) {}
+    static bool isKillMessageFlag() { return false; }
+    static void onKillMessageFlag() {}
+    static void setKillMessageFlag() {}
+    static void setNowTalkFlowNo(s16) {}
     // Called by fopMsgM_messageSet to arm a pending message
     void setMessageIndex(u32 /*msgIdx*/, u32 /*param*/, bool /*flag*/) {}
     void setMessageIndexDemo(u32, bool) {}
@@ -55,6 +60,12 @@ public:
     void setTalkPartner(fopAc_ac_c*) {}
     void setInsectItemNo(u8) {}
     bool isSelectTalkNowCheck() { return false; }
+    void setSelectWordFlag(u8) {}
+    u8 getSelectWordFlag() const { return 0; }
+    void setWord(const char*) {}
+    void setSelectWord(int, const char*) {}
+    void setMsgOutputType(u8) {}
+    const void* getMsgDtPtr() const { return nullptr; }
 };
 
 // -----------------------------------------------------------------------
@@ -63,10 +74,11 @@ public:
 // -----------------------------------------------------------------------
 class dMsgObject_HIO_c {
 public:
-    dMsgObject_HIO_c() : mMsgDebug(false), mMsgIndex(0) {}
+    dMsgObject_HIO_c() : mMsgDebug(0), mMsgIndex(0), mFlowIndex(0) {}
     virtual ~dMsgObject_HIO_c() {}
-    bool mMsgDebug;
+    u8 mMsgDebug;
     u32  mMsgIndex;
+    u32  mFlowIndex;
 };
 extern dMsgObject_HIO_c g_MsgObject_HIO_c;
 
@@ -107,6 +119,8 @@ inline bool dMsgObject_isSelectTalkNow() {
     dMsgObject_c* m = dComIfGp_getMsgObjectClass();
     return m ? m->isSelectTalkNowCheck() : false;
 }
+inline bool dMsgObject_isHowlHearingMode() { return false; }
+inline void dMsgObject_onMsgSend() {}
 inline void dMsgObject_setSmellType(u8 t) {
     if (dMsgObject_c* m = dComIfGp_getMsgObjectClass()) m->setSmellType(t);
 }
@@ -139,8 +153,16 @@ inline bool dMsgObject_getString(u32 id, J2DTextBox* t1, J2DTextBox* t2, JUTFont
     return m ? m->getString(id, t1, t2, font, out, text, ruby, name, idx) : false;
 }
 inline bool dMsgObject_isSelectTalkNowCheck() { return dMsgObject_isSelectTalkNow(); }
+inline bool dMsgObject_isTalkNowCheck() { return dMsgObject_isSelectTalkNow(); }
+inline bool dMsgObject_isKillMessageFlag() { return false; }
+inline void dMsgObject_onKillMessageFlag() {}
 inline void dMsgObject_setKillMessageFlag() {}
 inline void dMsgObject_setSelectWordFlag(u8) {}
+inline void dMsgObject_setWord(const char*) {}
+inline void dMsgObject_setSelectWord(int, const char*) {}
+inline void dMsgObject_setMsgOutputType(u8) {}
+inline u8* dMsgObject_getMsgDtPtr() { return nullptr; }
+inline void dMsgObject_setNowTalkFlowNo(s16) {}
 inline s16  dMsgObject_getSmellTypeMessageID() {
     dMsgObject_c* m = dComIfGp_getMsgObjectClass();
     return m ? m->getSmellTypeMessageID() : 0;

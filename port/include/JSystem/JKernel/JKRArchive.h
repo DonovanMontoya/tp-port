@@ -195,6 +195,10 @@ inline void* JKRGetTypeResource(u32 tag, const char* name, JKRArchive* arc) {
     return JKRArchive::getGlbResource(tag, name, arc);
 }
 
+inline void* JKRGetNameResource(const char* name, JKRArchive* archive) {
+    return archive ? archive->getResource(name) : nullptr;
+}
+
 inline bool JKRRemoveResource(void* resource, JKRFileLoader* fileLoader) {
     return JKRFileLoader::removeResource(resource, fileLoader);
 }

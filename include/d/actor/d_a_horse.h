@@ -2,6 +2,7 @@
 #define D_A_HORSE_H
 
 #include "Z2AudioLib/Z2Creature.h"
+#include "Z2AudioLib/Z2LinkMgr.h"
 #include "d/actor/d_a_player.h"
 #include "d/actor/d_a_scene_exit.h"
 #include "d/d_bg_s_acch.h"

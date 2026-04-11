@@ -17,6 +17,8 @@
 #include "Z2AudioLib/Z2AudioMgr.h"
 #include "port/port.h"
 
+extern "C" process_profile_definition* tpPort_GetMissingActorProfile();
+
 BOOL fpcBs_Is_JustOfType(int i_typeA, int i_typeB) {
     if (i_typeB == i_typeA) {
         return TRUE;
@@ -48,8 +50,9 @@ int fpcBs_Execute(base_process_class* i_proc) {
     int result = 1;
     layer_class* exec_layer;
 
-    if (i_proc->profname == fpcNm_TITLE_e) {
-        tp::log::info("fpcBs_Execute: TITLE proc=%p methods=%p layer=%p",
+    if (i_proc->profname == fpcNm_TITLE_e || i_proc->profname == fpcNm_OPENING_SCENE_e) {
+        tp::log::info("fpcBs_Execute: %s proc=%p methods=%p layer=%p",
+                      i_proc->profname == fpcNm_TITLE_e ? "TITLE" : "OPENING_SCENE",
                       i_proc, i_proc->methods, i_proc->layer_tag.layer);
     }
 
@@ -144,14 +147,32 @@ base_process_class* fpcBs_Create(s16 i_profname, fpc_ProcID i_procID, void* i_ap
     process_profile_definition* pprofile;
     base_process_class* pprocess;
     u32 size;
+    bool used_missing_actor_profile = false;
 
     pprofile = (process_profile_definition*)fpcPf_Get(i_profname);
-    if (i_profname == fpcNm_LOGO_SCENE_e || i_profname == fpcNm_MENU_SCENE_e) {
+#if PLATFORM_PC
+    if (pprofile == NULL && i_append != NULL) {
+        pprofile = tpPort_GetMissingActorProfile();
+        used_missing_actor_profile = (pprofile != NULL);
+        if (used_missing_actor_profile) {
+            tp::log::info("fpcBs_Create[PC]: using missing-actor fallback for proc=%d procID=%u append=%p",
+                          i_profname, i_procID, i_append);
+        }
+    }
+#endif
+    if (pprofile == NULL) {
+        tp::log::info("fpcBs_Create[PC]: missing profile for proc=%d procID=%u append=%p",
+                      i_profname, i_procID, i_append);
+        return NULL;
+    }
+    if (i_profname == fpcNm_LOGO_SCENE_e || i_profname == fpcNm_MENU_SCENE_e ||
+        i_profname == fpcNm_ALINK_e) {
         tp::log::info("fpcBs_Create: proc=%d profile=%p procID=%u append=%p",
                       i_profname, pprofile, i_procID, i_append);
     }
     size = pprofile->process_size + pprofile->unk_size;
-    if (i_profname == fpcNm_LOGO_SCENE_e || i_profname == fpcNm_MENU_SCENE_e) {
+    if (i_profname == fpcNm_LOGO_SCENE_e || i_profname == fpcNm_MENU_SCENE_e ||
+        i_profname == fpcNm_ALINK_e) {
         tp::log::info("fpcBs_Create: proc=%d process_size=0x%x unk_size=0x%x total=0x%x",
                       i_profname, pprofile->process_size, pprofile->unk_size, size);
     }
@@ -173,13 +194,14 @@ base_process_class* fpcBs_Create(s16 i_profname, fpc_ProcID i_procID, void* i_ap
     pprocess->id = i_procID;
     pprocess->profname = i_profname;
     pprocess->type = fpcBs_MakeOfType(&g_fpcBs_type);
-    pprocess->name = pprofile->name;
+    pprocess->name = used_missing_actor_profile ? i_profname : pprofile->name;
     fpcPause_Init(pprocess);
     pprocess->methods = pprofile->methods;
     pprocess->profile = pprofile;
     pprocess->append = i_append;
     pprocess->parameters = pprofile->parameters;
-    if (i_profname == fpcNm_LOGO_SCENE_e || i_profname == fpcNm_MENU_SCENE_e) {
+    if (i_profname == fpcNm_LOGO_SCENE_e || i_profname == fpcNm_MENU_SCENE_e ||
+        i_profname == fpcNm_ALINK_e) {
         tp::log::info("fpcBs_Create: proc=%d process=%p methods=%p profile_name=%d",
                       i_profname, pprocess, pprocess->methods, pprocess->name);
     }

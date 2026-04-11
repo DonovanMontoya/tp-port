@@ -67,6 +67,11 @@ inline void mDoAud_bgmStop(u32)            {}
 inline void mDoAud_bgmAllMute(u32)         {}
 inline void mDoAud_subBgmStart(u32)        {}
 inline void mDoAud_subBgmStop()            {}
+inline void mDoAud_changeSubBgmStatus(s32) {}
+inline void mDoAud_taktModeMute()          {}
+inline void mDoAud_taktModeMuteOff()       {}
+inline void mDoAud_getCameraMapInfo(u32)   {}
+inline void mDoAud_setCameraGroupInfo(u8)  {}
 inline void mDoAud_bgmNowBattle(f32)       {}
 inline void mDoAud_bgmStreamPrepare(u32)   {}
 inline void mDoAud_bgmStreamPlay()         {}

@@ -130,7 +130,15 @@ fopAc_ac_c* fopAcM_FastCreate(s16 i_procName, FastCreateReqFunc i_createFunc, vo
 
 void fopAcM_setStageLayer(void* i_proc) {
     scene_class* stageProc = fopScnM_SearchByID(dStage_roomControl_c::getProcID());
-    JUT_ASSERT(367, stageProc != NULL);
+    if (stageProc == NULL) {
+#if PLATFORM_PC
+        tp::log::warn("fopAcM_setStageLayer[PC]: stage scene not ready, keeping current layer proc=%p",
+                      i_proc);
+        return;
+#else
+        JUT_ASSERT(367, stageProc != NULL);
+#endif
+    }
 
     fpcM_ChangeLayerID(i_proc, fopScnM_LayerID(stageProc));
 }
@@ -138,7 +146,16 @@ void fopAcM_setStageLayer(void* i_proc) {
 void fopAcM_setRoomLayer(void* i_proc, int i_roomNo) {
     if (i_roomNo >= 0) {
         scene_class* roomProc = fopScnM_SearchByID(dStage_roomControl_c::getStatusProcID(i_roomNo));
-        JUT_ASSERT(390, roomProc != NULL);
+        if (roomProc == NULL) {
+#if PLATFORM_PC
+            tp::log::warn(
+                "fopAcM_setRoomLayer[PC]: room scene not ready room=%d, keeping current layer proc=%p",
+                i_roomNo, i_proc);
+            return;
+#else
+            JUT_ASSERT(390, roomProc != NULL);
+#endif
+        }
 
         fpcM_ChangeLayerID(i_proc, fopScnM_LayerID(roomProc));
     }

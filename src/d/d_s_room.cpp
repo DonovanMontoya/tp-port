@@ -125,13 +125,12 @@ static int objectDeleteJugge(void* i_process, void* i_data) {
             #if DEBUG
             char namebuf[16];
             fopAcM_getNameString((fopAc_ac_c*)i_process, namebuf);
+            OS_REPORT("削除！<%s>\n", namebuf);
             #endif
 
             if (!fopAcM_CheckCondition((fopAc_ac_c*)i_process, fopAcCnd_NODRAW_e)) {
                 return 0;
             }
-            
-            OS_REPORT("削除！<%s>\n", namebuf);
         }
 
         fpcM_Delete(i_process);
@@ -362,6 +361,7 @@ static int dScnRoom_Delete(room_of_scene_class* i_this) {
 static int phase_0(room_of_scene_class* i_this) {
     int param = fopScnM_GetParam(i_this);
     int roomNo = fopScnM_GetParam(i_this);
+    tp::log::info("dScnRoom_Create[PC]: phase_0 room=%d", roomNo);
     dStage_roomControl_c::setStatusProcID(roomNo, fopScnM_GetID(i_this));
     return cPhs_NEXT_e;
 }
@@ -371,6 +371,7 @@ static int phase_1(room_of_scene_class* i_this) {
 
     int roomNo = fopScnM_GetParam(i_this);
     const char* arcName = setArcName(i_this);
+    tp::log::info("dScnRoom_Create[PC]: phase_1 room=%d arc=%s", roomNo, arcName);
 
     if (dComIfG_syncStageRes(arcName) < 0) {
         JKRExpHeap* heap = dStage_roomControl_c::getMemoryBlock(roomNo);
@@ -403,6 +404,7 @@ static int phase_1(room_of_scene_class* i_this) {
 
 static int phase_2(room_of_scene_class* i_this) {
     const char* arcName = setArcName(i_this);
+    tp::log::info("dScnRoom_Create[PC]: phase_2 room=%d arc=%s", fopScnM_GetParam(i_this), arcName);
 
     int rt = dComIfG_syncStageRes(arcName);
     if (rt < 0) {
@@ -438,8 +440,10 @@ static int phase_2(room_of_scene_class* i_this) {
     i_this->roomDt = dComIfGp_roomControl_getStatusRoomDt(roomNo);
     i_this->roomDt->setRoomNo(roomNo);
     i_this->roomInfo = dComIfG_getStageRes(arcName, "room.dzr");
+    tp::log::info("dScnRoom_Create[PC]: phase_2 room=%d roomInfo=%p", roomNo, i_this->roomInfo);
 
     if (i_this->roomInfo != NULL) {
+        tp::log::info("dScnRoom_Create[PC]: phase_2 invoking roomLoader room=%d", roomNo);
         dStage_dt_c_roomLoader(i_this->roomInfo, i_this->roomDt, roomNo);
     }
 
@@ -469,6 +473,8 @@ static int phase_2(room_of_scene_class* i_this) {
 }
 
 static int phase_3(room_of_scene_class* i_this) {
+    tp::log::info("dScnRoom_Create[PC]: phase_3 room=%d field_1d4=%d field_1d5=%d",
+                  fopScnM_GetParam(i_this), i_this->field_0x1d4, i_this->field_0x1d5);
     if (!objectSetCheck(i_this)) {
         return cPhs_INIT_e;
     } else {
@@ -478,13 +484,17 @@ static int phase_3(room_of_scene_class* i_this) {
 
 static int phase_4(room_of_scene_class* i_this) {
     if (dComIfGp_getPlayer(0) == NULL) {
+        tp::log::info("dScnRoom_Create[PC]: phase_4 waiting for player room=%d", fopScnM_GetParam(i_this));
         return cPhs_INIT_e;
     }
 
     if (!objectSetCheck(i_this)) {
+        tp::log::info("dScnRoom_Create[PC]: phase_4 objectSetCheck pending room=%d",
+                      fopScnM_GetParam(i_this));
         return cPhs_INIT_e;
     }
 
+    tp::log::info("dScnRoom_Create[PC]: phase_4 complete room=%d", fopScnM_GetParam(i_this));
     OS_REPORT("dScnRoom_Create(): End !! room%d\n", fopScnM_GetParam(i_this));
     return cPhs_COMPLEATE_e;
 }
@@ -499,7 +509,10 @@ static int dScnRoom_Create(scene_class* i_this) {
     };
 
     room_of_scene_class* room = static_cast<room_of_scene_class*>(i_this);
-    return dComLbG_PhaseHandler(&room->phase, l_method, i_this);
+    int ret = dComLbG_PhaseHandler(&room->phase, l_method, i_this);
+    tp::log::info("dScnRoom_Create[PC]: ret=%d room=%d player=%p",
+                  ret, fopScnM_GetParam(room), dComIfGp_getPlayer(0));
+    return ret;
 }
 
 static scene_method_class l_dScnRoom_Method = {
